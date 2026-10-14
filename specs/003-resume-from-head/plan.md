@@ -8,7 +8,7 @@
 
 Replace the fragment's Resume rule with one start rule for every run: the first phase with an
 unmarked task, each phase verified from HEAD before its first worker, the worker told to check what
-the repository already holds, and changes made before the run kept the user's; a fresh run on a
+the repository already holds, and a clean tree outside the feature directory (else the run is core's); a fresh run on a
 clean tree verifies and marks as before. Measure it with one resume run of the preset on 002's `checkout` fixture in a
 "Phases 1–2 done" state (a `run.sh --state` overlay), judged by a script. Release `0.2.0`, then move
 dotfiles' `sdd-init` and supertrader to it.

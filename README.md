@@ -17,7 +17,12 @@ The measured state of 001 is tagged
 
 ```bash
 specify preset add --from https://github.com/camilopiedra92/spec-kit-preset-story-workers/archive/refs/tags/v0.1.0.zip
+git add .specify .claude && git commit -m "Add the story-workers preset"
 ```
+
+Commit the install before the next `/speckit-implement`: from `0.2.0`, workers need nothing
+uncommitted outside the feature directory, and a run that finds something there is carried out as
+core does.
 
 It appends a `## Story workers` section to core `speckit-implement` and replaces nothing
 (constitution I). Each phase of `tasks.md` goes to one foreground worker started with

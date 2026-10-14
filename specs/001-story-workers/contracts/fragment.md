@@ -57,7 +57,7 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
 10. **Where a run starts** (0.2.0): as `specs/003-resume-from-head/contracts/harness.md` states
     it: the first phase with an unmarked task, all-marked phases skipped, each phase's baseline as
     Verification says, the worker checking what is already done, a clean tree outside the feature
-    directory (else core), a `Started at phase <n>:` report line.
+    directory (else core), the main session committing what it carries out there, a `Started at phase <n>:` report line.
 11. **Narrowed, by name**: core's `For completed tasks, make sure to mark the task off as [X]`,
     `parallel tasks [P] can run together` and `Halt execution if any non-parallel task fails`.
 

@@ -37,39 +37,11 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   report, so the user knows which work had only the suite. A task a hook blocks stays unmarked, so
   each later run starts at its phase and costs one worker to find it still blocked.
 
-## R4. Uncommitted work: a clean tree outside the feature directory
-
-- **Decision** (owner, 2026-10-14, after the third fresh review): before the first worker the run
-  runs `git status --porcelain --untracked-files=all`; a path outside the feature directory sends
-  the whole run to core (Fallback), naming those paths. Inside the feature directory, uncommitted
-  changes stay as they are: no worker edits, stages, commits or reverts a file there, and a task that
-  changes one is carried out in the main session as core does, left uncommitted. The run's
-  `tasks.md` commits carry the file as it stands. A worker stages only its own files and commits
-  Project Setup Verification's changes on their own; the main session commits what it changes
-  outside the feature directory before the next worker. Verification requires the same `git status`,
-  run before its own runs, to list nothing outside the feature directory.
-- **Rationale**: with nothing uncommitted outside the feature directory, every change there after a
-  worker is that worker's, so no record is needed and none can be misread; spec artifacts, the usual
-  uncommitted files at implement time, live inside the feature directory, which workers never write.
-- **Alternatives considered**: *a record of `git status --porcelain` taken at the start, workers
-  never touching a listed file* (second review's fix): a worker's edit to an already changed file
-  leaves its status line as it was; untracked directories collapse to one line; the main session's
-  own uncommitted work reads as a worker's; a red suite cannot be traced to the user's file. Patching
-  it needs per-file hashes, untracked files listed one by one and a suite at the start, and each
-  round found more. *Falling back to core on any uncommitted change*: spec files are usually
-  uncommitted at implement time, so the preset would rarely run. *Letting a worker finish
-  uncommitted partial work*: its commit would carry the user's changes.
-- **Accepted limits**: a project with uncommitted work outside the feature directory (supertrader's
-  owner's `CLAUDE.md` and decision records, today) runs as core until that work is committed. Tasks
-  that change the feature's own documents (a quickstart, a contract) are carried out in the main
-  session. The fallback on a dirty tree is core itself, so it is not measured (constitution IV's
-  source); the eval measures the inside case: an uncommitted edit to the feature's spec.
-
 ## R2. The resumed state for the eval
 
 - **Decision**: `tests/eval/run.sh --state <name>` overlays `fixtures/<fixture>/states/<name>/
   committed/` onto the copied project before the setup commit, and `uncommitted/`, when present,
-  after every commit, so the agent finds it changed; `versions.txt` records `state: <name>`. The
+  after it, so the agent finds it changed; `versions.txt` records `state: <name>`. The
   state `phase-2-done` of `checkout` holds Phases 1–2 implemented (the reference's US1 code, without
   US2 and US3, and the US1 test files a worker would have written) and `tasks.md` with T001–T011
   marked `[X]`, and in `uncommitted/` an HTML comment appended to the feature's `spec.md`, as an
@@ -113,3 +85,35 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
 - **Alternatives considered**: *reading the verdict by hand*: one more place for a slip, which
   002's reviews found more than once. *A `without` arm beside it*: core resumes by redoing nothing
   only because it never reads history; comparing it says nothing about the preset's rule.
+
+## R4. Uncommitted work: a clean tree outside the feature directory
+
+- **Decision** (owner, 2026-10-14, after the third fresh review): before the first worker the run
+  runs `git status --porcelain --untracked-files=all`; a path outside the feature directory sends
+  the whole run to core (Fallback), naming those paths. Inside the feature directory, uncommitted
+  changes stay as they are: no worker edits, stages, commits or reverts a file there, and a task that
+  changes one is carried out in the main session as core does, left uncommitted. The run's
+  `tasks.md` commits carry the file as it stands. A worker stages only its own files and commits
+  Project Setup Verification's changes on their own; the main session commits what it changes
+  outside the feature directory before the next worker. Verification requires the same `git status`,
+  run before its own runs, to list nothing outside the feature directory.
+- **Rationale**: with nothing uncommitted outside the feature directory, every change there after a
+  worker is that worker's, so no record is needed and none can be misread; spec artifacts, the usual
+  uncommitted files at implement time, live inside the feature directory, which workers never write.
+- **Alternatives considered**: *a record of `git status --porcelain` taken at the start, workers
+  never touching a listed file* (second review's fix): a worker's edit to an already changed file
+  leaves its status line as it was; untracked directories collapse to one line; the main session's
+  own uncommitted work reads as a worker's; a red suite cannot be traced to the user's file. Patching
+  it needs per-file hashes, untracked files listed one by one and a suite at the start, and each
+  round found more. *Falling back to core on any uncommitted change*: spec files are usually
+  uncommitted at implement time, so the preset would rarely run. *Letting a worker finish
+  uncommitted partial work*: its commit would carry the user's changes.
+- **Accepted limits**: a project with uncommitted work outside the feature directory runs as core
+  until that work is committed: the preset's own install included (the README says to commit it),
+  generated files git does not ignore (a worker adds them to the ignore file once one is found after
+  it), and, in a monorepo, a sibling project's uncommitted work. A worker that writes the feature
+  directory against its brief is seen in the commit reading when it commits, and the finding is
+  this session's to carry out as core does; an uncommitted write there is not seen. Tasks
+  that change the feature's own documents (a quickstart, a contract) are carried out in the main
+  session. The fallback on a dirty tree is core itself, so it is not measured (constitution IV's
+  source); the eval measures the inside case: an uncommitted edit to the feature's spec.

@@ -19,30 +19,35 @@
   naming those paths. Inside the feature directory, uncommitted changes stay as they are: no
   finding, no question, no stop; no worker edits, stages, commits or reverts a file there; a task
   that changes one is carried out in the main session as core does and left uncommitted. The run's
-  `tasks:` commits carry `tasks.md` as it stands. A worker commits Project Setup Verification's
-  changes in a commit of their own. The main session commits what it changes outside the feature
-  directory before the next phase's worker (`tasks: carried out in this session`). Verification
+  `tasks:` commits carry `tasks.md` as it stands; core's extension hooks' commits are core's. The
+  start check comes before any of the run's own suite or static-check runs. A worker commits Project
+  Setup Verification's changes, and ignore-file entries for generated files git does not ignore, in
+  commits of their own. A task that changes the feature directory is not handed off: the main
+  session carries it out, all of it. The main session commits what it changes outside the feature
+  directory as soon as it has carried out the items, before any later Verification or worker
+  (`tasks: carried out in this session`). Verification
   requires `git status --porcelain --untracked-files=all`, run before its own runs, to list nothing
   outside the feature directory; what it lists is the worker's, and goes back to it as a
   finding.
 - A task found already done is marked on the suite, the static checks and the main session's
   reading of the commit or file the worker cites.
 - `Project Setup Verification` is Phase 1's worker's only.
-- In a git repository the completion report carries `Started at phase <n>: work committed before
+- When a phase went to a worker, the completion report carries `Started at phase <n>: work committed before
   this run was covered by the whole suite, not read as a diff, its static-check findings in the
   baseline.`; with every task marked, no worker starts, nothing is committed, and the report says so
   in its place.
 - `compose.sh` requires a phrase per clause and refuses the 0.1.0 clauses (`A run starts at the
   phase after the last commit whose message contains`, `on resume, the uncommitted diff`, `temporary
   git worktree`, `what earlier workers finished`) and the first draft's `Resumed at phase` and
-  `the baseline is HEAD at the run's start`. A phrase shows a clause is there, not that no qualifier
+  `the baseline is HEAD at the run's start`, the second draft's `Changes made before the run` and
+  `beyond that record`, and the third's `it commits before the next phase's worker starts`. A phrase shows a clause is there, not that no qualifier
   was added beside it; that is the reviewer's to read.
 
 ## `tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <arm> <out-dir>`
 
 `--state <name>` copies `fixtures/<fixture>/states/<name>/committed/` as committed (`git archive`)
 over the scratch project before the setup commit, and `states/<name>/uncommitted/`, when there is
-one, after every commit, so the agent finds it changed and not committed; refused (exit 2) when
+one, after the setup commit (nothing commits after it before the agent), so the agent finds it changed and not committed; refused (exit 2) when
 `committed/` is not committed. `commits.txt` is written with `--no-renames`, so a moved file shows
 its old path too.
 `versions.txt` adds `state: <name>` (`state: -` without the flag), a pre-run key.

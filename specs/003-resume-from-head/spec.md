@@ -89,7 +89,7 @@ takes them as they are and starts from the repository as it finds it.
 
 ### User Story 1 - A feature started without the preset resumes where it is (Priority: P1)
 
-A developer installs the preset on a project whose feature is partly built, with earlier phases'
+A developer installs the preset, and commits the install, on a project whose feature is partly built, with earlier phases'
 tasks marked done, and runs `/speckit-implement`. The run starts at the first phase that still has
 an unmarked task, leaves the finished phases alone, hands the worker only that phase's unmarked
 tasks, told to check what of them the repository already holds, and finishes the feature.
@@ -114,8 +114,9 @@ with every held-out test passing.
    starts, **Then** it resumes at that phase, briefs the worker with that one task, and does not
    treat the later phases' work as that phase's to redo.
 4. **Given** uncommitted changes inside the feature directory, **When** a run starts, **Then** it
-   neither asks nor stops, as core would not, and no commit or revert of the run touches them,
-   `tasks.md` aside, which its mark commits carry as it stands.
+   neither asks nor stops, as core would not, and no commit or revert the run makes touches them,
+   `tasks.md` aside, which its mark commits carry as it stands; commits core's extension hooks make
+   are core's.
 5. **Given** a run in a git repository, **When** it finishes, **Then** its completion report names
    the phase it started at and says that work committed before the run was covered by the whole
    suite but not read as a diff.
@@ -135,7 +136,7 @@ run now does: the brief's note that an unmarked task may already be done and its
 already marked (in place of what earlier workers finished); the worker staging only its own files;
 the report slot for tasks found done; Verification reading the run's commits (in place of the diff
 from the recorded HEAD) and requiring nothing uncommitted outside the feature directory; Project
-Setup Verification's changes in a commit of their own; tasks that change the feature directory
+Setup Verification's changes, and ignore-file entries for generated files, in commits of their own; the main session committing what it carries out outside the feature directory (`tasks: carried out in this session`); tasks that change the feature directory
 carried out in the main session; a run starting with uncommitted changes outside the feature
 directory carried out as core does; no `tasks: mark phase` commit when a phase marked nothing new;
 the `Started at phase 1:` line.
@@ -208,13 +209,16 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
   --untracked-files=all`; a path outside the feature directory MUST send the whole run to core
   (Fallback), naming those paths in the completion report. Uncommitted changes inside the feature
   directory MUST stay as they are: no question, no stop, no finding, no worker edits, stages,
-  commits or reverts a file there; a task that changes one is carried out in the main session as
-  core does and left uncommitted; the run's `tasks.md` commits carry the file as it stands. A worker
+  commits or reverts a file there (the run's own commits; core's extension hooks' commits are
+  core's); a task that changes one is carried out in the main session as core does, all of it, its
+  feature-directory files left uncommitted; the run's `tasks.md` commits carry the file as it stands. A worker
   MUST stage only the files it changed and commit Project Setup Verification's changes in a commit
-  of their own; the main session MUST commit what it changes outside the feature directory before
-  the next worker; Verification MUST require `git status --porcelain --untracked-files=all`, run
+  of their own; the main session MUST commit what it changes outside the feature directory as soon
+  as it has carried out the items, before any later Verification or worker; generated files git
+  does not ignore go into the ignore file in a worker's commit of their own; the start check MUST
+  come before any of the run's own suite or static-check runs; Verification MUST require `git status --porcelain --untracked-files=all`, run
   before its own runs, to list nothing outside the feature directory.
-- **FR-005**: In a git repository, a run's completion report MUST carry `Started at phase <n>: work committed before this run was covered by the whole suite, not
+- **FR-005**: When a phase went to a worker, a run's completion report MUST carry `Started at phase <n>: work committed before this run was covered by the whole suite, not
   read as a diff, its static-check findings in the baseline.`; a run with every task marked says so
   in its place.
 - **FR-006**: A run with no task marked on a clean working tree MUST verify, mark and commit as
@@ -222,8 +226,7 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
   task may already be done and its list of the phases already marked (in place of what earlier
   workers finished); the worker staging only its own files; the report slot for tasks found done;
   Verification reading the run's commits (in place of the diff from the recorded HEAD) and requiring
-  nothing uncommitted outside the feature directory; Project Setup Verification's changes in a
-  commit of their own; tasks that change the feature directory carried out in the main session; a
+  nothing uncommitted outside the feature directory; Project Setup Verification's changes, and ignore-file entries for generated files, in commits of their own; the main session committing what it carries out outside the feature directory (`tasks: carried out in this session`); tasks that change the feature directory carried out in the main session; a
   run starting with uncommitted changes outside the feature directory carried out as core does; no
   `tasks: mark phase` commit when a phase marked nothing new; the `Started at phase 1:` line.
 - **FR-007**: The composition test MUST check each clause of FR-001 to FR-005 in the fragment and

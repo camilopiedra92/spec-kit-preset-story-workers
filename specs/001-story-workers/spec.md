@@ -182,7 +182,7 @@ its own.
   not marked `[X]` or `[x]`, skipping all-marked phases; each phase's baseline is taken as
   Verification says; the worker gets only the unmarked tasks and checks what the repository already
   holds; a run that finds uncommitted changes outside the feature directory is
-  carried out as core does; the completion report says where the
+  carried out as core does; the main session commits what it carries out outside it; the completion report says where the
   run started and that work committed before it had the suite but no diff reading.
   (0.1.0 resumed after the last `tasks: mark phase <n>` commit, which restarted a feature adopted
   partway through at Phase 1.)
