@@ -27,7 +27,8 @@ Rates and percentages are integers of basis points: 825 is 8.25%, 1500 is 15%. E
 ### `src/checkout/money.py`
 
 - `apply_rate(amount: int, basis_points: int) -> int`: `amount × basis_points / 10000`, rounded
-  half-even to the cent (spec, Conventions). Used for tax and for percentage discounts.
+  half-even to the cent (spec, Conventions). Used for tax, percentage discounts, the bulk price
+  and the restocking fee.
 
 ### `src/checkout/allocation.py`
 
@@ -43,6 +44,9 @@ Rates and percentages are integers of basis points: 825 is 8.25%, 1500 is 15%. E
   (User Story 3).
 - `Product(sku: str, unit_price: int, category: str)`: a dataclass.
 - `Catalog(products: Iterable[Product])`: `Catalog.get(sku: str) -> Product`, raising `UnknownSku`.
+- `line_unit_price(product: Product, quantity: int) -> int`: the unit price of a line of `quantity`
+  units of `product`: the bulk unit price at 10 or more units, the catalog unit price otherwise
+  (spec, User Story 1).
 
 ### `src/checkout/tax.py`
 
@@ -56,12 +60,13 @@ Rates and percentages are integers of basis points: 825 is 8.25%, 1500 is 15%. E
 - `BuyXGetY(sku: str, buy: int, get: int, exclusive: bool = False)`: buy X get Y free on a SKU.
 - `PercentOff(category: str, basis_points: int, exclusive: bool = False)`: percentage off a
   category.
-- `FixedOff(amount: int, exclusive: bool = False)`: a fixed amount off the order.
+- `FixedOff(amount: int, exclusive: bool = False, min_net: int = 0)`: a fixed amount off the
+  order, applied only when the order's current net is at least `min_net`.
 - `Promotion = BuyXGetY | PercentOff | FixedOff`: a type alias.
 - `line_discounts(items: Sequence[tuple[Product, int]], promotions: Sequence[Promotion],
   discount_cap: int | None = None) -> list[int]`: each item is a line's product and quantity, in
-  cart order; returns each line's discount after the stacking order, the cap and exclusivity of
-  User Story 2.
+  cart order; returns each line's discount after the stacking order, the minimum net, the cap
+  and exclusivity of User Story 2. Free units are worth `line_unit_price` each.
 
 ### `src/checkout/cart.py`
 
@@ -72,8 +77,9 @@ Rates and percentages are integers of basis points: 825 is 8.25%, 1500 is 15%. E
   `InvalidQuantity` and leaving the cart unchanged when it does; `Cart.lines -> tuple[CartLine,
   ...]`, a property, in the order SKUs were first added.
 - `PricedLine(sku: str, quantity: int, unit_price: int, gross: int, discount: int, net: int, tax:
-  int, unit_nets: tuple[int, ...], unit_taxes: tuple[int, ...])`: a dataclass; `gross` is unit
-  price × quantity, `net` is `gross - discount`; `unit_nets` and `unit_taxes` are `per_unit(net,
+  int, unit_nets: tuple[int, ...], unit_taxes: tuple[int, ...])`: a dataclass; `unit_price` is
+  the line's unit price, `line_unit_price(product, quantity)`; `gross` is `unit_price` ×
+  quantity, `net` is `gross - discount`; `unit_nets` and `unit_taxes` are `per_unit(net,
   quantity)` and `per_unit(tax, quantity)` (User Story 3).
 - `Receipt(lines: tuple[PricedLine, ...], gross: int, discount: int, net: int, tax: int, total:
   int)`: a dataclass; the order amounts are the sums of the line amounts, `total = net + tax`.
@@ -83,9 +89,12 @@ Rates and percentages are integers of basis points: 825 is 8.25%, 1500 is 15%. E
 ### `src/checkout/returns.py`
 
 - `class OverReturn(ValueError)`: more units than remain in the line.
-- `Refund(sku: str, quantity: int, net: int, tax: int, total: int)`: a dataclass.
-- `Order(receipt: Receipt)`: `Order.return_units(sku: str, quantity: int) -> Refund`, raising
-  `UnknownSku`, `InvalidQuantity` or `OverReturn` and leaving the order unchanged when it does.
+- `Refund(sku: str, quantity: int, net: int, tax: int, fee: int, total: int)`: a dataclass;
+  `total = net + tax - fee`.
+- `Order(receipt: Receipt, fee_basis_points: int = 0, fee_cap: int | None = None)`: the
+  restocking fee's rate and its cap across the order's returns (spec, User Story 3);
+  `Order.return_units(sku: str, quantity: int) -> Refund`, raising `UnknownSku`,
+  `InvalidQuantity` or `OverReturn` and leaving the order unchanged when it does.
 
 Tests live in `tests/`, one file per area, named in `tasks.md`.
 
