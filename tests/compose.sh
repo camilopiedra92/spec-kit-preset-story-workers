@@ -162,6 +162,9 @@ phrases=(
   "with \`model\` set to this session's model family"
   'carry out the remaining tasks in this session'
   'Carried out in this session:'
+  # Resume follows core's own progress record, tasks.md's [X] marks, so a
+  # project that adopts the preset partway through a feature resumes where it is.
+  'resumes at the first phase that has a task not marked [X]'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
@@ -169,6 +172,11 @@ phrases=(
 )
 for phrase in "${phrases[@]}"; do
   grep -qF -- "$phrase" <<< "$said" || problem "the fragment does not say '$phrase'"
+done
+# Rules the fragment no longer holds: resuming from its own marker commits
+# restarted a feature adopted partway through at Phase 1 (fixed in 0.1.1).
+for phrase in 'A run starts at the phase after the last commit whose message contains'; do
+  ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
 specify version > version.txt 2>&1 || true

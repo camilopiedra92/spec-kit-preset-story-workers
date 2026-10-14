@@ -70,9 +70,10 @@ phase goes to a worker as usual. The completion report always carries
 the line `Carried out in this session: none`, or `Carried out in this session:` followed by the
 task ids and, for fix items, the phase and a short name of each.
 
-**Resume.** A run starts at the phase after the last commit whose message contains
-`tasks: mark phase <n>`, or at the first phase when there is none. Take that phase's baseline at
-that commit (with none, at the commit before the first phase's first commit) in a temporary
-`git worktree`, and verify the phase's existing commits as above. Uncommitted changes to files other
+**Resume.** `tasks.md`'s `[X]` marks are the record of what is done, as in core, whatever made
+them (this preset, core, or a project that adopted the preset partway through a feature): a run
+resumes at the first phase that has a task not marked [X], and hands its worker only that phase's
+unmarked tasks. Take that phase's baseline at the last commit that changed `tasks.md` (with none, at
+HEAD) in a temporary `git worktree`, and verify the phase's commits since then as above. Uncommitted changes to files other
 than `tasks.md` go to a worker briefed with the diff, to finish or discard; uncommitted changes to
 `tasks.md` are yours to keep or drop.
