@@ -17,19 +17,20 @@ are dropped here)
 Core `/speckit-implement` runs every task in the main session, on whatever model that session uses.
 The hypothesis this feature tests is that most of a feature's usage is spent there — reading code,
 writing tests and code, running the suite — while the steps that need the larger model's judgement
-(the spec, the plan, the tasks, verification, review) are short. Core already executes "phase by
-phase" and asks to "verify each phase completion before proceeding": the phase is the natural unit
-to hand over.
+(the spec, the plan, the tasks, verification, review) are short. Core already runs "Phase-by-phase
+execution" and asks to "Verify each phase completion before proceeding": the phase is the natural
+unit to hand over.
 
 A lead model that plans and checks while a smaller model executes is the pattern Anthropic
 describes for its own multi-agent research system (Opus lead, Sonnet subagents; "How we built our
 multi-agent research system", Anthropic engineering, 2025).
 
 Observed on 2026-10-13 with Claude Code 2.1.296 (research.md R1 lists each run): a subagent started
-with `model` and `effort` on the Agent call runs with them, whatever the main session's; without
-them it takes the main session's model and effort (or `CLAUDE_CODE_SUBAGENT_MODEL`'s model when
-set); it has the project's `CLAUDE.md` in its context; the project's hooks apply to its calls; a
-project agent named `general-purpose` replaces the built-in one's prompt but not the call's model.
+with `model` and `effort` on the Agent call runs with them, whatever the main session's, even when
+the project defines its own `general-purpose` agent; without them it takes the main session's
+model and effort, or `CLAUDE_CODE_SUBAGENT_MODEL`'s model when that is set. It has the project's
+`CLAUDE.md` in its context, the project's hooks apply to its calls and their messages reach it, and
+a project's `Stop` hook fires once, at the end of the main session's turn, not when a subagent stops.
 
 What the observations do not settle, and the release must measure (constitution III): whether a
 feature implemented with workers uses less usage than without them, once the main session's
@@ -43,7 +44,7 @@ verification is counted, and whether it delivers code that is any worse.
   review.
 - Q: What feature is measured? → A: a synthetic two-story feature committed as a fixture, so the
   measurement can be rerun on a later version.
-- Q: How many runs per arm? → A: one per arm, reported as directional.
+- Q: How many runs per arm? → A: one counted run per arm, reported as directional.
 - Q: Who applies a fix that verification or a review finds? → A: a worker briefed with it; the main
   session verifies again.
 - Q: If the measurement fails, what happens to the branch? → A: only the README entry reaches
@@ -52,27 +53,33 @@ verification is counted, and whether it delivers code that is any worse.
   `effort: "medium"`, so raising the main session's effort for planning does not raise every
   worker's; a review inherits the main session's. Recorded as an exception to the owner's policy of
   leaving effort at each model's default, with its reason (research.md R7).
-- Q: Does the eval run with the owner's own configuration? → A: no: it runs hermetic — the user's
-  instructions, settings, hooks, skills, plugins and MCP servers excluded, the project's kept — so
-  the result depends on the preset and Claude Code's version and anyone can reproduce it.
+- Q: Does the eval run with the owner's own configuration? → A: no: hermetic — the user's
+  instructions, settings, hooks, skills, plugins and MCP servers excluded, the project's kept — so the
+  result depends on the preset and Claude Code's version, and anyone can reproduce it.
+- Q: What happens when a worker cannot go on — a usage limit, an error, no report? → A: the main
+  session carries out the remaining tasks as core does and says why in the completion report
+  (constitution IV): never worse than without the preset.
+- Q: An eval arm that does not count (a crash, the deadline, an error)? → A: it is not a
+  measurement: rerun, up to twice; only counted arms that miss a criterion are recorded as not
+  adopted.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A phase's tasks run in a worker (Priority: P1)
 
 A developer runs `/speckit-implement` in a project with this preset installed. For each phase of
-`tasks.md`, in order, the main session hands the phase's tasks to a worker on the smaller model.
-The worker carries them out under core's execution rules and the project's own instructions,
-commits its work, and returns a report. The main session verifies the phase in its own runs, marks
-what passes, and sends anything to fix back to a worker. Any review the project's instructions call
-for runs in a fresh context on the main session's model, never in a worker.
+`tasks.md`, in order, the main session hands the phase's tasks to a worker on the smaller model. The
+worker carries them out under core's execution rules and the project's own instructions, commits
+each task, and returns a report. The main session verifies the phase in its own runs, reads its
+diff, marks what passes, and sends anything to fix back to a worker. Any review the project's
+instructions call for runs in a fresh context on the main session's model, never in a worker.
 
 **Why this priority**: it is the feature; without it nothing moves off the larger model.
 
 **Independent Test**: the `with` arm of the eval (User Story 2) is this story's end-to-end test: in
-its stream the main session edits only `tasks.md` (SC-003), the workers' turns ran on the smaller
-model, every worker commit follows the fixture's commit-message rule (so the project's instructions
-reached the worker), and each `[X]` follows a whole-suite run by the main session.
+its stream the main session edits no tracked file but `tasks.md` (SC-003), the workers' turns ran on
+the smaller model, the fixture's commit-message rule holds on every code commit (so the project's
+instructions reached the workers), and each `[X]` follows a whole-suite run by the main session.
 
 **Acceptance Scenarios**:
 
@@ -80,20 +87,20 @@ reached the worker), and each `[X]` follows a whole-suite run by the main sessio
    **Then** each phase is carried out by its own worker, the next only after the previous one's
    verification, never two at once.
 2. **Given** a worker that reports its phase done, **When** the main session's own run of the suite
-   fails or the static checks report something the baseline did not, **Then** no task of the phase
-   is marked done, and the failure goes to a worker briefed with it.
-3. **Given** a worker whose commits touch files outside its phase's tasks, **When** the main session
-   verifies, **Then** those changes go back to a worker or into the report, and nothing is marked
-   until they are resolved.
+   fails, or of the static checks reports a finding its baseline did not have, **Then** no task of
+   the phase is marked done, and the failure goes to a worker briefed with it.
+3. **Given** a phase whose diff changes files no task of the phase calls for, **When** the main
+   session reads it, **Then** those changes go back to a worker or into the completion report, and
+   nothing is marked until they are resolved.
 4. **Given** a project whose instructions call for a review per story, **When** a story's phase is
    verified, **Then** the reviewer is started in a fresh context with the main session's model
    family named on the call, and each finding it proves goes to a worker, then verification again.
-5. **Given** a hand-off that comes back with nothing it was given resolved, **When** the main
-   session has verified it, **Then** one new worker gets what remains; a second such hand-off stops
-   the run with a report.
-6. **Given** a session with no Agent tool, or whose first Agent call returns an error and no report
-   for a reason other than a usage limit, **When** `/speckit-implement` runs, **Then** the main
-   session carries out the tasks itself as core does, and says so in the completion report.
+5. **Given** two consecutive hand-offs on the same items after which verification still fails them,
+   **When** the second returns, **Then** the main session carries out those items itself as core
+   does, and says so in the completion report.
+6. **Given** a session with no Agent tool, or a worker that returns an error or no report, **When**
+   it happens, **Then** the main session carries out the remaining tasks itself as core does, and
+   says why in the completion report.
 
 ---
 
@@ -101,45 +108,71 @@ reached the worker), and each `[X]` follows a whole-suite run by the main sessio
 
 The owner deciding whether to release reads, in the README, a measured comparison on a committed
 fixture, run hermetically: the same two-story feature implemented without the preset, with it, and
-with it but no Agent tool (the fallback), each arm's usage per model and in total, and its result on
-acceptance tests the agent never saw, with the date and the version of every tool and model.
+with it but no Agent tool (the fallback), each arm's usage per model and in total and its result on
+acceptance tests the agent never saw, with the date and the version of every tool and model. The
+same harness reruns the observations the design rests on, so a Claude Code release that breaks one
+shows up as a failed probe.
 
 **Why this priority**: constitution III makes it the condition of release, and constitution IV asks
-its fallback to be evaluated where the capability can be withheld.
+for the fallback to be evaluated where the capability can be withheld.
 
 **Independent Test**: the README entry names the fixture and its size (stories, tasks, held-out
-tests), the date, the arms, the runs per arm, each arm's usage per model and in total, each arm's
-held-out results, the isolation used, and the versions of Spec Kit, Claude Code, the model IDs,
-git, uv, Python and pytest.
+tests), the date, the arms, the counted runs per arm and any rerun with its reason, each arm's usage
+per model and in total, each arm's held-out results, the isolation used, the probes' results, and
+the versions of Spec Kit, Claude Code, the model IDs and efforts, git, uv, Python, pytest and ruff.
 
 **Acceptance Scenarios**:
 
-1. **Given** all three arms run and count (FR-011), **When** SC-001, SC-002 and SC-005 hold,
-   **Then** the README records the result and the preset is released.
-2. **Given** all three arms run, **When** any of them fails, **Then** the preset is not released;
-   the README entry alone reaches `main`, recording the rule as measured and not adopted with the
-   reason, and the branch is tagged and left unmerged.
+1. **Given** all three arms counted, **When** SC-001, SC-002 and SC-005 hold, **Then** the README
+   records the result and the preset is released.
+2. **Given** all three arms counted, **When** any of SC-001, SC-002 or SC-005 does not hold, **Then**
+   the preset is not released; the README entry alone reaches `main`, recording the rule as measured
+   and not adopted with the reason, and the branch is tagged and left unmerged.
+3. **Given** an arm that does not count, **When** it is rerun twice without counting, **Then** no
+   result is recorded and the reason is reported to the owner.
+
+---
+
+### User Story 3 - The owner's setup adopts the released preset (Priority: P3)
+
+Once the preset is released, every repository the owner starts with Spec Kit gets it, the projects
+already on Spec Kit can take it, and the owner's documented policies stay true.
+
+**Why this priority**: without it the release reaches no project; it only follows a pass of User
+Story 2.
+
+**Independent Test**: `sdd-init` in a scratch repository installs both presets; the dotfiles check
+for `sdd-init` goes red when the story-workers preset is removed from it; `docs/claude-settings.md`
+names the exception; each existing Spec Kit project the owner approves has the preset in a commit of
+its own.
+
+**Acceptance Scenarios**:
+
+1. **Given** the released tag, **When** `sdd-init` runs in a new repository, **Then** it installs
+   `constitution-authoring` and `story-workers` in its one commit.
+2. **Given** dotfiles' effort policy, **When** the preset is released, **Then** the policy names the
+   worker's effort as its one exception and links the decision record.
+3. **Given** a project already on Spec Kit, **When** the owner approves it, **Then** it gets
+   `specify preset add` of the tag in a commit of its own, and no other change.
 
 ### Edge Cases
 
 - **A worker ends with the suite red**: verification catches it (FR-004); a project's Stop hook
-  fires at the end of the main session's turn, not at a subagent's.
-- **A worker's error is a usage limit**, at any point: the main session stops and reports; it never
-  continues the tasks itself on the larger model.
-- **A project hook blocks a worker's call**: the worker follows the hook's message, or leaves the
-  task unfinished with the message in its report; the main session never makes the blocked call
-  itself.
-- **A run resumes** after an interruption: a phase with commits but unmarked tasks is verified as
-  FR-004 says; uncommitted changes go to a worker briefed with the diff, to finish or discard, then
-  verification.
-- **The project names no suite or static check**: the main session verifies with what it has, says
-  in the completion report what was missing, and otherwise marks as core does.
+  fires at the end of the main session's turn, not at a subagent's (observed, R1).
+- **A project hook blocks a worker's call**: the worker receives the hook's message (observed) and
+  follows it or leaves the task unfinished with the message in its report; the main session never
+  makes the blocked call itself.
+- **A run resumes** after an interruption: the phase starts at the last commit that changed
+  `tasks.md`; its commits are verified as FR-004 says; uncommitted changes go to a worker briefed
+  with the diff, to finish or discard. The static-check baseline is taken at that commit.
+- **The project names no suite, or no static check**: verification runs what is named, says in the
+  completion report what was not, and the diff is read as always.
 - **`[P]` tasks** run inside their phase's worker, one after another: two workers would write the
   same worktree and index at once.
-- **`CLAUDE_CODE_SUBAGENT_MODEL` is set**: the worker still runs on the smaller model and the
-  reviewer on the main session's family, because both calls name their model.
-- **The project defines its own `general-purpose` agent**: it is used as the worker, with its own
-  prompt; the call's model and effort still apply (observed, R1).
+- **`CLAUDE_CODE_SUBAGENT_MODEL` is set**: the worker still runs on the smaller model and the reviewer
+  on the main session's family, because both calls name their model.
+- **The project defines its own `general-purpose` agent**: it is used for workers and reviews, with
+  its own prompt; the calls' model and effort still apply (observed, R1).
 - **The main session is already on the smaller model**: the hand-off still happens; not measured.
 
 ## Requirements *(mandatory)*
@@ -148,56 +181,63 @@ git, uv, Python and pytest.
 
 - **FR-001**: The fragment MUST hand each phase of `tasks.md` to one worker, in the order core runs
   them, the next only after the previous one's verification, with no two workers active at once.
-- **FR-002**: The worker MUST be started with `model: "sonnet"` (the family alias, so a newer model
-  of the family is picked up without a release) and `effort: "medium"` on the call.
-- **FR-003**: The worker's brief MUST point it at core's "Project Setup Verification" (first phase
-  only), "Execute implementation", "Implementation execution rules" and "Progress tracking and error
-  handling" steps in the composed skill rather than repeating them, and MUST carry the phase's tasks,
-  the feature directory, the suite and static-check commands — from the project's instructions, else
-  `plan.md`'s Technical Context — what earlier workers finished, and, for a fix, the finding itself.
-  The worker MUST commit its work, one commit per task, and MUST NOT edit `tasks.md`, start a review
-  or start another worker.
+- **FR-002**: The worker MUST be started with `subagent_type: "general-purpose"`, `model: "sonnet"`
+  (the family alias, so a newer model of the family is picked up without a release) and
+  `effort: "medium"` on the call.
+- **FR-003**: The worker's brief MUST carry the phase's tasks — and, for a fix, the finding; on
+  resume, the uncommitted diff — the feature directory, the suite and static-check commands (from the
+  project's instructions, else `plan.md`'s Technical Context), and what earlier workers finished; it
+  MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
+  Verification" (first phase only), "Execute implementation", "Implementation execution rules" and
+  "Progress tracking and error handling" steps in the composed skill rather than repeating them; and
+  it MUST say the worker commits each task in a commit of its own, and does not edit `tasks.md`,
+  start a review or start another worker.
 - **FR-004**: The main session MUST mark a task `[X]` only after, in its own runs, the whole suite
-  passes, the static checks report nothing beyond the baseline it ran before the phase's worker
-  started, and the phase's commits — those between the HEAD it recorded before the phase's first
-  worker and HEAD after verification — change only files a task of the phase names, or files in a
-  directory one names; uncommitted changes count as outside. A worker's report never marks a task.
+  passes, the static checks report no finding the baseline it took before the phase's first worker
+  did not have, and its reading of the phase's diff finds nothing the phase's tasks do not call for.
+  A worker's report never marks a task.
 - **FR-005**: Any review the project's instructions or a command call for MUST be started in a fresh
-  context with `model` set to the main session's model family and no `effort`, so it inherits the
-  main session's, and never run by a worker.
-- **FR-006**: A hand-off — unfinished tasks, a failed verification, a review finding — MUST go to a
-  worker briefed with it, then verification again. A hand-off resolves nothing when, after
-  verification, none of what it was given passes; the main session then gives what remains to one
-  new worker, and stops and reports at the second such hand-off. The main session's only file
-  writes are `tasks.md` — its checkboxes and any task a worker reported finding — and its commit of
-  them, except under FR-007.
-- **FR-007**: When no worker can be started (US1 scenario 6), the main session MUST carry out the
-  tasks as core does and say so in the completion report (constitution IV).
+  context with `subagent_type: "general-purpose"`, `model` set to the main session's model family and
+  no `effort`, so it inherits the main session's; never run by a worker.
+- **FR-006**: Every hand-off — unfinished tasks, a failed verification, a review finding — MUST go
+  to a worker briefed with it, then verification again; a review finding passes when a fresh review
+  of that finding no longer reports it. After two consecutive hand-offs on the same items that
+  verification still fails, the main session carries them out itself as core does (FR-007). Apart
+  from that, the main session's only edits to tracked files are `tasks.md` — its checkboxes, and the
+  tasks a worker reported finding — and its commits of them; running the suite, the static checks or
+  core's extension hooks is not writing code.
+- **FR-007**: When no worker can carry on — no Agent tool, a worker's error (a usage limit included)
+  or missing report, or FR-006's bound — the main session MUST carry out the remaining tasks as core
+  does and say which and why in the completion report (constitution IV).
 - **FR-008**: The fragment MUST name each core rule it narrows — "For completed tasks, make sure to
-  mark the task off as [X]" and "parallel tasks [P] can run together" — and the composition test
-  MUST fail when core no longer carries one, or no longer has a step the brief points at
-  (constitution I).
+  mark the task off as [X]", "parallel tasks [P] can run together" and "Halt execution if any
+  non-parallel task fails" — and the composition test MUST fail when core no longer carries one, or
+  no longer has a step the brief names (constitution I).
 - **FR-009**: The README MUST record the eval of User Story 2 with everything its Independent Test
-  lists, that one synthetic feature is less representative than a real one, and where a break of
-  each Context observation would show: a per-call model or effort break in the arm's usage per
-  model, instructions no longer reaching the worker in the fixture's commit-message check.
-- **FR-010**: The fixture, its held-out tests and the harness MUST live under `tests/`, outside the
-  release archive (constitution V), with the steps to rerun every arm.
-- **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline and its result
-  reports no error; otherwise the harness records it as failed and writes no usage or held-out
-  result for it.
+  lists, and that one synthetic feature is less representative than a real one.
+- **FR-010**: The fixture, its held-out tests, the probes and the harness MUST live under `tests/`,
+  outside the release archive (constitution V), with the steps to rerun them.
+- **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline, its result
+  reports no error and no permission denial, and the arm's own checks hold; otherwise the harness
+  records it as not counted, with the reason, and writes no usage or held-out result for it.
+- **FR-012**: The probes MUST rerun each observation of research.md R1 the design rests on, and
+  fail when one no longer holds.
+- **FR-013**: On release, dotfiles' `sdd-init` MUST install the preset beside `constitution-authoring`,
+  with its check seen red; dotfiles' effort policy MUST name the exception and link the decision; and
+  each existing Spec Kit project MUST get the preset only with the owner's approval, in a commit of its
+  own.
 
 ### Key Entities
 
-- **Worker**: a subagent started for one hand-off with `model: "sonnet"` and `effort: "medium"`.
-- **Hand-off**: the phase's tasks (or the fix's finding), the feature directory, the suite and
-  static-check commands, what earlier workers finished, the pointer to core's steps, and what the
-  worker must not do.
+- **Worker**: a subagent started for one hand-off with `subagent_type: "general-purpose"`,
+  `model: "sonnet"` and `effort: "medium"`.
+- **Hand-off**: everything FR-003 lists, and what the worker must not do.
 - **Worker report**: the commits it made (first and last), the tasks done and, for each not done,
   what stopped it, anything it found that no task covers, and the output of its last whole-suite
   run.
-- **Eval arm**: `without` (no preset), `with`, `fallback` (`with`, no Agent tool); per arm, usage per
-  model and in total, held-out results, the suite, the stream, the status, and the versions.
+- **Eval arm**: `without` (no preset), `with`, `fallback` (`with`, no Agent tool); per arm, its
+  status, usage per model and in total, held-out results, suite result, stream and versions.
+- **Probe**: one observation of R1, rerun headless, with its expected outcome.
 
 ## Success Criteria *(mandatory)*
 
@@ -211,9 +251,10 @@ git, uv, Python and pytest.
   makes targets the feature's `tasks.md`; its shell commands are listed beside the result, for a
   reviewer to confirm none writes code.
 - **SC-004**: The composition test goes red when a core rule FR-008 names, or a core step the brief
-  points at, is removed, seen red once before it is trusted.
-- **SC-005**: The `fallback` arm passes at least as many held-out tests as `without`, ran on no
-  model but the main session's, and its completion report says the tasks ran in the session.
+  names, is removed, seen red once before it is trusted.
+- **SC-005**: The `fallback` arm passes at least as many held-out tests as `without`, makes no Agent
+  call, and its completion report says the tasks ran in the session.
+- **SC-006**: Every probe passes on the Claude Code version the eval ran on.
 
 ## Assumptions
 
@@ -221,10 +262,11 @@ git, uv, Python and pytest.
 - The eval pins the main session to Opus at `--effort medium`, its default today; another model or
   effort is not measured, and the README says so.
 - Usage is compared by the per-model cost Claude Code reports for a headless run (list price,
-  subagents included), since a subscription's window is not exposed per run.
-- Held-out acceptance tests — at least one per acceptance scenario of the fixture's spec, against
-  the interface its plan fixes — judge every arm by the same oracle; the agent's own tests differ
-  between arms and are not compared.
-- The hermetic eval leaves in what no flag removes: admin-managed settings and Claude Code's
-  built-in skills and plugins; the harness records which loaded.
+  subagents included). The subscription window's utilization the stream also reports is recorded
+  beside it, not used for SC-001: it moves with any other session on the account.
+- Held-out acceptance tests — at least one per acceptance scenario of the fixture's spec, against the
+  interface its plan fixes — judge every arm by the same oracle; the agent's own tests differ between
+  arms and are not compared.
+- The hermetic eval leaves in what no flag removes: admin-managed settings and Claude Code's built-in
+  skills and plugins; the harness records which loaded.
 - Agents other than Claude Code fall back to core (FR-007).
