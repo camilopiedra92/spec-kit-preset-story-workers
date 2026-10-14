@@ -13,13 +13,13 @@ for arm in without with fallback; do
   done
 done
 cat /tmp/eval-*-*/status                               # every try, with each rerun's reason
-cat /tmp/eval-*/usage.txt                              # costUSD per model, the sum, the window
-cat /tmp/eval-*/heldout.txt                            # held-out passed / total
+cat /tmp/eval-{without,with,fallback}/usage.txt        # costUSD per model, the sum, the window
+cat /tmp/eval-{without,with,fallback}/heldout.txt      # held-out passed / total
 uv run python tests/eval/attribution.py /tmp/eval-with # SC-003: exit 0
 for arm in with fallback; do                           # same tools and main model, or rerun
   diff <(grep -v '^date' /tmp/eval-without/versions.txt) <(grep -v '^date' "/tmp/eval-$arm/versions.txt")
 done
-cat /tmp/eval-*/models.txt                             # worker models and efforts, per arm
+cat /tmp/eval-{without,with,fallback}/models.txt      # models, efforts and Agent calls, per arm
 ```
 
 - **SC-001**: `1 - with.sum / without.sum >= 0.30`.

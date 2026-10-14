@@ -47,10 +47,10 @@ contract, and the validity of the eval.
 
 ## Eval Validity
 
-- [ ] CHK021 Do the arms differ only in the preset: same fixture, pinned main model, same tool versions recorded? [Completeness, Research §R6, Contract run.sh]
+- [x] CHK021 Do the arms differ only in the preset: same fixture, pinned main model, same tool versions recorded? [Completeness, Research §R6, Contract run.sh]
 - [x] CHK022 Is the fixture's size and its representativeness limit stated where the README reader sees it? [Completeness, Spec §FR-009]
 - [x] CHK023 Is a run that fails partway (deadline, crash) handled so it cannot be mistaken for a result? [Gap, Contract run.sh]
-- [ ] CHK024 Is the tool permission set for the headless run the same for both arms and sufficient for implement? [Gap, Contract run.sh]
+- [x] CHK024 Is the tool permission set for the headless run the same for both arms and sufficient for implement? [Gap, Contract run.sh]
 
 ## Dependencies & Assumptions
 

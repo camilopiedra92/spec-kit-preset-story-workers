@@ -149,11 +149,15 @@ Observations are dated and name the versions they ran on (constitution III).
   list in every arm), under a 3600-second deadline that `tests/eval/bounded.py` enforces by running
   the command in its own process group and killing the group (R1 (15): no `timeout` on macOS).
 - **Counting** (FR-011): `claude` exited 0 within the deadline; the stream holds exactly one `result`
-  event, with `is_error: false` and no `permission_denials`; for `with`, `modelUsage` has a Sonnet
-  entry, every commit after the setup commit that changes more than `tasks.md` starts with
-  `fixture:`, there is at least one, and the completion report names no item carried out in the
-  session; for `fallback`, the stream has no Agent `tool_use`. An arm
-  that does not count is rerun, at most twice (Clarifications).
+  event, with `is_error: false` and no `permission_denials`. Nothing else decides whether an arm
+  counts: what the feature does — the commit rule, Sonnet usage, the `Carried out in this session`
+  line, the reviews, the fallback's absence of Agent calls — is judged by SC-003, SC-005 and SC-007 on
+  a counted run, so a rerun cannot hide a worker that misbehaved. A rerun forced by a `versions.txt`
+  mismatch counts towards the two reruns. An arm that does not count is rerun, at most twice
+  (Clarifications).
+- **Alternatives considered for counting**: *the feature checks as counting rules* (the commit rule,
+  Sonnet usage, no item carried out in the session): an arm that broke them would be rerun until it
+  did not, hiding the failure (checklist pass 4); they are success criteria instead.
 - **After a counted run**: the project's own suite runs first (`suite.txt`); then `heldout/` is copied
   to `tests_heldout/`, a directory the fixture does not use, and run alone (`heldout.txt`).
 - **Outputs**: `status`, `stream.jsonl`, `usage.txt` (`costUSD` per model and the sum; the first and
@@ -171,7 +175,8 @@ Observations are dated and name the versions they ran on (constitution III).
   11, 15) headless in scratch repositories, prints the Claude Code version, and checks each expected
   outcome (FR-012). R1 (6, 12) are not probed — a probe would have to write to the user's own
   configuration — and are checked on every eval run from its `init` event (output style, plugins,
-  MCP servers); R1 (2) is covered by (9); R1 (14) and (16) are recorded, not relied on, so a Claude Code release that breaks one is
+  MCP servers); R1 (2) is covered by (9); R1 (14) is recorded, not relied on; R1 (16) is relied on by `run.sh` and a break shows as a
+  failed run. For the probed observations, a Claude Code release that breaks one is
   a red probe, not a silent change in the eval.
 - **Rationale**: per-model cost is the closest per-run observable to a subscription's usage, and
   summing every model is stricter than counting the larger one; the window's utilization moves with

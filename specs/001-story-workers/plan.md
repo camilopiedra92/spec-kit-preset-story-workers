@@ -18,7 +18,7 @@ on. On a pass, the owner's setup adopts it (dotfiles, existing projects).
 ## Technical Context
 
 **Language/Version**: Markdown (the fragment); bash (`tests/check.sh`, `tests/compose.sh`,
-`tests/eval/run.sh`, `tests/eval/probes.sh`); Python 3.11+ for `tests/eval/attribution.py`.
+`tests/eval/run.sh`, `tests/eval/probes.sh`); Python 3.11+ for `tests/eval/attribution.py` and `tests/eval/bounded.py`.
 
 **Primary Dependencies**: Spec Kit CLI (`SPECKIT_PINNED` v1.1.0 in CI, as the sibling presets; 1.1.3
 locally); Claude Code 2.1.296 for the observations and the eval; `jq`; dev only: ruff, mypy, pytest,
@@ -40,7 +40,7 @@ pytest-timeout through uv.
 of the archive.
 
 **Scale/Scope**: one fragment (~60 lines), a composition test, an eval harness with a two-story
-fixture, eight probes, one small Python module with its tests; three changes in dotfiles and one
+fixture, eleven probe runs over ten observations, two small Python modules with their tests; three changes in dotfiles and one
 commit per approved project at rollout.
 
 ## Constitution Check
@@ -65,7 +65,7 @@ Re-checked after Phase 1: no violation; Complexity Tracking is empty.
 specs/001-story-workers/
 ├── spec.md
 ├── plan.md
-├── research.md          # R1 observations (16 runs), R2–R7 decisions and alternatives
+├── research.md          # R1 observations (16 items), R2–R7 decisions and alternatives
 ├── quickstart.md        # running the probes and the eval
 ├── contracts/
 │   └── fragment.md      # the fragment's rules, the harness's and the probes' interface

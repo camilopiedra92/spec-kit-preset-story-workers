@@ -130,7 +130,7 @@ the versions of Spec Kit, Claude Code, the model IDs and efforts, git, uv, Pytho
 
 **Acceptance Scenarios**:
 
-1. **Given** all three arms counted, **When** every success criterion SC-001 to SC-006 holds,
+1. **Given** all three arms counted, **When** every success criterion SC-001 to SC-007 holds,
    **Then** the README records the result and the preset is released.
 2. **Given** all three arms counted, **When** any success criterion does not hold, **Then**
    the preset is not released; the README entry alone reaches `main`, recording the rule as measured
@@ -170,9 +170,10 @@ its own.
   follows it or leaves the task unfinished with the message in its report; the main session never
   makes the blocked call itself, also under FR-007: such a task stays unfinished and goes into the
   completion report.
-- **A run resumes** after an interruption: the phase starts at the last commit that changed
-  `tasks.md` (FR-004 makes the main session commit it after each phase); its commits are verified
-  as FR-004 says; uncommitted changes go to a worker briefed with the diff, to finish or discard. The
+- **A run resumes** after an interruption: the phase starts after the last `tasks: mark phase <n>`
+  commit (FR-004); its commits are verified
+  as FR-004 says; uncommitted changes to files other than `tasks.md` go to a worker briefed with the diff, to finish
+  or discard; uncommitted changes to `tasks.md` are the main session's to keep or drop. The
   static-check baseline is taken at that commit, in a temporary `git worktree` of it.
 - **The project names no suite, or no static check**: verification runs what is named, says in the
   completion report what was not, and the diff is read as always.
@@ -205,8 +206,10 @@ its own.
 - **FR-004**: The main session MUST mark a task `[X]` only after, in its own runs, the whole suite
   passes (when one is named), the static checks report no finding the baseline it took before the
   phase's first worker did not have (when they are named), and its reading of the phase's diff finds
-  nothing the phase's tasks do not call for; it commits `tasks.md` after marking each phase. A
-  worker's report never marks a task.
+  nothing the phase's tasks do not call for. A review the phase calls for (FR-005), and every fix
+  it leads to, resolves before the phase is marked; then the main session commits `tasks.md` with the
+  message `tasks: mark phase <n>`, and only then does the next phase's worker start. A worker's report
+  never marks a task.
 - **FR-005**: Any review the user's or the project's instructions, or a command, call for MUST be
   started in a fresh context with `subagent_type: "general-purpose"`, `model` set to the main
   session's model family and no `effort`, so it inherits the main session's; never run by a worker.
@@ -216,15 +219,19 @@ its own.
 - **FR-006**: Every hand-off — unfinished tasks, a failed verification, a review finding — MUST go
   to a worker briefed with it, then verification again; a review finding passes when a fresh review
   of that finding no longer reports it. A phase gets at most two fix hand-offs, whatever items they
-  carry; when verification still fails after them, the main session carries out the phase's
+  carry; when verification — a fresh review still reporting its finding included — still fails after
+  them, the main session carries out the phase's
   remaining items itself as core does (FR-007). Tasks a worker reported finding join the current
-  phase in `tasks.md` and go to its next hand-off. Apart
+  phase in `tasks.md` (committed as `tasks: add found tasks`) and go to its next hand-off. A task a
+  project hook blocked is not handed off again: it stays unmarked, goes into the completion report,
+  and the next phase starts without it. Apart
   from that, the main session's only edits to tracked files are `tasks.md` — its checkboxes, and the
   tasks a worker reported finding — and its commits of them; running the suite, the static checks or
   core's extension hooks is not writing code.
 - **FR-007**: When no worker can carry on — no Agent tool, a worker's error (a usage limit included)
   or missing report, or FR-006's bound — the main session MUST carry out the remaining tasks as core
-  does and say which and why in the completion report (constitution IV).
+  does and say which and why in the completion report (constitution IV). The completion report always
+  carries the line `Carried out in this session: none` or `Carried out in this session: <task ids>`.
 - **FR-008**: The fragment MUST name each core rule it narrows — "For completed tasks, make sure to
   mark the task off as [X]", "parallel tasks [P] can run together" and "Halt execution if any
   non-parallel task fails" — and the composition test MUST fail when core no longer carries one, or
@@ -233,9 +240,8 @@ its own.
   lists, and that one synthetic feature is less representative than a real one.
 - **FR-010**: The fixture, its held-out tests, the probes and the harness MUST live under `tests/`,
   outside the release archive (constitution V), with the steps to rerun them.
-- **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline, its result
-  reports no error and no permission denial, and the arm's own checks hold — for `with`, that the
-  completion report names no item carried out in the session, so the arm measures workers only; otherwise the harness
+- **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline, and its result
+  reports no error and no permission denial; otherwise the harness
   records it as not counted, with the reason, and writes no usage or held-out result for it.
 - **FR-012**: The probes MUST rerun each observation of research.md R1 the design rests on that can
   be rerun without writing to the user's own configuration, print the Claude Code version they ran
@@ -266,14 +272,19 @@ its own.
   verification and any review included — is at least 30% lower than the `without` arm's.
 - **SC-002**: On the fixture, the `with` arm passes at least as many held-out acceptance tests as
   `without`, and its own suite is green at the end.
-- **SC-003**: In the `with` arm's stream, every Write, Edit or NotebookEdit call the main session
-  makes targets the feature's `tasks.md`; its shell commands are listed beside the result, for a
-  reviewer to confirm none writes code.
+- **SC-003**: In the `with` arm: every Write, Edit or NotebookEdit call the main session makes
+  targets the feature's `tasks.md` (its shell commands are listed beside the result, for a reviewer to
+  confirm none writes code); `modelUsage` has a Sonnet entry; at least one commit changes more than
+  `tasks.md`, and every such commit's message starts with `fixture:`; and the completion report says
+  `Carried out in this session: none`.
 - **SC-004**: The composition test goes red when a core rule FR-008 names, or a core step the brief
   names, is removed, seen red once before it is trusted.
 - **SC-005**: The `fallback` arm passes at least as many held-out tests as `without`, makes no Agent
   call, and its completion report says the tasks ran in the session.
 - **SC-006**: Every probe passes on the Claude Code version the eval ran on.
+- **SC-007**: In the `without` and `with` arms, the stream holds at least one review Agent call per
+  user story (an Agent call without `model: "sonnet"`); in `with`, each names the main session's
+  family (`opus`).
 
 ## Assumptions
 
