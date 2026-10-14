@@ -4,8 +4,8 @@ Observations are dated and name the versions they ran on (constitution III).
 
 ## R1. The worker is a model and an effort on the call
 
-- **Decision**: hand each phase to the `general-purpose` agent with `model: "sonnet"` and
-  `effort: "medium"` on the Agent call. Nothing is installed in the project.
+- **Decision**: hand each phase to the `general-purpose` agent with `model: "sonnet"`,
+  `effort: "medium"` and `run_in_background: false` on the Agent call. Nothing is installed in the project.
 - **Observed** 2026-10-13, Claude Code 2.1.296, git 2.56.0, macOS; `claude -p --output-format
   stream-json --verbose` in scratch repositories; one run each:
   1. `general-purpose` with `model: "sonnet"`: the subagent's turns ran on `claude-sonnet-5-5`, the
@@ -59,6 +59,11 @@ Observations are dated and name the versions they ran on (constitution III).
   16. `env -i` with only `HOME`, `USER`, `LOGNAME`, `PATH`, `TMPDIR`, `LANG` and `TERM`: the OAuth
       login still worked (`apiKeySource: none`, a normal reply), and `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`,
       set in the calling shell, read as unset inside.
+  17. Observed 2026-10-13 on Claude Code 2.1.299, hermetic as in (6) and (16): the Agent tool takes
+      `run_in_background`; two `sonnet` calls with it `false`, the second asked for only after the
+      first's reply, each had its subagent's events (`parent_tool_use_id` set to the call's id) before
+      its `tool_result`, and the second `tool_use` came after the first `tool_result`. A call with it
+      `true` was not run.
 - **Not observed**: that `fable` is accepted as a `model` alias; the Agent tool's schema lists
   `sonnet`, `opus`, `haiku` and `fable`, and only the first three were run.
 - **Alternatives considered**: *an agent definition in `.claude/agents/`*: works, but needs an
@@ -181,7 +186,7 @@ Observations are dated and name the versions they ran on (constitution III).
   comparison is refused and the arms are rerun. Worker models differ between arms by design and live
   in `models.txt`.
 - **Probes** `tests/eval/probes.sh`: reruns R1 (1, 3, 4 with `sonnet` and `opus`, 5, 7, 8, 9, 10,
-  11, 15) headless in scratch repositories, prints the Claude Code version, and checks each expected
+  11, 15, 17) headless in scratch repositories, prints the Claude Code version, and checks each expected
   outcome (FR-012). R1 (6, 12) are not probed — a probe would have to write to the user's own
   configuration — and are checked on every eval run from its `init` event (output style, plugins,
   MCP servers); R1 (2) is covered by (9); R1 (14) is recorded, not relied on; R1 (16) is relied on by `run.sh` and a break shows as a

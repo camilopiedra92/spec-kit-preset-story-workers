@@ -195,9 +195,11 @@ its own.
 - **FR-001**: The fragment MUST hand each phase of `tasks.md` to one worker, in the order core runs
   them, the next only after the previous one's verification, with no two workers active at once.
 - **FR-002**: The worker MUST be started with `subagent_type: "general-purpose"`, `model: "sonnet"`
-  (the family alias, so a newer model of the family is picked up without a release) and
-  `effort: "medium"` on the call.
-- **FR-003**: The worker's brief MUST carry the phase's tasks — and, for a fix, the finding; on
+  (the family alias, so a newer model of the family is picked up without a release),
+  `effort: "medium"` and `run_in_background: false` on the call, so the main session has the
+  worker's report before it verifies (research.md R1 17).
+- **FR-003**: The worker's brief MUST open with the phase's heading as `tasks.md` writes it and carry
+  the phase's tasks — and, for a fix, the finding; on
   resume, the uncommitted diff — the feature directory, the suite and static-check commands (from the
   project's instructions, else `plan.md`'s Technical Context), and what earlier workers finished; it
   MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
@@ -262,7 +264,7 @@ its own.
 ### Key Entities
 
 - **Worker**: a subagent started for one hand-off with `subagent_type: "general-purpose"`,
-  `model: "sonnet"` and `effort: "medium"`.
+  `model: "sonnet"`, `effort: "medium"` and `run_in_background: false`.
 - **Hand-off**: everything FR-003 lists, and what the worker must not do.
 - **Worker report**: the commits it made (first and last), the tasks done and, for each not done,
   what stopped it, anything it found that no task covers, and the output of its last whole-suite
@@ -282,8 +284,9 @@ its own.
 - **SC-003**: In the `with` arm, as `tests/eval/attribution.py` reports it: every Write, Edit or
   NotebookEdit call the main session makes targets the feature's `tasks.md` (its shell commands are
   listed beside the result, for a reviewer to confirm none writes code); `modelUsage` has a Sonnet
-  entry; the main session makes at least one worker call (`model: "sonnet"`) per phase of the
-  fixture's `tasks.md`, and starts none while another worker call has not returned (FR-001); among the commits after the setup commit, at least one changes more than `tasks.md`, and
+  entry; every worker call (`model: "sonnet"`) is in the foreground (`run_in_background: false`),
+  each phase heading of the fixture's `tasks.md` opens the brief of at least one of them, and none
+  starts while another has not returned its result (FR-001); among the commits after the setup commit, at least one changes more than `tasks.md`, and
   every such commit's message starts with `fixture:`; the completion report says `Carried out in this
   session: none`; and the result has no `permission_denials` (a worker reaching for a tool outside
   the list is the feature misbehaving, not the environment).

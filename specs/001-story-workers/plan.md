@@ -7,7 +7,7 @@
 ## Summary
 
 A preset with one fragment appended to core `speckit-implement`: each phase of `tasks.md` goes to a
-worker subagent started with `model: "sonnet"` and `effort: "medium"`; the main session verifies in
+worker subagent started in the foreground with `model: "sonnet"` and `effort: "medium"`; the main session verifies in
 its own runs and reads the diff before marking `[X]`, sends every fix back to a worker, starts any
 review naming its own model family, and falls back to core whenever a worker cannot carry on.
 Nothing is installed in a project. The release is gated on an eval run hermetically — a committed
@@ -43,7 +43,7 @@ observed 2026-10-13). The eval and the probes run by hand: they call a model and
 of the archive.
 
 **Scale/Scope**: one fragment (~60 lines), a composition test, an eval harness with a two-story
-fixture, eleven probe runs over ten observations, two small Python modules with their tests; the ruleset in dotfiles at scaffold, three more
+fixture, twelve probe runs over eleven observations, two small Python modules with their tests; the ruleset in dotfiles at scaffold, three more
 dotfiles changes and one commit per approved project at rollout.
 
 ## Constitution Check
@@ -52,7 +52,7 @@ dotfiles changes and one commit per approved project at rollout.
 
 | Principle | How this plan meets it |
 |---|---|
-| I. Append, never replace | One fragment, `strategy: "append"`, no frontmatter; it names the three core rules it narrows, and `tests/compose.sh` greps core for them and for each step the brief names. |
+| I. Append, never replace | One fragment, `strategy: "append"`, no frontmatter; it names the three core rules it narrows, and `tests/compose.sh` runs `tests/core-anchors.sh` on core for them and for each step the brief names. |
 | II. Verified against the real CLI | `tests/compose.sh` installs a tag-shaped archive with the real CLI; CI runs `tests/check.sh` pinned on every push and pull request and against the latest release weekly. |
 | III. Behaviour is measured, not asserted | The eval (R6) runs the fixture hermetically in three arms and the probes rerun R1; the README records the date, usage, held-out results, runs and reruns, probes, and every tool's and model's version and effort. Released only if every success criterion holds. |
 | IV. Degrades to core | FR-007: no Agent tool, a worker's error or usage limit, or the hand-off bound, and the session carries on as core does; the `fallback` arm measures it (SC-005). |
@@ -112,7 +112,9 @@ ruleset, at scaffold, as soon as CI exists).
 
 **Structure Decision**: mirrors `spec-kit-preset-constitution-authoring` (fragment, `tests/compose.sh`,
 CI pinned and latest), with the eval and probes beside it under `tests/`. The Python modules get the
-linter, formatter, type checker and tests at scaffold, as a new project does.
+linter, formatter, type checker and tests with the first of them (Story 2), scoped to the harness's
+own modules and tests: the fixture, held-out tests and reference implementation are checked by the
+runs that use them.
 
 ## Phases after this plan
 

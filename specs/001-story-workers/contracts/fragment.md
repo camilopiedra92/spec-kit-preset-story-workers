@@ -10,8 +10,9 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
 
 1. **Unit**: "hand each phase to a worker", in the order core runs the phases; the next only after
    the previous one's verification; never two at once; `[P]` tasks run inside their phase's worker.
-2. **The call**: `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`.
-3. **The brief** (spec FR-003): the phase's tasks, and for a fix the finding, on resume the
+2. **The call**: `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`,
+   `run_in_background: false`.
+3. **The brief** (spec FR-003): opens with the phase's heading as `tasks.md` writes it; the phase's tasks, and for a fix the finding, on resume the
    uncommitted diff; the feature directory; the suite and static-check commands (the project's
    instructions, else `plan.md`'s Technical Context); what earlier workers finished; "follow core's"
    `Load and analyze the implementation context`, `Project Setup Verification` (first phase only),
@@ -87,9 +88,10 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
 
 Reads `stream.jsonl` and `commits.txt`, checks every clause of SC-003 and prints each with `ok` or
 what failed: the main session's (no `parent_tool_use_id`) Write, Edit and NotebookEdit calls not on
-the feature's `tasks.md`; a Sonnet entry in `modelUsage`; at least one main-session Agent call with
-`model: "sonnet"` per `## Phase` heading of the fixture's `tasks.md`, and no such call started while
-another has no `tool_result` yet; the commits after the setup commit that
+the feature's `tasks.md`; a Sonnet entry in `modelUsage`; every main-session Agent call with
+`model: "sonnet"` has `run_in_background: false`; each `## Phase` heading of the fixture's `tasks.md`
+appears in the prompt of at least one of them; and none starts while another has no `tool_result`
+yet (R1 17); the commits after the setup commit that
 change more than `tasks.md` (at least one, each starting with `fixture:`); the `Carried out in this
 session: none` line; no `permission_denials`. Then it lists the main session's Bash commands. Exit 0
 when every clause holds, 1 when one does not, 2 when an input cannot be read or `status` is not
@@ -97,7 +99,7 @@ when every clause holds, 1 when one does not, 2 when an input cannot be read or 
 
 ## `tests/eval/probes.sh`
 
-Reruns R1 (1, 3, 4 with both `sonnet` and `opus`, 5, 7, 8, 9, 10, 11, 15) headless and hermetic in
+Reruns R1 (1, 3, 4 with both `sonnet` and `opus`, 5, 7, 8, 9, 10, 11, 15, 17) headless and hermetic in
 scratch repositories, prints the Claude Code version and one line per probe (`ok` or `FAIL` with what was seen), and exits 1 when any fails. Probe 5 and 8 compare
 thinking tokens between a low and a high effort on the call, and fail when the high arm's is not
 larger.
