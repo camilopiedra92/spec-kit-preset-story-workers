@@ -78,7 +78,10 @@ def write_run(fixtures: Path, root: Path, **over: Any) -> Path:
     events = [worker(over.get("brief", f"{PHASE_2}\n\nTasks T003, T004."))]
     (out / "stream.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
     (out / "heldout.txt").write_text(over.get("heldout", f"passed {N}/{N}\n"))
-    report = "Resumed at phase 2: work committed before this run was covered by the whole suite."
+    report = (
+        "Started at phase 2: work committed before this run was covered by the whole suite, "
+        "not read as a diff."
+    )
     (out / "report.txt").write_text(over.get("report", report) + "\n")
     return out
 
@@ -127,14 +130,19 @@ def test_a_held_out_score_below_n_fails(
 
 
 @pytest.mark.parametrize(
-    "report", ["Carried out in this session: none", "Resumed at phase 1: covered by the suite."]
+    "report",
+    [
+        "Carried out in this session: none",
+        "Started at phase 1: covered by the suite.",
+        "Resumed at phase 2: covered by the suite.",
+    ],
 )
 def test_a_report_without_the_right_resume_line_fails(
     fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], report: str
 ) -> None:
     code, out = check(fixtures, write_run(fixtures, tmp_path, report=report), capsys)
     assert code == 1
-    assert "FAIL report names the resume" in out
+    assert "FAIL report names the start" in out
 
 
 def test_a_run_that_did_not_count_is_refused(

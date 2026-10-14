@@ -44,6 +44,20 @@ takes them as they are and starts from the repository as it finds it.
   with Phase 1 done, plus a check that a fresh run is unchanged. Released as 0.2.0, a MINOR
   version: behaviour changes for resumed runs (constitution V).
 
+### Session 2026-10-14 (after the fragment's fresh review)
+
+- Q: Are a fresh and a resumed run told apart? → A: no. Every run reads the marks the same way;
+  the brief always says an unmarked task may already be done; the report always carries `Started at
+  phase <n>:` in a git repository. A run interrupted in Phase 1 before anything was marked would
+  otherwise count as fresh and lose both.
+- Q: Where are the marks read? → A: from `tasks.md` as core reads it, the working tree; the main
+  session only marks after verification, so uncommitted marks are verified ones.
+- Q: What about changes uncommitted when the run starts? → A: they are not the run's: not a
+  finding, never committed or reverted by the run; the diff reading covers the commits the run made
+  since the recorded HEAD; a worker stages only the files it changed.
+- Q: What about phases all marked after the start point? → A: every phase whose tasks are all
+  marked is skipped, wherever it falls; with every task marked, no worker starts.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A feature started without the preset resumes where it is (Priority: P1)
@@ -55,15 +69,16 @@ tasks, told to check what of them the repository already holds, and finishes the
 
 **Why this priority**: it is the defect: today such a run restarts at Phase 1.
 
-**Independent Test**: the resume eval (User Story 3): on a fixture with Phase 1 done, one run with
-the preset makes no commit that touches Phase 1's files, does not stop, and ends with every held-out
-test the remaining phases cover passing.
+**Independent Test**: the resume eval (User Story 3): on a fixture with Phases 1–2 done, one run
+with the preset makes no commit that touches a file only those phases name, does not stop, and ends
+with every held-out test passing.
 
 **Acceptance Scenarios**:
 
-1. **Given** a feature whose Phase 1 tasks are all marked and committed and whose later phases are
-   untouched, **When** `/speckit-implement` runs with the preset, **Then** the first worker is
-   briefed with Phase 2's tasks, and no commit of the run changes a file only Phase 1's tasks name.
+1. **Given** a feature whose first phases' tasks are all marked and committed and whose later
+   phases are untouched, **When** `/speckit-implement` runs with the preset, **Then** the first
+   worker is briefed with the first unfinished phase's tasks, and no commit of the run changes a
+   file only the finished phases' tasks name.
 2. **Given** a phase with some tasks marked and some not, **When** the run reaches it, **Then** its
    worker is briefed with only the unmarked tasks, and told that some may already be done in
    whole or in part, to check each against the code and `git log`, and to complete only what is
@@ -72,17 +87,22 @@ test the remaining phases cover passing.
    starts, **Then** it resumes at that phase, briefs the worker with that one task, and does not
    treat the later phases' work as that phase's to redo.
 4. **Given** uncommitted changes in the working tree, **When** a run starts, **Then** it neither
-   asks nor stops, as core would not.
-5. **Given** a resumed run, **When** it finishes, **Then** its completion report says that work
-   committed before the run was covered by the whole suite but not read as a diff.
+   asks nor stops, as core would not, and no commit or revert of the run touches them.
+5. **Given** a run in a git repository, **When** it finishes, **Then** its completion report names
+   the phase it started at and says that work committed before the run was covered by the whole
+   suite but not read as a diff.
+6. **Given** phases all marked after an unfinished one, **When** the run reaches them, **Then** it
+   skips them.
 
 ---
 
 ### User Story 2 - A fresh run is unchanged (Priority: P1)
 
-A developer runs `/speckit-implement` on a feature with no task marked. The run behaves as in
-`v0.1.0`: Phase 1 first, baseline at HEAD before the first worker, every phase verified and marked
-as before.
+A developer runs `/speckit-implement` on a feature with no task marked, on a clean working tree.
+The run behaves as in `v0.1.0` for what is verified and marked: Phase 1 first, baseline at HEAD
+before each phase's first worker, every phase verified and marked as before. It differs only in
+what every run now does: the brief's note that a task may already be done, the worker staging only
+its own files, and the report's `Started at phase 1:` line.
 
 **Why this priority**: the change must not move the measured path (Evals 001 and 002).
 
@@ -94,7 +114,7 @@ unchanged harness tests, not by a new paid run.
 **Acceptance Scenarios**:
 
 1. **Given** no task marked, **When** a run starts, **Then** it starts at Phase 1 with the baseline
-   at HEAD, exactly as `v0.1.0` does.
+   at HEAD, verifying and marking as `v0.1.0` does.
 
 ---
 
@@ -124,36 +144,43 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
 - **Every task marked**: nothing to resume; the run says so in its completion report and starts no
   worker.
 - **`tasks.md` not committed** (a fresh feature): its marks are read from the working tree, as core
-  reads them; with none marked, it is a fresh run.
+  reads them, always; with none marked, the run starts at Phase 1.
 - **No git repository**: the fallback to core already applies (FR-007 of 001); the resume point is
   still the first unmarked task, as core would continue.
 - **Commits or uncommitted changes already hold part of an unmarked task** (an interrupted run of
   this preset, or core's own work): the worker finds them by checking the code and `git log`, and
-  does not redo them; the main session's diff reading covers only what the new run changes.
+  does not redo them; the main session's diff reading covers only the commits the new run makes.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: The fragment MUST resume at the first phase of `tasks.md` that has a task not marked
-  `[X]` or `[x]`, and MUST NOT read the resume point from commit messages.
-- **FR-002**: A resumed phase's static-check baseline and diff reading MUST start at HEAD at the
-  run's start; no baseline is taken from history.
-- **FR-003**: A resumed phase's worker brief MUST carry only the phase's unmarked tasks, and MUST
-  tell the worker that some may already be done in whole or in part, to check each against the code
-  and `git log`, and to complete only what is missing: the worker judges what is done, no rule
-  reconstructs it from history.
-- **FR-004**: A run MUST leave uncommitted changes as core does: it neither asks about them nor
-  stops for them.
-- **FR-005**: A resumed run's completion report MUST say that work committed before the run was
-  covered by the whole-suite run but not read as a diff.
-- **FR-006**: A run with no task marked MUST behave as `v0.1.0` does.
+- **FR-001**: The fragment MUST start a run at the first phase of `tasks.md` that has a task not
+  marked `[X]` or `[x]`, reading the marks from the file as core does, skip every phase whose tasks
+  are all marked wherever it falls, start no worker when every task is marked, and MUST NOT read
+  where a run starts from commit messages.
+- **FR-002**: Each phase's static-check baseline MUST be HEAD before its first worker, as for any
+  phase; the diff reading MUST cover the commits made since it; no baseline is taken from history.
+- **FR-003**: Every worker brief MUST carry only the phase's unmarked tasks, and MUST tell the
+  worker that some may already be done in whole or in part, to check each against the code and
+  `git log`, and to complete only what is missing; the worker's report MUST list tasks found already
+  done, with the commit or file that holds each; the main session marks those on the suite and the
+  static checks.
+- **FR-004**: Changes uncommitted when a run starts MUST NOT be the run's: the run neither asks
+  about them nor stops for them, they are no finding, no one in the run commits or reverts them, and
+  a worker stages only the files it changed.
+- **FR-005**: In a git repository, every run's completion report MUST carry `Started at phase <n>:
+  work committed before this run was covered by the whole suite, not read as a diff.`
+- **FR-006**: A run with no task marked on a clean working tree MUST verify, mark and commit as
+  `v0.1.0` does; its differences (FR-003's note and report slot, FR-004's staging, FR-005's line) are
+  named in the CHANGELOG.
 - **FR-007**: The composition test MUST check each clause of FR-001 to FR-005 in the fragment and
-  MUST fail if the `v0.1.0` resume rule is still there; each check seen red once.
-- **FR-008**: A resume eval MUST exist under `tests/` (a fixture with Phase 1 done, marked and
-  committed, the preset installed) and be run once with the preset before release; it passes when
-  no commit of the run changes a file only Phase 1's tasks name, the run exits normally without a
-  stop or a question, and every held-out test of the remaining phases passes.
+  MUST fail if a `v0.1.0` resume clause is still there; each check seen red once.
+- **FR-008**: A resume eval MUST exist under `tests/` (the `checkout` fixture in a state with Phases
+  1–2 done, marked and committed) and be run once with the preset before release; it passes when no
+  commit of the run changes a file only finished phases' tasks name, the first worker is briefed
+  with the first unfinished phase, the run exits normally without a stop or a question, every
+  held-out test passes, and the report names the phase it started at.
 - **FR-009**: `0.2.0` MUST be released only on a passing resume eval, with the README entry,
   CHANGELOG entry and tag of constitutions III and V; then dotfiles' `sdd-init` MUST install it
   (its check seen red first) and supertrader's `main` MUST move to it and be merged into feature
@@ -162,16 +189,17 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
 ### Key Entities
 
 - **Resume point**: the first phase with an unmarked task.
-- **Resume eval**: a fixture whose Phase 1 is done, run once with the preset; its pass conditions
-  are FR-008's.
+- **Resume eval**: the `checkout` fixture in a state with Phases 1–2 done, run once with the
+  preset; its pass conditions are FR-008's.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: In the resume eval, 0 commits of the run change a file only Phase 1's tasks name.
+- **SC-001**: In the resume eval, 0 commits of the run change a file only finished phases' tasks
+  name.
 - **SC-002**: In the resume eval, the run exits normally, with no stop or question in its stream.
-- **SC-003**: In the resume eval, every held-out test the remaining phases cover passes.
+- **SC-003**: In the resume eval, every held-out test passes.
 - **SC-004**: The composition test is green, and each new check was seen red once.
 - **SC-005**: After the release, a new repository from `sdd-init` and supertrader's feature 001 both
   have `v0.2.0` installed.
@@ -180,6 +208,6 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
 
 - One counted resume run is enough: the eval checks a behaviour (not redoing Phase 1, not
   stopping), not a cost comparison; the README calls it directional.
-- The resume fixture reuses 002's `checkout` fixture with its Phase 1 already implemented from the
-  reference, marked and committed, so no new feature is written.
+- The resume fixture reuses 002's `checkout` fixture with its Phases 1–2 already implemented from
+  the reference (US1 only), marked and committed, so no new feature is written.
 - The cost question is unchanged since 002 and out of scope.

@@ -178,10 +178,11 @@ its own.
   follows it or leaves the task unfinished with the message in its report; the main session never
   makes the blocked call itself, also under FR-007: such a task stays unfinished and goes into the
   completion report.
-- **A run resumes** (rule of 0.2.0, feature 003): at the first phase with a task not marked `[X]`
-  or `[x]`, with HEAD at the run's start as the baseline; the worker gets only the unmarked tasks
-  and checks what the repository already holds; uncommitted changes stay as core leaves them; the
-  completion report says that work committed before the run had the suite but no diff reading.
+- **A run resumes** (rule of 0.2.0, feature 003): every run starts at the first phase with a task
+  not marked `[X]` or `[x]`, skipping all-marked phases; each phase's baseline is taken as
+  Verification says; the worker gets only the unmarked tasks and checks what the repository already
+  holds; changes uncommitted at the start are not the run's; the completion report says where the
+  run started and that work committed before it had the suite but no diff reading.
   (0.1.0 resumed after the last `tasks: mark phase <n>` commit, which restarted a feature adopted
   partway through at Phase 1.)
 - **The project names no suite, or no static check**: verification runs what is named, says in the
@@ -194,7 +195,7 @@ its own.
   its own prompt; the calls' model and effort still apply (observed, R1).
 - **The main session is already on the smaller model**: the hand-off still happens; not measured.
 - **The project is not a git repository**: core runs without git, the hand-off cannot (per-task
-  commits, the diff from a recorded HEAD, the baseline worktree): the run falls back to core (FR-007).
+  commits, the diff from a recorded HEAD): the run falls back to core (FR-007).
   Not measured, the eval's fixture being a git repository; the source is core itself, whose
   "Project Setup Verification" checks `git rev-parse --git-dir` before relying on git (constitution
   III's cited source, for a rule that restates core's behaviour).
@@ -210,10 +211,9 @@ its own.
   `effort: "medium"` and `run_in_background: false` on the call, so the main session has the
   worker's report before it verifies (research.md R1 17).
 - **FR-003**: The worker's brief MUST open with the phase's heading as `tasks.md` writes it and carry
-  the phase's tasks — and, for a fix, the finding; on
-  resume, only the unmarked tasks, which may already be partly done (0.2.0, feature 003) — the
-  feature directory, the suite and static-check commands (from the
-  project's instructions, else `plan.md`'s Technical Context), and what earlier workers finished; it
+  the phase's unmarked tasks, which may already be partly done (0.2.0, feature 003) — or, for a
+  fix, the finding — the feature directory, the suite and static-check commands (from the
+  project's instructions, else `plan.md`'s Technical Context), and the phases already marked; it
   MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
   Verification" (first phase only), "Execute implementation", "Implementation execution rules" and
   "Progress tracking and error handling" steps in the composed skill rather than repeating them; and

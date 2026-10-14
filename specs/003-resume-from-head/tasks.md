@@ -54,13 +54,15 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 - [X] T008 [US3] `tests/eval/run.sh --state <name>` (contract); usage line and header
 - [X] T009 [US3] `tests/eval/resume_check.py` (contract; research R3), stdlib, typed
-- [ ] T010 [US3] Write `tests/eval/fixtures/checkout/states/phase-2-done/`: `tasks.md` with T001–T011 marked `[X]`, and Phases 1–2's files (the reference's US1 code without US2 and US3, and the US1 test files); prove it: the held-out tests of US1 pass against it, and those of US2 and US3 fail for want of their code
-- [ ] T011 [US3] Green run: T005–T006 unchanged; `tests/check.sh` green
+- [X] T010 [US3] Write `tests/eval/fixtures/checkout/states/phase-2-done/`: `tasks.md` with T001–T011 marked `[X]`, and Phases 1–2's files (the reference's US1 code without US2 and US3, and the US1 test files); prove it: the held-out tests of US1 pass against it, and those of US2 and US3 fail for want of their code
+- [X] T011 [US3] Green run: T005–T006 unchanged; `tests/check.sh` green
 
 ### The measurement (spends usage; the owner confirms first)
 
 - [ ] T012 [US3] Step 0 (check, probes, oracle); show the estimate; **owner confirms**; run quickstart's resume run; `resume_check.py` on it
 - [ ] T013 [US3] Commit the run's files under `tests/eval/results/003-resume-from-head/` (no stream, no transcripts) and write the README's Eval 003 entry (date, fixture and state, what was checked, one run, versions, result)
+
+- [X] T019 [US1] Apply the fragment review's findings (B1, W1–W4, G1–G6, C1–C2): one rule for every run (marks from the working tree, all-marked phases skipped, every task marked starts no worker, `Started at phase <n>:` line), changes uncommitted at the start not the run's (diff reading of the run's commits, worker stages its own files), a report slot for tasks found done; compose phrases per clause and the old clauses refused, seen red first; `resume_check.py` and its tests to `Started at phase`; spec 003, contract, research and 001's docs to match; a second fresh review
 
 **Checkpoint**: a fresh review of US3 (harness, state, the README entry against the committed outputs). Pass → Phase 4; fail → the result goes to the owner, no release.
 

@@ -9,7 +9,7 @@ Prints  one line per check, `ok <check>` or `FAIL <check>: <what>`:
             the state's finished phases name;
           first brief opens the first unfinished phase;
           held-out N of N;
-          report names the resume: a `Resumed at phase <n>` line for that phase.
+          report names the start: a `Started at phase <n>` line for that phase.
 Exit:   0 every check holds; 1 one does not; 2 unreadable input, or a run that did
         not count (status other than `ok`).
 
@@ -110,12 +110,12 @@ def check(out: Path, fixtures: Path) -> list[str]:
     lines.append(
         f"ok held-out N of N ({n})" if score == n else f"FAIL held-out N of N: {score}/{n}"
     )
-    named = re.search(r"Resumed at phase (\d+)", report.replace("*", "").replace("`", ""))
+    named = re.search(r"Started at phase (\d+)", report.replace("*", "").replace("`", ""))
     want = number.group(1) if number else "?"
     lines.append(
-        "ok report names the resume"
+        "ok report names the start"
         if named and named.group(1) == want
-        else f"FAIL report names the resume: want phase {want}, "
+        else f"FAIL report names the start: want phase {want}, "
         f"found {named.group(0) if named else 'none'}"
     )
     return lines
