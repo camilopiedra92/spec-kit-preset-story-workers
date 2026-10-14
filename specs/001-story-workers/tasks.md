@@ -44,7 +44,7 @@ Python file (T013): before that, mypy and pytest have nothing to check and exit 
 
 **Purpose**: the ruleset that makes `compose (pinned)` required (constitution, Governance).
 
-- [ ] T005 In dotfiles, on a branch of its own: add `"camilopiedra92/spec-kit-preset-story-workers": {"checks": ["compose (pinned)"]}` to `~/dotfiles/github/repos.json`, run `./check.sh`, open its PR, and once merged run `bin/repo-rules.sh` so the ruleset applies (the check name exists once the draft PR has run CI, T003a)
+- [X] T005 In dotfiles, on a branch of its own: add `"camilopiedra92/spec-kit-preset-story-workers": {"checks": ["compose (pinned)"]}` to `~/dotfiles/github/repos.json`, run `./check.sh`, open its PR, and once merged run `bin/repo-rules.sh` so the ruleset applies (the check name exists once the draft PR has run CI, T003a)
 
 **Checkpoint**: the ruleset is declared; the feature's PR will wait for `compose (pinned)`.
 
