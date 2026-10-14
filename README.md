@@ -45,6 +45,11 @@ when the owner accepts it, with the result recorded as it is). Recorded as it st
 shown the preset to save usage, and one measured it costing 65% more; no eval could show a quality
 difference either way. Accepted as released, not as measured to work.
 
+Both evals ran hermetically, without the user's own instructions, settings or plugins, so their
+results are the preset's and reproducible. In a setup whose instructions add work to every story
+(a mutation check, a fresh review per story, red test runs), that work is done in both modes, with
+and without the preset; how it shifts the comparison was not measured.
+
 ## Eval 002, 2026-10-14
 
 **What was planned.** The same fragment, unchanged (FR-006; checked at each attempt with
