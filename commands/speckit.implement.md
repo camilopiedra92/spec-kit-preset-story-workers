@@ -23,10 +23,11 @@ Context; and the phases already marked. It tells the worker to follow core's "Lo
 implementation context", "Project Setup Verification" (first phase only), "Execute
 implementation", "Implementation execution rules" and "Progress tracking and error handling" steps
 of `.claude/skills/speckit-implement/SKILL.md`, whose Story workers section is the main session's,
-not the worker's; that the worker commits each task in a commit of its
-own, staging only the files it changed, never `git add -A` or `-a`; that it follows a call a project hook blocks, or leaves that task unfinished with the hook's
-message in its report; and that it does not edit `tasks.md` (core's "mark the task off as [X]" in
-those steps is yours), start a review or start another worker.
+not the worker's; that the worker commits each task in a commit of its own, staging only the
+files it changed, never `git add -A` or `-a`; that it follows a call a project hook blocks, or
+leaves that task unfinished with the hook's message in its report; and that it does not edit
+`tasks.md` (core's "mark the task off as [X]" in those steps is yours), start a review or start
+another worker.
 
 **The report** the brief asks for: the first and last commit; the tasks done; the tasks found
 already done, with the commit or file that holds each; for each task not done, what stopped it;
