@@ -164,7 +164,13 @@ phrases=(
   'Carried out in this session:'
   # Resume follows core's own progress record, tasks.md's [X] marks, so a
   # project that adopts the preset partway through a feature resumes where it is.
-  'resumes at the first phase that has a task not marked [X]'
+  "marks as committed at HEAD"
+  'resumes at the first phase that has a task not marked'
+  'the last commit whose message contains `tasks: mark phase`'
+  "only the phase's unmarked tasks"
+  'A resumed phase gets its own two fix hand-offs'
+  'never skipped'
+  'ask the user whether to commit them as finished work'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
@@ -175,7 +181,8 @@ for phrase in "${phrases[@]}"; do
 done
 # Rules the fragment no longer holds: resuming from its own marker commits
 # restarted a feature adopted partway through at Phase 1 (fixed in 0.1.1).
-for phrase in 'A run starts at the phase after the last commit whose message contains'; do
+for phrase in 'A run starts at the phase after the last commit whose message contains' \
+  "baseline at the last commit that changed \`tasks.md\`"; do
   ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
