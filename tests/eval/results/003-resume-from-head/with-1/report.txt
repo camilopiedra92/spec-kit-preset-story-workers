@@ -1,0 +1,22 @@
+Phases 3 (promotions) and 4 (returns) are done, so all 30 tasks in `tasks.md` are now marked. My own final run: all 66 tests pass and `uv run ruff check` reports no issues.
+
+`Started at phase 3: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.` Phases 1–2 were already marked; I checked them only by running the whole suite (19 tests passing) and ruff (clean).
+
+**Phase 3: Promotions (T012–T021)**
+- The worker added `src/checkout/allocation.py` (`allocate`) and `src/checkout/promotions.py` (the three promotion kinds, the order they apply in, minimum net, the discount cap, exclusive promotions). It also connected promotions and the cap to `price`.
+- The worker deleted one test of its own whose expected value was wrong. I checked: the correct discounts are `[147, 53]`, not the test's `[200, 0]`, and no spec scenario covers that case.
+- The fresh review, as `CLAUDE.md` requires, found nothing that misses the spec. I marked the phase in commit `e89b9f0`.
+
+**Phase 4: Returns (T022–T030)**
+- The worker added `per_unit`, `unit_nets` and `unit_taxes` on `PricedLine`, and `src/checkout/returns.py` (`Order`, `Refund`, `OverReturn`, the restocking fee and its cap).
+- One intermediate commit, `ecf64b8`, fails to import on its own; the next commit, `f2394cd`, fixes it. Only HEAD is known to pass.
+- The review found one gap: the test for scenario US3-6 checked only refund totals, not the per-unit amounts or each refund's net and tax. The code itself was correct.
+- One fix round added those checks (`c3566f5`), and a second fresh review confirmed the gap is gone. I marked the phase in commit `387b249`.
+
+**Other notes**
+- Your uncommitted edit to `specs/001-checkout/spec.md`, an owner note, is untouched.
+- None of the issues the workers raised needed a new task. The unchecked inputs are ones the spec says it doesn't cover, and `allocate` is tested through `price`.
+- There is no `checklists/` folder and no `.specify/extensions.yml`, so there were no checklists to check and no hooks before or after implementation.
+- `CLAUDE.md` names both the test command and the static check, so I ran both.
+
+Carried out in this session: none

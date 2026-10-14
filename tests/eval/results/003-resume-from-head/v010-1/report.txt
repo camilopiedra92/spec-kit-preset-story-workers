@@ -1,0 +1,16 @@
+All 30 tasks are done and marked `[X]`. The suite passes (65 tests) and `uv run ruff check` is clean. Each user story passed a fresh review against `spec.md`.
+
+**Phases 1–2 (T001–T011, User Story 1: price a cart with tax):** These were already marked done in the setup commit, but there was no checkpoint commit, so I verified them first. The US1 review found a real bug: `Cart.add` accepted adding 0, a negative number or a fraction to a line already in the cart. For example, adding −2 to a line of 5 pens dropped it to 3. A worker fixed it in `894a201`, with new tests, and a second fresh review confirmed it's gone. Because the code was already committed, I recorded the checkpoint as an empty commit, `f90c628`.
+
+**Phase 3 (T012–T021, User Story 2: promotions):** One worker did all ten tasks in ten commits, tests first. These cover buy X get Y, percentage off, fixed amounts with a minimum net, the discount cap, and exclusivity with its tie-breaks. The review found no problems. Marked in `7835722`.
+
+**Phase 4 (T022–T030, User Story 3: returns):** One worker did all nine tasks, tests first. These cover per-unit amounts fixed at purchase, `Order.return_units` and its rejections, the restocking fee, and its cap across returns. The review found no problems. The rejections for T028 went into the T027 commit, so the T028 commit only adds a docstring. Marked in `9dd7de3`.
+
+Things to know:
+- **Your uncommitted note in `specs/001-checkout/spec.md`:** the run rules say leftover uncommitted changes go to a worker to finish or discard. Yours is a note to yourself, not leftover code, so I didn't hand it off. It is still uncommitted and nothing in this run touched it.
+- **Test gaps:** the US3 review noted that a few returns tests check only refund totals, not the net and tax behind them (US3-4, US3-6, and the last return in US3-8). The code gives the spec's numbers for all of them; the tests just assert less than they could.
+- **`.gitignore`:** it covers `.venv/`, `__pycache__/` and the pytest/ruff caches, but not `*.pyc`, `dist/` or `*.egg-info/`. Phase 1's setup check normally handles this, and Phase 1 was already finished, so I left it alone.
+- **Other checks:** the project names only the test suite and ruff. Coverage, type checking and a build were not run.
+- **Hooks:** there is no `.specify/extensions.yml`, so no hooks ran before or after.
+
+Carried out in this session: none

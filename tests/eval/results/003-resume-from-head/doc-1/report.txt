@@ -1,0 +1,21 @@
+All 31 tasks in `specs/001-checkout/tasks.md` are now done: 63 tests pass (`uv run pytest`) and `uv run ruff check` is clean.
+
+Phases 1–2 were already done when I started, so the run began at Phase 3. Started at phase 3: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.
+
+| Phase | Tasks | Done by | Review (per CLAUDE.md) |
+|---|---|---|---|
+| 3 – Promotions | T012–T021 | worker, `841153e`…`fc52676` | Fresh review: no findings |
+| 4 – Returns | T022–T030 | worker, `5190e14`…`15f84c5` | Fresh review: no findings |
+| 4 – Returns | T031 | this session | covered by the Phase 4 review |
+
+- **Checks on each phase:** before marking a phase I ran the suite and ruff myself, made sure there were no stray files outside `specs/001-checkout/`, and read every commit. Each commit stayed within its phase's tasks. Phase 4 has one extra commit (`e6b1b81`) that only sorts imports in the new test files.
+- **Marking commits:** `6699689` (`fixture: tasks: mark phase 3`) and `17109ad` (`fixture: tasks: mark phase 4`).
+- **Your files:** `specs/001-checkout/plan.md` now has a new `## Returns as built` section (T031), and it is not committed. Your note in `spec.md` is still uncommitted too, as it was when I started.
+- **Extension hooks:** there is no `.specify/extensions.yml`, so there were no hooks to run before or after.
+
+Carried out in this session: T031 (Phase 4, edits `plan.md` in the feature directory)
+
+The reviews raised a few things outside the tasks; none of them were changed:
+- **`Cart.add` accepts negative quantities:** with `PEN` ×5 in the cart, `add('PEN', -1)` is accepted and leaves ×4, because it only checks the line's new total. US1-2 covers only an empty cart, and the requirement (FR-002) could be read either way. This is User Story 1 code from before this run.
+- **Some return tests check totals only:** the US3-6, US3-8 and US3-9 tests check refund totals and fees but not net and tax separately. No test reads `unit_nets` or `unit_taxes` directly. The code gives the right values; the tests just don't pin them down.
+- **`ruff format --check`:** it would reformat 5 files. The project doesn't list this check, so I didn't treat it as a failure.

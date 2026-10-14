@@ -85,6 +85,58 @@ results are not shaped by a user's setup and can be rerun. How a setup whose ins
 Eval 001 showed, in one directional run, that `fallback`, with no Agent tool, runs no fresh-context
 review at all.
 
+## Eval 003, 2026-10-14
+
+**What was compared.** The `0.2.0` rule for where a run starts (`tasks.md`'s marks, each phase
+verified from HEAD before its first worker, a clean tree outside the feature directory, else core)
+against `v0.1.0`'s (the phase after the last `tasks: mark phase` commit), on a feature adopted
+partway through: the `checkout` fixture of Eval 002 with Phases 1–2 done, marked and committed
+without any marker commit, and an owner's note left uncommitted in the feature's `spec.md`
+(`tests/eval/fixtures/checkout/states/phase-2-done/`). Two more states extend it to measure the
+rule's other parts: `phase-2-done-doc-task` adds T031, a task that writes the feature's `plan.md`;
+`phase-2-done-dirty` leaves `NOTES.md` uncommitted at the project root. Each run is judged by
+`tests/eval/resume_check.py`'s nine checks. Spec, plan and reviews: `specs/003-resume-from-head/`.
+
+**Runs.** One counted run per arm, no rerun: directional. The preset under measurement is the same
+in the three `0.2.0` runs (`git diff e7cfbf0 288a34f -- commands/ preset.yml` is empty); `v0.1.0`
+was installed from its tag's archive (`run.sh --preset v0.1.0`). Outputs:
+`tests/eval/results/003-resume-from-head/` (no streams or transcripts: they carry local paths and
+session ids).
+
+| Run | Preset | State | Checks | Held-out | Cost |
+|---|---|---|---|---|---|
+| `with-1` | `0.2.0` (`e7cfbf0`) | `phase-2-done` | 9 of 9 | 59/59 | $1.971 |
+| `v010-1` | `v0.1.0` | `phase-2-done` | 5 of 9 | 59/59 | $2.290 |
+| `doc-1` | `0.2.0` (`288a34f`) | `phase-2-done-doc-task` | 9 of 9 | 59/59 | $1.911 |
+| `dirty-1` | `0.2.0` (`288a34f`) | `phase-2-done-dirty` | 9 of 9 | 59/59 | $1.988 |
+
+Spent with the probes: $9.52 (`spent.txt`).
+
+**What it showed.**
+
+- `0.2.0` started at Phase 3, its first worker briefed with it, no brief for a finished phase, no
+  change to a file only Phases 1–2 left, the uncommitted note untouched, every task marked, no
+  question, and the report's `Started at phase 3: …` line.
+- `v0.1.0` reviewed and re-ran the finished Phase 2: its first worker was briefed with Phase 2, it
+  changed `tests/test_cart.py` and committed `tasks: mark phase 2`, and its report names no start.
+  It left the uncommitted note alone, by its own judgement rather than its rule (which hands such
+  changes to a worker to finish or discard).
+- `doc-1`: the main session carried out T031 itself, `plan.md` changed and in no commit, T031 on the
+  `Carried out in this session:` line.
+- `dirty-1`: no worker started; the report named `NOTES.md` and carried the run out as core does;
+  `NOTES.md` and the note in `spec.md` untouched.
+- **What the skipped re-verification costs.** `v0.1.0`'s review of Phase 2 found a real gap:
+  `Cart.add` accepts a negative or zero quantity added to a line already in the cart when the
+  line's new total stays between 1 and 99 (5 pens, add −2: 3 pens). It is in the fixture's
+  reference too, and the spec states the rule only for an empty cart (US1-2), so no held-out test
+  covers it. `0.2.0` does not re-read work committed before the run, by design, and says so in its
+  report; `doc-1`'s review noted the same gap without acting on it, as outside its phase. A run that
+  starts partway through a feature trusts its finished phases to their own verification.
+
+**Versions.** Spec Kit `specify` 1.1.3; Claude Code 2.1.300; main session `claude-opus-5-5`
+(effort medium), workers `claude-sonnet-5-5` (effort medium), reviews `claude-opus-5-5`; git 2.56.0;
+uv 0.13.0; Python 3.12.12; pytest 9.1.1; ruff 0.17.0.
+
 ## Eval 002, 2026-10-14
 
 **What was planned.** The same fragment, unchanged (FR-006; checked at each attempt's commit with

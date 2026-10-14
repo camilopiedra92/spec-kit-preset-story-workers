@@ -1,0 +1,9 @@
+FAIL finished phases untouched: tests/test_cart.py
+ok uncommitted changes untouched
+FAIL first brief opens the first unfinished phase: 'Phase 2: User Story 1 - Price a cart with tax (Priority: P1)', not 'Phase 3: User Story 2 - Promotions (Priority: P2)'
+FAIL no brief opens a finished phase: Phase 2: User Story 1 - Price a cart with tax (Priority: P1)
+ok every task marked
+ok no question asked
+ok held-out N of N (59)
+FAIL report names the start: no line 'Started at phase 3: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
+ok feature-directory tasks carried out in this session: none

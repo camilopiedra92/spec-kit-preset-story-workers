@@ -1,0 +1,9 @@
+ok finished phases untouched
+ok uncommitted changes untouched
+ok no worker started: core's run
+ok no brief opens a finished phase
+ok every task marked
+ok no question asked
+ok held-out N of N (59)
+ok report names the paths outside the feature directory
+ok feature-directory tasks carried out in this session: none

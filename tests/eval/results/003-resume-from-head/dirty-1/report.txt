@@ -1,0 +1,22 @@
+All 30 tasks in `tasks.md` are now marked done. User Story 2 (promotions) and User Story 3 (returns) are implemented, and the full suite passes: 58 tests, with ruff reporting nothing.
+
+**I did the whole run myself instead of handing phases to workers.** When the run started, `NOTES.md` was an untracked file outside the feature directory. With it there, a worker's changes couldn't be kept apart from it, so the run followed the fallback rule. I didn't touch `NOTES.md`. The uncommitted owner note at the end of `spec.md` is also still uncommitted, as it was.
+
+Carried out in this session: T012, T013, T014, T015, T016, T017, T018, T019, T020, T021, T022, T023, T024, T025, T026, T027, T028, T029, T030
+
+**What was built**
+- **Phase 3, promotions (T012–T021):**
+  - `src/checkout/allocation.py` gets `allocate`, the largest-remainder split.
+  - `src/checkout/promotions.py` gets buy X get Y free, percentage off and fixed amount off. They apply in the spec's stacking order, a fixed amount can carry a minimum net, and the discount cap never limits free units. An exclusive promotion applies when it gives the largest discount, and ties go the way the spec says.
+  - `cart.price` now takes promotions and an optional discount cap.
+- **Phase 4, returns (T022–T030):**
+  - `per_unit` splits each line's net and tax per unit, and `PricedLine` carries those per-unit amounts.
+  - `src/checkout/returns.py` adds `Order`, `Refund` and `OverReturn`. Returns take a line's units in order; a return of too many units, fewer than 1, or a SKU not in the order is rejected and leaves the order unchanged. There's an optional restocking fee, rounded once per return and capped across all of the order's returns.
+- **Commits:** the tests for each story were committed first, and I saw them fail before writing the code. Each task has its own commit, followed by `fixture: tasks: mark phase 3` and `fixture: tasks: mark phase 4`, 21 commits after `028e9f1`.
+
+**Reviews and checks**
+- **Reviews:** as CLAUDE.md asks, each story got a review in a fresh context against `spec.md`. Neither found anything that falls short of the spec. The only gap the US3 review mentioned is minor: the US3-6 test checks refund totals but not the separate net and tax figures.
+- **Checks:** before each phase I recorded HEAD and ran the suite and ruff. The suite and static check were `uv run pytest` and `uv run ruff check`, as CLAUDE.md names them. The project names no coverage tool, so test coverage wasn't measured.
+- **Hooks and checklists:** there is no `.specify/extensions.yml`, so there were no hooks before or after the run. There is no `checklists/` directory either.
+
+Phases 1–2 were already marked done, so the run started at Phase 3. Work committed before the run was only covered by passing the whole suite; I didn't review its diff.
