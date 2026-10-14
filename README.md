@@ -60,12 +60,13 @@ the run) is recorded beside it and not used for SC-001, since other sessions mov
 
 **Reading.** The design delegated what it was meant to: Sonnet wrote every line of code, and
 Opus only verified, reviewed and decided. But on a feature this small, the Opus share (main
-session and reviews together) cost more than core's whole run did ($0.753 against $0.599). The
-arms also differ in commits, as observed: `without` made none after setup (core does not commit;
-its report says so), while `with` and `fallback` made eight each, one per task plus one per phase
-for `tasks.md`, as the fragment asks. The likely reason, an inference not measured on its own:
+session and reviews together) cost more than core's whole run did ($0.753 against $0.599). The likely reason, an inference not measured on its own:
 each phase adds a brief to write, a report to read, a suite and static checks to rerun, and a diff
-to read, and none of that work shrinks with the size of the phase. The saving the hypothesis counts on, implementation work moving to the cheaper
+to read, and none of that work shrinks with the size of the phase.
+
+The arms also differ in commits, as observed: `without` made none after setup (core does not
+commit; its report says so), while `with` and `fallback` made eight each, one per task plus one per
+phase for `tasks.md`, as the fragment asks. The saving the hypothesis counts on, implementation work moving to the cheaper
 model, needs phases large enough for it to outweigh that fixed cost. This fixture's phases were
 one or two tasks each. The `fallback` arm ran no reviews (no Agent tool, so its report says they did
 not run), where `without` ran two; that difference is not attributed further.
