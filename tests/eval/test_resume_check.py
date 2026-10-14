@@ -17,7 +17,7 @@ TASKS = """# Tasks
 
 ## Phase 1: User Story 1 - One (Priority: P1)
 
-- [ ] T001 [US1] Write `tests/test_one.py`
+- [ ] T001 [US1] Write `tests/test_one.py` and the empty `conftest.py` in `tests/`
 - [ ] T002 [US1] Implement `src/one.py` and `src/shared.py`
 
 ## Phase 2: User Story 2 - Two (Priority: P2)
@@ -41,6 +41,10 @@ def fixtures(tmp_path: Path) -> Path:
     (fx / "heldout/N").write_text(f"{N}\n")
     (fx / "states/one-done/specs/001-fx").mkdir(parents=True)
     (fx / "states/one-done/specs/001-fx/tasks.md").write_text(DONE)
+    # The state's files: what its finished phases left, whatever tasks.md calls them.
+    for name in ["tests/test_one.py", "tests/conftest.py", "src/one.py", "src/shared.py"]:
+        (fx / "states/one-done" / name).parent.mkdir(parents=True, exist_ok=True)
+        (fx / "states/one-done" / name).write_text("")
     git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
     subprocess.run([*git, "init", "-q"], check=True)
     subprocess.run([*git, "add", "-A"], check=True)
@@ -75,12 +79,20 @@ def write_run(fixtures: Path, root: Path, **over: Any) -> Path:
         "commit a2\nfixture: T004\nsrc/two.py\nsrc/shared.py\n",
     )
     (out / "commits.txt").write_text(commits)
-    events = [worker(over.get("brief", f"{PHASE_2}\n\nTasks T003, T004."))]
+    briefs = over.get("briefs", [f"{PHASE_2}\n\nTasks T003, T004."])
+    events = [worker(b) for b in briefs] + over.get("extra_events", [])
     (out / "stream.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
+    final = out / "repo/specs/001-fx/tasks.md"
+    final.parent.mkdir(parents=True)
+    final.write_text(
+        over.get(
+            "final", DONE.replace("- [ ] T003", "- [X] T003").replace("- [ ] T004", "- [X] T004")
+        )
+    )
     (out / "heldout.txt").write_text(over.get("heldout", f"passed {N}/{N}\n"))
     report = (
         "Started at phase 2: work committed before this run was covered by the whole suite, "
-        "not read as a diff."
+        "not read as a diff, its static-check findings in the baseline."
     )
     (out / "report.txt").write_text(over.get("report", report) + "\n")
     return out
@@ -96,7 +108,7 @@ def test_a_good_resume_passes_every_check(
 ) -> None:
     code, out = check(fixtures, write_run(fixtures, tmp_path), capsys)
     assert code == 0, out
-    assert out.count("ok ") == 4
+    assert out.count("ok ") == 7
 
 
 def test_a_commit_touching_a_finished_only_file_fails(
@@ -114,7 +126,7 @@ def test_a_first_brief_for_another_phase_fails(
     fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     brief = "## Phase 1: User Story 1 - One (Priority: P1)\n\nRedo."
-    code, out = check(fixtures, write_run(fixtures, tmp_path, brief=brief), capsys)
+    code, out = check(fixtures, write_run(fixtures, tmp_path, briefs=[brief]), capsys)
     assert code == 1
     assert "FAIL first brief opens the first unfinished phase" in out
 
@@ -134,6 +146,7 @@ def test_a_held_out_score_below_n_fails(
     [
         "Carried out in this session: none",
         "Started at phase 1: covered by the suite.",
+        "Started at phase 2: covered by the suite.",
         "Resumed at phase 2: covered by the suite.",
     ],
 )
@@ -160,3 +173,50 @@ def test_unreadable_input_is_refused(
     (out / "commits.txt").unlink()
     code, _ = check(fixtures, out, capsys)
     assert code == 2
+
+
+def test_a_commit_touching_a_state_file_its_tasks_name_loosely_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # T001 names conftest.py only as `conftest.py` in `tests/`: the state, not the
+    # backticked paths, says which files the finished phases left.
+    commits = "commit a1\nfixture: redo\ntests/conftest.py\n"
+    code, out = check(fixtures, write_run(fixtures, tmp_path, commits=commits), capsys)
+    assert code == 1
+    assert "FAIL finished phases untouched: tests/conftest.py" in out
+
+
+def test_a_later_brief_for_a_finished_phase_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    briefs = [f"{PHASE_2}\n\nTasks T003, T004.", "## Phase 1: User Story 1 - One (Priority: P1)\n"]
+    code, out = check(fixtures, write_run(fixtures, tmp_path, briefs=briefs), capsys)
+    assert code == 1
+    assert "FAIL no brief opens a finished phase" in out
+
+
+def test_a_run_with_no_worker_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out = check(fixtures, write_run(fixtures, tmp_path, briefs=[]), capsys)
+    assert code == 1
+    assert "FAIL first brief opens the first unfinished phase: '(no worker)'" in out
+
+
+def test_a_task_left_unmarked_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    final = DONE.replace("- [ ] T003", "- [X] T003")
+    code, out = check(fixtures, write_run(fixtures, tmp_path, final=final), capsys)
+    assert code == 1
+    assert "FAIL every task marked: T004" in out
+
+
+def test_a_question_in_the_stream_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    ask = {"type": "tool_use", "name": "AskUserQuestion", "input": {}}
+    event = {"type": "assistant", "parent_tool_use_id": None, "message": {"content": [ask]}}
+    code, out = check(fixtures, write_run(fixtures, tmp_path, extra_events=[event]), capsys)
+    assert code == 1
+    assert "FAIL no question asked" in out

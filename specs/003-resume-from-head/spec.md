@@ -35,11 +35,11 @@ takes them as they are and starts from the repository as it finds it.
 
 - Q: How does a run decide what is done? → A: from `tasks.md`'s marks, `[X]` or `[x]`, as core
   records them; nothing is read from commit messages for it.
-- Q: What is a resumed phase verified against? → A: HEAD at the run's start, as a fresh run is:
-  the static-check baseline and the diff reading start there. Work committed before the run is
-  covered by the whole-suite run, not by a diff reading, and the completion report says so.
+- Q: What is a resumed phase verified against? → A: (superseded below: each phase's baseline is
+  HEAD before its first worker, as Verification says.) Work committed before the run is covered by
+  the whole-suite run, not by a diff reading, and the completion report says so.
 - Q: What happens to uncommitted changes when a run starts? → A: what core does: they stay in the
-  working tree; the run neither asks nor stops.
+  working tree; the run neither asks nor stops (made precise below).
 - Q: Is the rule measured? → A: yes, before release (constitution III): a resume eval on a fixture
   with Phase 1 done, plus a check that a fresh run is unchanged. Released as 0.2.0, a MINOR
   version: behaviour changes for resumed runs (constitution V).
@@ -56,7 +56,17 @@ takes them as they are and starts from the repository as it finds it.
   finding, never committed or reverted by the run; the diff reading covers the commits the run made
   since the recorded HEAD; a worker stages only the files it changed.
 - Q: What about phases all marked after the start point? → A: every phase whose tasks are all
-  marked is skipped, wherever it falls; with every task marked, no worker starts.
+  marked is skipped, wherever it falls; with every task marked, no worker starts and nothing is
+  committed.
+
+### Session 2026-10-14 (after the second fresh review)
+
+- Q: How are changes made before the run kept apart from the run's? → A: the run records `git
+  status --porcelain` before the first worker. No worker edits, stages, commits or reverts a file it
+  lists; a task that needs one, or a suite red because of one, goes to the main session, which
+  carries out that phase's remaining items as core does. Verification also requires the working
+  tree to list nothing beyond that record and `tasks.md`, so a worker's uncommitted leftover is a
+  finding. The run's own `tasks.md` commits carry the file as it stands, earlier edits included.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -101,8 +111,11 @@ with every held-out test passing.
 A developer runs `/speckit-implement` on a feature with no task marked, on a clean working tree.
 The run behaves as in `v0.1.0` for what is verified and marked: Phase 1 first, baseline at HEAD
 before each phase's first worker, every phase verified and marked as before. It differs only in
-what every run now does: the brief's note that a task may already be done, the worker staging only
-its own files, and the report's `Started at phase 1:` line.
+what every run now does: the brief's note that an unmarked task may already be done and its list of the phases already
+marked (in place of what earlier workers finished); the worker staging only its own files; the
+report slot for tasks found done; Verification reading the run's commits and `git status` against
+the record at the start (in place of the diff from the recorded HEAD); no `tasks: mark phase`
+commit when a phase marked nothing new; the `Started at phase 1:` line.
 
 **Why this priority**: the change must not move the measured path (Evals 001 and 002).
 
@@ -148,8 +161,10 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
 - **No git repository**: the fallback to core already applies (FR-007 of 001); the resume point is
   still the first unmarked task, as core would continue.
 - **Commits or uncommitted changes already hold part of an unmarked task** (an interrupted run of
-  this preset, or core's own work): the worker finds them by checking the code and `git log`, and
-  does not redo them; the main session's diff reading covers only the commits the new run makes.
+  this preset, or core's own work): committed parts, the worker finds by checking the code and `git
+  log` and does not redo; uncommitted parts are changes made before the run, so the task goes to the
+  main session, carried out as core does; the diff reading covers only the commits the new run
+  makes.
 
 ## Requirements *(mandatory)*
 
@@ -164,23 +179,33 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
 - **FR-003**: Every worker brief MUST carry only the phase's unmarked tasks, and MUST tell the
   worker that some may already be done in whole or in part, to check each against the code and
   `git log`, and to complete only what is missing; the worker's report MUST list tasks found already
-  done, with the commit or file that holds each; the main session marks those on the suite and the
-  static checks.
-- **FR-004**: Changes uncommitted when a run starts MUST NOT be the run's: the run neither asks
-  about them nor stops for them, they are no finding, no one in the run commits or reverts them, and
-  a worker stages only the files it changed.
-- **FR-005**: In a git repository, every run's completion report MUST carry `Started at phase <n>:
-  work committed before this run was covered by the whole suite, not read as a diff.`
+  done, with the commit or file that holds each; the main session marks those on the suite, the
+  static checks and its reading of the commit or file cited.
+- **FR-004**: Changes uncommitted when a run starts MUST NOT be the run's: the run records `git
+  status --porcelain` before the first worker, neither asks about the files it lists nor stops for
+  them, counts them as no finding, and no worker edits, stages, commits or reverts them; a task that
+  needs one, or a suite red because of one, is carried out in the main session as core does; a
+  worker stages only the files it changed; Verification requires the tree to list nothing beyond
+  that record and `tasks.md`; the run's `tasks.md` commits carry the file as it stands.
+- **FR-005**: In a git repository, every run that starts a worker MUST end its completion report
+  with `Started at phase <n>: work committed before this run was covered by the whole suite, not
+  read as a diff, its static-check findings in the baseline.`; a run with every task marked says so
+  in its place.
 - **FR-006**: A run with no task marked on a clean working tree MUST verify, mark and commit as
-  `v0.1.0` does; its differences (FR-003's note and report slot, FR-004's staging, FR-005's line) are
-  named in the CHANGELOG.
+  `v0.1.0` does; its differences, named in the CHANGELOG, are: the brief's note that an unmarked task may already be done and its list of the phases already
+  marked (in place of what earlier workers finished); the worker staging only its own files; the
+  report slot for tasks found done; Verification reading the run's commits and `git status` against
+  the record at the start (in place of the diff from the recorded HEAD); no `tasks: mark phase`
+  commit when a phase marked nothing new; the `Started at phase 1:` line.
 - **FR-007**: The composition test MUST check each clause of FR-001 to FR-005 in the fragment and
   MUST fail if a `v0.1.0` resume clause is still there; each check seen red once.
 - **FR-008**: A resume eval MUST exist under `tests/` (the `checkout` fixture in a state with Phases
   1–2 done, marked and committed) and be run once with the preset before release; it passes when no
   commit of the run changes a file only finished phases' tasks name, the first worker is briefed
-  with the first unfinished phase, the run exits normally without a stop or a question, every
-  held-out test passes, and the report names the phase it started at.
+  with the first unfinished phase and no brief opens a finished one, the run exits normally with
+  every task marked and no question asked, every held-out test passes, and the report carries
+  FR-005's line for the phase it started at. Finished phases' files are those the state holds that
+  no unfinished phase's task names.
 - **FR-009**: `0.2.0` MUST be released only on a passing resume eval, with the README entry,
   CHANGELOG entry and tag of constitutions III and V; then dotfiles' `sdd-init` MUST install it
   (its check seen red first) and supertrader's `main` MUST move to it and be merged into feature

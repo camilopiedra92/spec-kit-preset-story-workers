@@ -215,15 +215,18 @@ its own.
   fix, the finding — the feature directory, the suite and static-check commands (from the
   project's instructions, else `plan.md`'s Technical Context), and the phases already marked; it
   MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
-  Verification" (first phase only), "Execute implementation", "Implementation execution rules" and
+  Verification" (Phase 1's worker only, 0.2.0), "Execute implementation", "Implementation execution rules" and
   "Progress tracking and error handling" steps in the composed skill rather than repeating them; and
-  it MUST say the worker commits each task in a commit of its own, returns the worker report, follows
+  it MUST say the worker commits each task in a commit of its own (0.2.0: staging only the files it
+  changed, never a file changed before the run), returns the worker report, follows
   or reports a call a project hook blocks, and does not edit `tasks.md` (core's "mark the task off as
   [X]" in those steps is the main session's), start a review or start another worker.
 - **FR-004**: The main session MUST mark a task `[X]` only after, in its own runs, the whole suite
   passes (when one is named), the static checks report no finding the baseline it took before the
   phase's first worker did not have (when they are named), and its reading of the phase's diff finds
-  nothing the phase's tasks do not call for. A review the phase calls for (FR-005), and every fix
+  nothing the phase's tasks do not call for (0.2.0: the commits since the recorded HEAD, and `git
+  status` listing nothing beyond the record taken at the run's start and `tasks.md`; a task found
+  already done is marked on the suite, the static checks and the commit or file cited). A review the phase calls for (FR-005), and every fix
   it leads to, resolves before the phase is marked; then the main session commits `tasks.md` with a
   message containing `tasks: mark phase <n>` (after any prefix the project's instructions require), and only then does the next phase's worker start. A worker's report
   never marks a task.

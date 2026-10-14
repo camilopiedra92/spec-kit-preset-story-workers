@@ -29,11 +29,11 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 ### Tests (write first)
 
-- [X] T002 [US1] In `tests/compose.sh`, require one phrase per clause of the contract's Resume rule (the resume point from `[X]` or `[x]` marks; the baseline at HEAD at the run's start; the brief's "may already be done" check; uncommitted changes left as core leaves them; the `Resumed at phase <n>:` report line; no task marked is a fresh run) and refuse the 0.1.0 sentence; commit and run it against the 0.1.0 fragment, each check red for its own phrase
+- [X] T002 [US1] In `tests/compose.sh`, require one phrase per clause of the contract's Resume rule (the resume point from `[X]` or `[x]` marks; the baseline at HEAD at the run's start; the brief's "may already be done" check; uncommitted changes left as core leaves them; the `Resumed at phase <n>:` report line; no task marked is a fresh run) and refuse the 0.1.0 sentence; commit and run it against the 0.1.0 fragment, each check red for its own phrase (superseded in part by T019 and T020)
 
 ### Implementation
 
-- [X] T003 [US1] Rewrite the Resume paragraph of `commands/speckit.implement.md` to the contract, the brief's resume clause, and the completion report's `Resumed at phase <n>:` line; lines within 100 columns; T002 green unchanged
+- [X] T003 [US1] Rewrite the Resume paragraph of `commands/speckit.implement.md` to the contract, the brief's resume clause, and the completion report's `Resumed at phase <n>:` line; lines within 100 columns; T002 green unchanged (superseded in part by T019 and T020)
 - [X] T004 [US1] Bring `specs/001-story-workers/spec.md` (edge case "A run resumes", FR-003's brief) and `specs/001-story-workers/contracts/fragment.md` (§3, §10) to the new rule
 
 **Checkpoint**: `tests/check.sh` green; a fresh review of the fragment change against spec 003 and the constitution.
@@ -47,7 +47,7 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 ### Tests (write first)
 
 - [X] T005 [P] [US3] Extend `tests/eval/test_run.py`: `--state <name>` overlays the committed `fixtures/<f>/states/<name>/` before the setup commit; an uncommitted or missing state is refused (exit 2); `versions.txt` has `state:` among the pre-run keys
-- [X] T006 [P] [US3] Write `tests/eval/test_resume_check.py` against synthetic run directories: each check passes and fails on its own (a commit touching a finished-only file; the first worker brief opening another phase; a held-out score below N; no `Resumed at phase` line, or one naming another phase); exit 2 on unreadable input or a non-`ok` status
+- [X] T006 [P] [US3] Write `tests/eval/test_resume_check.py` against synthetic run directories: each check passes and fails on its own (a commit touching a finished-only file; the first worker brief opening another phase; a held-out score below N; no `Resumed at phase` line, or one naming another phase); exit 2 on unreadable input or a non-`ok` status (superseded in part by T019 and T020)
 - [X] T007 [US3] Red run of T005–T006 against a stub `resume_check.py` and the unchanged `run.sh`
 
 ### Implementation
@@ -63,6 +63,7 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 - [ ] T013 [US3] Commit the run's files under `tests/eval/results/003-resume-from-head/` (no stream, no transcripts) and write the README's Eval 003 entry (date, fixture and state, what was checked, one run, versions, result)
 
 - [X] T019 [US1] Apply the fragment review's findings (B1, W1–W4, G1–G6, C1–C2): one rule for every run (marks from the working tree, all-marked phases skipped, every task marked starts no worker, `Started at phase <n>:` line), changes uncommitted at the start not the run's (diff reading of the run's commits, worker stages its own files), a report slot for tasks found done; compose phrases per clause and the old clauses refused, seen red first; `resume_check.py` and its tests to `Started at phase`; spec 003, contract, research and 001's docs to match; a second fresh review
+- [X] T020 [US1] [US3] Apply the second fresh review: changes made before the run recorded with `git status --porcelain`, never touched by a worker, a task needing one carried out in this session; Verification checks the tree against that record; found-done tasks marked on the cited commit or file too; `Project Setup Verification` Phase 1's worker only; the report line names the static-check baseline; every task marked starts no worker and commits nothing; compose phrases for each inverted clause the review found undetected (seen red first); `resume_check.py`: finished files from the state, no brief for a finished phase, every task marked, no question asked, FR-005's whole line (tests seen red first); docs to match
 
 **Checkpoint**: a fresh review of US3 (harness, state, the README entry against the committed outputs). Pass → Phase 4; fail → the result goes to the owner, no release.
 

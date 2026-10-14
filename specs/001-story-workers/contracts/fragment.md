@@ -16,20 +16,25 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
 3. **The brief** (spec FR-003): "opens with the phase's heading" as `tasks.md` writes it; the phase's tasks, and for a fix the finding (0.2.0: only
    the unmarked tasks, which may already be partly done); the feature directory; the suite and static-check commands (the project's
    instructions, else `plan.md`'s Technical Context); the phases already marked (0.2.0); "follow core's"
-   `Load and analyze the implementation context`, `Project Setup Verification` (first phase only),
+   `Load and analyze the implementation context`, `Project Setup Verification` (Phase 1's worker only, 0.2.0),
    `Execute implementation`, `Implementation execution rules` and `Progress tracking and error
    handling` steps of `.claude/skills/speckit-implement/SKILL.md`; the worker "commits each task",
+   staging only the files it changed and never a file changed before the run (0.2.0),
    returns the report of 4, follows or reports a call a project hook blocks, and does not edit
    `tasks.md` (core's "mark the task off as [X]" in those steps is the main session's), start a
    review or start a worker.
-4. **The report**: first and last commit; tasks done; for each task not done, what stopped it;
+4. **The report**: first and last commit; tasks done; tasks found already done, with the commit or
+   file holding each (0.2.0); for each task not done, what stopped it;
    anything found that no task covers; the output of its last whole-suite run.
 5. **Verification**: before the phase's first worker, the main session records HEAD and runs the
    static checks as the baseline. It "marks a task [X] only after" its own runs show the whole suite
    passing and no static-check finding the baseline lacked, and its reading of the diff from the
-   recorded HEAD finds nothing the phase's tasks do not call for (suite and checks when named). A
+   recorded HEAD finds nothing the phase's tasks do not call for (suite and checks when named);
+   0.2.0 reads the commits since that HEAD and `git status` against the record taken at the start,
+   and marks a task found done on the suite, the static checks and the commit or file cited. A
    review the phase calls for, and its fixes, resolve first; then it commits `tasks.md` with a
-   message containing `tasks: mark phase <n>` (after any prefix the project requires), and only then starts the next phase's worker.
+   message containing `tasks: mark phase <n>` (after any prefix the project requires; 0.2.0: none
+   when the phase marked nothing new), and only then starts the next phase's worker.
 6. **Hand-offs**: every unfinished task, failed verification or review finding goes to a worker,
    then verification again; a review finding passes when a fresh review of it no longer reports it.
    A phase gets "at most two fix hand-offs" (every hand-off of the phase after its first counts); when verification still fails after them, "carry out

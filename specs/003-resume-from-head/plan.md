@@ -6,9 +6,10 @@
 
 ## Summary
 
-Replace the fragment's Resume rule: a run resumes at the first phase with an unmarked task, verified
-from HEAD at the run's start, its worker told to check what the repository already holds; a fresh
-run is unchanged. Measure it with one resume run of the preset on 002's `checkout` fixture in a
+Replace the fragment's Resume rule with one start rule for every run: the first phase with an
+unmarked task, each phase verified from HEAD before its first worker, the worker told to check what
+the repository already holds, and changes made before the run kept the user's; a fresh run on a
+clean tree verifies and marks as before. Measure it with one resume run of the preset on 002's `checkout` fixture in a
 "Phases 1–2 done" state (a `run.sh --state` overlay), judged by a script. Release `0.2.0`, then move
 dotfiles' `sdd-init` and supertrader to it.
 
@@ -32,7 +33,7 @@ confirmed by the owner first.
 
 **Performance Goals**: none beyond 002's.
 
-**Constraints**: a fresh run's behaviour unchanged (FR-006); no question or stop added (constitution
+**Constraints**: a fresh run on a clean tree verifies and marks as before (FR-006); no question or stop added (constitution
 IV); the release only on a passing resume eval (constitution III).
 
 **Scale/Scope**: one fragment paragraph and a brief clause; one `run.sh` flag; one state overlay;

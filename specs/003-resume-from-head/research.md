@@ -61,13 +61,20 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
 
 - **Decision**: `tests/eval/resume_check.py <out-dir>` reads the run's committed files and the
   fixture (at the run's commit) and prints, each `ok` or `FAIL`: no commit of the run changes a
-  file that only finished phases' tasks name (for `phase-2-done`: `tests/test_catalog.py`,
-  `tests/test_cart.py`, `tests/test_tax.py`, `tests/test_pricing.py`, `src/checkout/tax.py`); the
-  first worker's brief opens with the first unfinished phase's heading; the held-out score is N of
-  N; the report has a `Started at phase <n>:` line naming that phase. A counted run (run.sh's own
-  rules) is the precondition: it exited normally, so it did not stop.
+  file the state holds that no unfinished phase's task names (for `phase-2-done`:
+  `src/checkout/__init__.py`, `src/checkout/tax.py`, `tests/conftest.py`, `tests/test_cart.py`,
+  `tests/test_catalog.py`, `tests/test_pricing.py`, `tests/test_tax.py`); the first worker's brief
+  opens with the first unfinished phase's heading and no brief opens a finished one; every task of
+  the run's final `tasks.md` is marked and the stream holds no `AskUserQuestion`, since a headless
+  run that ends its turn on a question still exits 0; the held-out score is N of N; the report
+  carries FR-005's whole line for that phase. A counted run (run.sh's own rules) is the
+  precondition.
+- **Limit**: US1's parts of the modules later phases also name (`cart.py`, `catalog.py`,
+  `money.py`) are those phases' to change, so a rewrite of them is not seen by the first check; the
+  held-out tests, US1's included, are what guard them.
 - **Rationale**: a behaviour check, not a comparison, so one counted run decides it; the script
-  makes the verdict reproducible from committed files, as `compare.py` does for 002.
+  makes the verdict reproducible, as `compare.py` does for 002: its output and every input but the
+  stream are committed (the stream holds local paths and session ids, so it stays local).
 - **Alternatives considered**: *reading the verdict by hand*: one more place for a slip, which
   002's reviews found more than once. *A `without` arm beside it*: core resumes by redoing nothing
   only because it never reads history; comparing it says nothing about the preset's rule.
