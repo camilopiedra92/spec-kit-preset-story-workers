@@ -233,7 +233,9 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
   MUST fail if a `v0.1.0` resume clause is still there; each check seen red once.
 - **FR-008**: A resume eval MUST exist under `tests/` (the `checkout` fixture in a state with Phases
   1–2 done, marked and committed, and an edit to the feature's spec left uncommitted) and be run
-  once with the preset before release; it passes when no commit of the run changes a file only
+  once with the preset and once with `v0.1.0` (the arm without the rule, research R3) before
+  release; it passes when the `0.2.0` run meets every condition below, and the `v0.1.0` run's result
+  is recorded beside it; the `0.2.0` run passes when no commit of the run changes a file only
   finished phases' tasks name and the run's tree holds those files as the state does, the
   uncommitted edit is in no commit and unchanged, the first worker is briefed
   with the first unfinished phase and no brief opens a finished one, the run exits normally with
@@ -265,8 +267,9 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
 
 ## Assumptions
 
-- One counted resume run is enough: the eval checks a behaviour (not redoing Phase 1, not
-  stopping), not a cost comparison; the README calls it directional.
+- One counted run per arm is enough: the eval checks a behaviour (not redoing finished phases, not
+  stopping), not a cost comparison; the arms are `0.2.0` (this rule) and `v0.1.0` (without it), on
+  the same state, and the README calls them directional.
 - The resume fixture reuses 002's `checkout` fixture with its Phases 1–2 already implemented from
   the reference (US1 only), marked and committed, so no new feature is written.
 - The cost question is unchanged since 002 and out of scope.

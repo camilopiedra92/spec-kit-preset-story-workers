@@ -3,7 +3,7 @@
 # /speckit-implement without the preset, with it, or with it but no Agent tool,
 # hermetic so the result is the preset's and anyone can rerun it.
 #
-# Usage:  tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <without|with|fallback> <out-dir>
+# Usage:  tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>
 #         <fixture> is a directory under tests/eval/fixtures/ holding project/
 #         (what the agent gets) and heldout/ (copied in after a counted run);
 #         --baseline names a counted run whose versions this one must match;
@@ -24,9 +24,10 @@ refuse() {
 src=${BASH_SOURCE[0]}
 case $src in */*) here=$(cd "${src%/*}" && pwd) ;; *) here=$(pwd) ;; esac
 
-usage="usage: tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <without|with|fallback> <out-dir>"
+usage="usage: tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>"
 baseline=
 state=
+preset=
 while [ "$#" -gt 3 ]; do
   case $1 in
     --baseline)
@@ -36,6 +37,9 @@ while [ "$#" -gt 3 ]; do
     # A committed state of the fixture laid over its project, as a feature
     # partly done (specs/003-resume-from-head, research R2).
     --state) state=$2 ;;
+    # The preset as another ref archives it: the arm without the rule under
+    # measurement, on the same fixture (specs/003-resume-from-head, research R3).
+    --preset) preset=$2 ;;
     *) refuse "$usage" ;;
   esac
   shift 2
@@ -46,6 +50,7 @@ arm=$2
 # A plain name: no path can lead outside fixtures/.
 case $fixture in "" | */* | . | ..) refuse "unknown fixture '$fixture'" ;; esac
 case $arm in without | with | fallback) ;; *) refuse "unknown arm '$arm'" ;; esac
+[ -z "$preset" ] || [ "$arm" != without ] || refuse "--preset applies to the with and fallback arms"
 out_arg=$3
 for tool in claude specify uv git python3 jq; do
   command -v "$tool" > /dev/null || refuse "missing $tool"
@@ -57,6 +62,8 @@ for part in project heldout; do
   [ -d "$here/$fixture_dir/$part" ] || refuse "fixture '$fixture' has no $part/"
 done
 fixture_rel=$(git -C "$here" rev-parse --show-prefix)$fixture_dir
+preset_sha=$(git -C "$root" rev-parse --verify --quiet "${preset:-HEAD}^{commit}") ||
+  refuse "unknown preset ref '$preset'"
 if [ -n "$state" ]; then
   case $state in */* | . | ..) refuse "unknown state '$state'" ;; esac
   git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state/committed" 2> /dev/null ||
@@ -144,7 +151,7 @@ cmp -s "$here/$fixture_dir/project/.specify/feature.json" .specify/feature.json 
 if [ "$arm" != without ]; then
   # As a project installs it: the tag archive's shape, from HEAD, served from
   # localhost because the CLI takes plain HTTP from there only.
-  git -C "$root" archive --format=zip --prefix="$(basename "$root")/" -o "$www/preset.zip" HEAD
+  git -C "$root" archive --format=zip --prefix="$(basename "$root")/" -o "$www/preset.zip" "$preset_sha"
   port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
   python3 -m http.server "$port" --bind 127.0.0.1 --directory "$www" > /dev/null 2>&1 &
   server=$!
@@ -190,6 +197,7 @@ semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
   echo "arm: $arm"
   echo "autoupdater: disabled"
   echo "state: ${state:--}"
+  echo "preset: ${preset:-HEAD} $preset_sha"
 } > "$out/versions.txt"
 differing() { # <key>...: those whose line differs between this run and the baseline
   local key
@@ -198,7 +206,7 @@ differing() { # <key>...: those whose line differs between this run and the base
       printf '%s ' "$key"
   done
 }
-pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater state)
+pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater state preset)
 if [ -n "$baseline" ]; then
   keys=$(differing "${pre_run[@]}")
   [ -z "$keys" ] || refused "versions differ from the baseline: ${keys% }"

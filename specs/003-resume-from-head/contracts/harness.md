@@ -43,7 +43,11 @@
   `beyond that record`, and the third's `it commits before the next phase's worker starts`. A phrase shows a clause is there, not that no qualifier
   was added beside it; that is the reviewer's to read.
 
-## `tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <arm> <out-dir>`
+## `tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <arm> <out-dir>`
+
+`--preset <ref>` installs the preset as `<ref>` archives it (default `HEAD`); refused (exit 2) with
+the `without` arm or an unknown ref. `versions.txt` adds `preset: <ref> <sha>`, a pre-run key.
+
 
 `--state <name>` copies `fixtures/<fixture>/states/<name>/committed/` as committed (`git archive`)
 over the scratch project before the setup commit, and `states/<name>/uncommitted/`, when there is

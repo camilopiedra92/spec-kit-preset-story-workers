@@ -85,6 +85,16 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
 - **Alternatives considered**: *reading the verdict by hand*: one more place for a slip, which
   002's reviews found more than once. *A `without` arm beside it*: core resumes by redoing nothing
   only because it never reads history; comparing it says nothing about the preset's rule.
+- **The arm without the rule** (owner, 2026-10-14, after the fourth review; constitution III):
+  `v0.1.0`, installed by `run.sh --preset v0.1.0` from its tag's archive, once on the same state.
+  Its rule restarts at the phase after the last `tasks: mark phase` commit, which this state lacks,
+  so it is expected to brief Phase 1 and fail `first brief opens the first unfinished phase`; its
+  0.1.0 handling of uncommitted changes (a worker to finish or discard them) is expected to fail
+  `uncommitted changes untouched`. The comparison is the two runs' `resume_check.py` outputs side by
+  side; both are directional (one run each). The rule's parts the state does not exercise (a task
+  that changes the feature directory, carried out and committed by the main session; a run sent to
+  core by uncommitted work outside the feature directory) are recorded in the README for the
+  owner's acceptance, each with its reason.
 
 ## R4. Uncommitted work: a clean tree outside the feature directory
 
