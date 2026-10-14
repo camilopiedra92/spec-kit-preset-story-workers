@@ -25,13 +25,13 @@ and each step the brief names.
    static checks as the baseline. It "marks a task [X] only after" its own runs show the whole suite
    passing and no static-check finding the baseline lacked, and its reading of the diff from the
    recorded HEAD finds nothing the phase's tasks do not call for (suite and checks when named). A
-   review the phase calls for, and its fixes, resolve first; then it commits `tasks.md` as
-   `tasks: mark phase <n>`, and only then starts the next phase's worker.
+   review the phase calls for, and its fixes, resolve first; then it commits `tasks.md` with a
+   message containing `tasks: mark phase <n>` (after any prefix the project requires), and only then starts the next phase's worker.
 6. **Hand-offs**: every unfinished task, failed verification or review finding goes to a worker,
    then verification again; a review finding passes when a fresh review of it no longer reports it.
    A phase gets "at most two fix hand-offs"; when verification still fails after them, "carry out
    the phase's remaining items in this session". Tasks a worker reported finding join the current
-   phase (committed as `tasks: add found tasks`) and go to its next hand-off. "Verification still
+   phase (committed with a message containing `tasks: add found tasks`) and go to its next hand-off. "Verification still
    fails" includes a fresh review still reporting its finding. The main session's only edits to tracked files are `tasks.md` (checkboxes, tasks a
    worker reported finding) and its commits of them.
 7. **Reviews**: any review the user's or the project's instructions, or a command, call for, `subagent_type: "general-purpose"`,
@@ -43,9 +43,10 @@ and each step the brief names.
 9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, or the
    bound of 6: "carry out the remaining tasks in this session" as core does, and say which and why in
    the completion report. The completion report always carries the line `Carried out in this session:
-   none` or `Carried out in this session: <task ids>`; `tests/compose.sh` greps for it.
-10. **Resume**: the phase starts after the last `tasks: mark phase <n>` commit; the baseline is
-    taken there, in a temporary `git worktree`; uncommitted changes to files other than `tasks.md` go to
+   none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.
+10. **Resume**: the phase starts after the last commit whose message contains `tasks: mark phase
+    <n>`, or at the first phase when there is none; the baseline is taken there (with none, at the
+    commit before the first phase's first commit), in a temporary `git worktree`; uncommitted changes to files other than `tasks.md` go to
     a worker with the diff, to finish or discard; uncommitted `tasks.md` changes are the main session's.
 11. **Narrowed, by name**: core's `For completed tasks, make sure to mark the task off as [X]`,
     `parallel tasks [P] can run together` and `Halt execution if any non-parallel task fails`.
@@ -58,8 +59,9 @@ and each step the brief names.
   `git init`, `specify init --here --force --integration claude`, checks `.specify/feature.json`
   survived; for `with` and `fallback`, installs this checkout's `git archive` of HEAD served from
   localhost, with `SPECKIT_PYTHON_EXECUTABLE` set; commits.
-- Every step after the refusals — the setup commit, the agent, the suite and the held-out run — runs
-  in the same clean environment: `env -i` passing only `HOME`, `USER`, `LOGNAME`, `PATH`, `TMPDIR`,
+- Every step after the refusals — `specify init`, the preset install, the setup commit, the agent,
+  the suite and the held-out run — runs in the same clean environment, and each under its own
+  deadline (3600 s for the agent, 600 s for each other step): `env -i` passing only `HOME`, `USER`, `LOGNAME`, `PATH`, `TMPDIR`,
   `LANG`, `TERM` and `SPECKIT_PYTHON_EXECUTABLE`, then setting only git's isolation (`GIT_CONFIG_GLOBAL=/dev/null`,
   `GIT_CONFIG_NOSYSTEM=1`, a fixed `eval` identity) — under a 3600-second deadline enforced by
   `tests/eval/bounded.py`, which runs the command in its own process group and kills the group (macOS
@@ -75,14 +77,19 @@ and each step the brief names.
   `tests_heldout/` and runs it alone (`heldout.txt`: passed/total and the output); writes
   `usage.txt`, `versions.txt` (this checkout's commit, tools, the main model ID and its effort, the `init` event's output
   style, plugin and MCP-server counts), `models.txt` (every model ID in `modelUsage` with its effort, and
-  the Agent calls per `model` value)
+  the Agent calls per `model` value), `commits.txt` (`git log --name-only` from the setup commit to
+  HEAD); the scratch repository is kept in `<out-dir>/repo`
   and `status` = `ok`.
 
 ## `tests/eval/attribution.py <out-dir>`
 
-Reads `stream.jsonl`. Prints the main session's (no `parent_tool_use_id`) Write, Edit and
-NotebookEdit calls whose path is not the feature's `tasks.md`, then its Bash commands. Exit 0 when
-the first list is empty, 1 when not, 2 when the stream cannot be read or `status` is not `ok`.
+Reads `stream.jsonl` and `commits.txt`, checks every clause of SC-003 and prints each with `ok` or
+what failed: the main session's (no `parent_tool_use_id`) Write, Edit and NotebookEdit calls not on
+the feature's `tasks.md`; a Sonnet entry in `modelUsage`; the commits after the setup commit that
+change more than `tasks.md` (at least one, each starting with `fixture:`); the `Carried out in this
+session: none` line; no `permission_denials`. Then it lists the main session's Bash commands. Exit 0
+when every clause holds, 1 when one does not, 2 when an input cannot be read or `status` is not
+`ok`.
 
 ## `tests/eval/probes.sh`
 

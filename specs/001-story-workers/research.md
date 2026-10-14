@@ -149,8 +149,11 @@ Observations are dated and name the versions they ran on (constitution III).
   list in every arm), under a 3600-second deadline that `tests/eval/bounded.py` enforces by running
   the command in its own process group and killing the group (R1 (15): no `timeout` on macOS).
 - **Counting** (FR-011): `claude` exited 0 within the deadline; the stream holds exactly one `result`
-  event, with `is_error: false` and no `permission_denials`. Nothing else decides whether an arm
-  counts: what the feature does — the commit rule, Sonnet usage, the `Carried out in this session`
+  event, with `is_error: false`; for `without` and `fallback`, no `permission_denials`, and for
+  `without` one review Agent call per story (it is the comparison's baseline, so a missing review there
+  is noise, not the preset's failure); and the `init` event shows the isolation held (output style
+  `default`, no MCP server, only Claude Code's built-in plugins — the user's hooks do not show there,
+  R1 (12) is the evidence for them). Nothing else decides whether an arm counts: what the feature does — the commit rule, Sonnet usage, the `Carried out in this session`
   line, the reviews, the fallback's absence of Agent calls — is judged by SC-003, SC-005 and SC-007 on
   a counted run, so a rerun cannot hide a worker that misbehaved. A rerun forced by a `versions.txt`
   mismatch counts towards the two reruns. An arm that does not count is rerun, at most twice
@@ -162,12 +165,15 @@ Observations are dated and name the versions they ran on (constitution III).
   to `tests_heldout/`, a directory the fixture does not use, and run alone (`heldout.txt`).
 - **Outputs**: `status`, `stream.jsonl`, `usage.txt` (`costUSD` per model and the sum; the first and
   last `five_hour.utilization` beside them, R1 (14)), `heldout.txt`, `suite.txt`, `versions.txt`
-  (date; Claude Code, Spec Kit, git, uv, Python, pytest, ruff; the main model ID and its effort; the
+  (date; this checkout's commit; Claude Code, Spec Kit, git, uv, Python, pytest, ruff; the main model
+  ID and its effort; the
   environment allowlist and git isolation; the `init` event's output style, plugin and MCP-server
-  counts, and built-in skills), `models.txt` (every model ID in `modelUsage` with its effort).
-- **SC-003**: `tests/eval/attribution.py <out-dir>` lists the main session's (no
-  `parent_tool_use_id`, R1 (1)) Write, Edit and NotebookEdit calls not on `tasks.md` (exit 1 if
-  any), then its Bash commands.
+  counts, and built-in skills), `models.txt` (every model ID in `modelUsage` with its effort, and the Agent calls per `model`
+  value), `commits.txt` (`git log --name-only` from the setup commit), and the scratch repository in
+  `repo/`.
+- **SC-003**: `tests/eval/attribution.py <out-dir>` checks every clause of SC-003 from `stream.jsonl`
+  (main-session calls have no `parent_tool_use_id`, R1 (1)) and `commits.txt`, and lists the main
+  session's Bash commands for the reviewer.
 - **Comparison**: every arm's `versions.txt` must match `without`'s but for the date; otherwise the
   comparison is refused and the arms are rerun. Worker models differ between arms by design and live
   in `models.txt`.

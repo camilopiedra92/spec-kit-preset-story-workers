@@ -28,7 +28,7 @@ contract, and the validity of the eval.
 ## Requirement Consistency
 
 - [x] CHK010 Does FR-004's marking rule agree with core's "**Validation checkpoints**: Verify each phase completion before proceeding"? [Consistency, Spec §FR-004]
-- [ ] CHK011 Is "The main session writes no code itself" consistent with the main session editing `tasks.md`, committing, and installing anything a project's own instructions require? [Consistency, Spec §FR-006, §SC-003]
+- [x] CHK011 Is "The main session writes no code itself" consistent with the main session editing `tasks.md`, committing, and installing anything a project's own instructions require? [Consistency, Spec §FR-006, §SC-003]
 - [x] CHK012 Is the review rule (FR-005) consistent with a project whose instructions call for no review at all? [Consistency, Spec §FR-005, Constitution IV]
 
 ## Acceptance Criteria Quality

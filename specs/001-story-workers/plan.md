@@ -27,7 +27,8 @@ pytest-timeout through uv.
 **Storage**: N/A.
 
 **Testing**: `tests/check.sh`, the one command CI runs: ruff (lint and format), mypy, pytest (for
-`attribution.py`, and `run.sh`'s refusals and counting driven against stub `claude` streams), then
+`attribution.py`, `bounded.py`, and `run.sh`'s refusals and counting driven against stub `claude`
+streams), then
 `tests/compose.sh`. The eval and the probes run by hand: they call a model and spend usage.
 
 **Target Platform**: projects using Spec Kit with Claude Code; other agents fall back to core.
@@ -40,8 +41,8 @@ pytest-timeout through uv.
 of the archive.
 
 **Scale/Scope**: one fragment (~60 lines), a composition test, an eval harness with a two-story
-fixture, eleven probe runs over ten observations, two small Python modules with their tests; three changes in dotfiles and one
-commit per approved project at rollout.
+fixture, eleven probe runs over ten observations, two small Python modules with their tests; the ruleset in dotfiles at scaffold, three more
+dotfiles changes and one commit per approved project at rollout.
 
 ## Constitution Check
 
@@ -105,7 +106,7 @@ check), `docs/claude-settings.md` (the effort exception), and `github/repos.json
 ruleset, at scaffold, as soon as CI exists).
 
 **Structure Decision**: mirrors `spec-kit-preset-constitution-authoring` (fragment, `tests/compose.sh`,
-CI pinned and latest), with the eval and probes beside it under `tests/`. The Python module gets the
+CI pinned and latest), with the eval and probes beside it under `tests/`. The Python modules get the
 linter, formatter, type checker and tests at scaffold, as a new project does.
 
 ## Phases after this plan
