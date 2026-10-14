@@ -80,9 +80,9 @@ Verification".
 
 **Alternative measured and not adopted.** Hand each phase to a Sonnet worker, with the main
 session verifying in its own runs before marking `[X]`. Not adopted because SC-001 failed: on this
-fixture the Opus share (main session and reviews) alone cost more than core's whole run. A remeasure needs a
-fixture whose phases carry enough work for delegation to pay for its per-phase verification, and
-that is a new feature with its own spec.
+fixture the Opus share (main session and reviews) alone cost more than core's whole run. A
+remeasure needs a fixture whose phases carry enough work for delegation to pay for its per-phase
+verification, and that is a new feature with its own spec.
 
 **Raw outputs.** `tests/eval/results/2026-10-14/` on the tag: each arm's `status`, `usage.txt`,
 `heldout.txt`, `suite.txt`, `versions.txt`, `models.txt`, `commits.txt` and `report.txt`, plus

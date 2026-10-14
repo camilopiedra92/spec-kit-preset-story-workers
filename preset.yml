@@ -8,6 +8,7 @@ schema_version: "1.0"
 preset:
   id: "story-workers"
   name: "Story workers"
+  # Pre-release: measured on 2026-10-14 and not adopted (README); no version is tagged.
   version: "0.1.0"
   description: "/speckit-implement hands each phase of tasks.md to a worker subagent on Sonnet; the main session verifies, reviews and decides, and falls back to core when a worker cannot carry on"
   author: "camilopiedra92"

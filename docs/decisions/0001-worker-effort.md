@@ -1,6 +1,7 @@
 # 0001. The worker's effort is set on its call
 
-- Status: accepted
+- Status: accepted for the measured design, which was not adopted (README, eval of 2026-10-14):
+  it binds a remeasure that keeps the worker, and takes effect only if one is adopted
 - Date: 2026-10-13
 - Source: [research.md R7](../../specs/001-story-workers/research.md#r7-the-workers-effort-is-set-this-is-an-exception)
 
@@ -30,11 +31,11 @@ inherits: it should think as hard as the session the owner chose.
 
 ### Consequences
 
-- The one exception to the owner's policy; dotfiles' `docs/claude-settings.md` names it and links
-  here (feature 001, T035).
-- The revisit the policy asks for is built in: the eval reruns at every release that changes a
-  rule (constitution III) and records each model's effort in `versions.txt`, and the probes check
-  that the call's effort still applies (R1 5 and 8).
+- On a release, the one exception to the owner's policy: dotfiles' `docs/claude-settings.md` is to
+  name it and link here (feature 001, T035; not done, as 001 was not adopted).
+- The revisit the policy asks for is built in: the eval reruns whenever a rule changes
+  (constitution III) and records each model's effort in `versions.txt`, and the probes check that
+  the call's effort still applies (R1 5 and 8; both held on Claude Code 2.1.299).
 - A later feature that wants another level for the worker reopens this record with an eval, not
   by editing the fragment.
 
