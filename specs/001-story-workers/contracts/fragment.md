@@ -57,13 +57,17 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
 
 ## `tests/eval/run.sh <without|with|fallback> <out-dir>`
 
-- Refuses: an unknown arm, an existing `<out-dir>`, a checkout whose `git status --porcelain` is not
+- Refuses: an unknown arm, an existing `<out-dir>` or one inside this checkout (its `CLAUDE.md`
+  would load into the run), a checkout whose `git status --porcelain` is not
   empty (`.gitignore` keeps tool caches and the virtualenv out of it), a missing
   `claude`, `specify`, `uv`, `git`, `python3` or `jq`.
-- Builds a scratch copy of `fixture/` (which carries its `uv.lock` and `.specify/feature.json`),
+- Builds a scratch copy of `fixture/` as git tracks it, ignored files left out (it carries its
+  `uv.lock` and `.specify/feature.json`),
   `git init`, `specify init --here --force --integration claude`, checks `.specify/feature.json`
   survived; for `with` and `fallback`, installs this checkout's `git archive` of HEAD served from
-  localhost, with `SPECKIT_PYTHON_EXECUTABLE` set; commits.
+  localhost, with `SPECKIT_PYTHON_EXECUTABLE` set; checks the composed skill has the `## Story workers`
+  section exactly when the arm installs the preset (else not counted, before the agent runs);
+  commits.
 - Every step after the refusals — `specify init`, the preset install, the setup commit, the agent,
   the suite and the held-out run — runs in the same clean environment, and each under its own
   deadline (3600 s for the agent, 600 s for each other step): `env -i` passing only `HOME`, `USER`, `LOGNAME`, `PATH`, `TMPDIR`,
@@ -81,13 +85,14 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
   retried. Reruns are the caller's (quickstart).
 - On a counted arm: runs the project's suite (`suite.txt`), then copies `heldout/` to
   `tests_heldout/` and runs it alone (`heldout.txt`: `passed <n>/<total>` from its junit report, then
-  the output); writes `usage.txt` (`<model> <costUSD>` per model, `sum <total>`, `five_hour <first>
+  the output); writes `usage.txt` (`<model> <costUSD> cache_read <n> cache_creation <n>` per model, `sum <total>`, `five_hour <first>
   <last>`), `versions.txt` (this checkout's commit, tools, the main model ID and its effort, the `init` event's output
   style, plugin and MCP-server counts), `models.txt` (`model <id>` for every model in `modelUsage`,
   the main session's model and effort, and `agent <subagent_type> <model|-> <effort|-> <count>` for
   the main session's Agent calls), `commits.txt` (`git log --reverse --format='commit %H%n%s'
   --name-only <setup>..HEAD`: the commits after the setup commit, each a header, its subject and its
-  files); `versions.txt` is `key: value` lines; `setup.log` and `claude.stderr` are kept for
+  files); `versions.txt` is `key: value` lines; `report.txt` is the completion report (the `result`
+  event's text); `setup.log` and `claude.stderr` are kept for
   diagnosis; the scratch repository is kept in `<out-dir>/repo`
   and `status` = `ok`.
 
@@ -100,7 +105,8 @@ the feature's `tasks.md`; a Sonnet entry in `modelUsage`; every main-session Age
 is the first line of at least one of their prompts; and none starts while another has no `tool_result`
 yet (R1 17); the commits after the setup commit that
 change more than `tasks.md` (at least one, each starting with `fixture:`); the `Carried out in this
-session: none` line; no `permission_denials`. Then it lists the main session's Bash commands. Exit 0
+session: none` line (list, quote, heading and emphasis marks and a closing stop aside); the phase
+headings compared with heading and emphasis marks aside; no `permission_denials`. Then it lists the main session's Bash commands. Exit 0
 when every clause holds, 1 when one does not, 2 when an input cannot be read or `status` is not
 `ok`.
 

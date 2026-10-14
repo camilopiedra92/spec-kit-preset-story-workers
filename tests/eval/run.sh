@@ -26,6 +26,9 @@ for tool in claude specify uv git python3 jq; do
 done
 [ ! -e "$2" ] || refuse "$2 exists: every try gets a directory of its own"
 root=$(git -C "$here" rev-parse --show-toplevel)
+case $2 in /*) target=$2 ;; *) target=$(pwd -P)/$2 ;; esac
+# A CLAUDE.md in any ancestor of the scratch repository loads into the run.
+case $target/ in "$root"/*) refuse "$2 is inside $root: its CLAUDE.md would load into the run" ;; esac
 # The `with` arms install HEAD's archive and versions.txt names HEAD: a change
 # not in HEAD would be measured under a commit that does not contain it.
 [ -z "$(git -C "$root" status --porcelain)" ] ||
@@ -34,7 +37,9 @@ root=$(git -C "$here" rev-parse --show-toplevel)
 mkdir -p "$2"
 out=$(cd "$2" && pwd)
 repo=$out/repo
-cp -R "$here/fixture" "$repo"
+# The fixture as committed: files git ignores (a stray .venv, tool caches) stay out.
+mkdir "$repo"
+(cd "$here" && git ls-files -z fixture | tar --null -T - -cf -) | tar -xf - -C "$repo" --strip-components 1
 feature=$(jq -r .feature_directory "$repo/.specify/feature.json")
 
 # Every step below runs in this environment: nothing of the caller's but what
@@ -89,6 +94,13 @@ if [ "$arm" != without ]; then
   done
   step "preset add" specify preset add --from "http://127.0.0.1:$port/preset.zip"
 fi
+# What the arm installs is what it measures: checked before the costly run.
+composed=no
+if grep -q '^## Story workers' .claude/skills/speckit-implement/SKILL.md 2> /dev/null; then
+  composed=yes
+fi
+[ "$composed" = "$([ "$arm" = without ] && echo no || echo yes)" ] ||
+  not_counted "setup: preset not composed as the arm needs (Story workers section: $composed)"
 step "git add" git add -A
 step "setup commit" git commit -qm "fixture: setup"
 setup=$(git rev-parse HEAD)
@@ -99,7 +111,7 @@ flags=(-p "/speckit-implement" --model claude-opus-5-5 --effort medium
   --output-format stream-json --verbose)
 [ "$arm" != fallback ] || flags+=(--disallowedTools Agent)
 rc=0
-clean 3600 claude "${flags[@]}" > "$out/stream.jsonl" 2> "$out/claude.stderr" || rc=$?
+clean 3600 claude "${flags[@]}" < /dev/null > "$out/stream.jsonl" 2> "$out/claude.stderr" || rc=$?
 
 # Counting (R6): only whether this run is a measurement. What the feature does
 # is judged on a counted run by SC-003, SC-005 and SC-007, so a rerun cannot
@@ -117,13 +129,19 @@ if [ "$arm" != with ]; then
   denials=$(q '.[] | select(.type == "result") | .permission_denials // [] | length')
   [ "$denials" -eq 0 ] || not_counted "permission denial: $denials"
 fi
+# The Agent tool's default subagent_type is general-purpose.
 main_agent_calls='[.[] | select(.type == "assistant" and .parent_tool_use_id == null)
-  | .message.content[]? | select(.type == "tool_use" and .name == "Agent") | .input]'
+  | .message.content[]? | select(.type == "tool_use" and .name == "Agent")
+  | {id} + .input + {subagent_type: (.input.subagent_type // "general-purpose")}]'
 if [ "$arm" = without ]; then
   # The comparison's baseline needs the reviews the fixture asks for: a
-  # `general-purpose` call per story (Explore and the like are not reviews).
+  # `general-purpose` call per story that returned without an error (Explore
+  # and the like are not reviews).
   stories=$(grep -c '^### User Story' "$repo/$feature/spec.md" || true)
-  reviews=$(q "$main_agent_calls | map(select(.subagent_type == \"general-purpose\")) | length")
+  reviews=$(q "($main_agent_calls | map(select(.subagent_type == \"general-purpose\") | .id)) as \$ids
+    | [.[] | select(.type == \"user\" and .parent_tool_use_id == null) | .message.content[]?
+      | select(.type == \"tool_result\" and (.is_error // false | not)) | .tool_use_id
+      | select(. as \$id | \$ids | index(\$id))] | unique | length")
   [ "$reviews" -ge "$stories" ] || not_counted "reviews: $reviews of $stories"
 fi
 init='first(.[] | select(.type == "system" and .subtype == "init"))'
@@ -153,7 +171,9 @@ print("passed %d/%d" % (total - n("failures") - n("errors") - n("skipped"), tota
 
 result='.[] | select(.type == "result")'
 {
-  q "$result | .modelUsage | to_entries[] | \"\(.key) \(.value.costUSD)\""
+  # Cache tokens beside the cost: arms run back to back, so a later one may
+  # read a prefix an earlier one wrote.
+  q "$result | .modelUsage | to_entries[] | \"\(.key) \(.value.costUSD) cache_read \(.value.cacheReadInputTokens // 0) cache_creation \(.value.cacheCreationInputTokens // 0)\""
   q "[$result | .modelUsage[] | .costUSD] | \"sum \(add)\""
   q '[.[] | select(.type == "rate_limit_event") | .rate_limit_info.unifiedWindows.five_hour.utilization]
     | "five_hour \(first) \(last)"'
@@ -188,4 +208,6 @@ semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
 } > "$out/models.txt"
 
 clean 600 git log --reverse --format='commit %H%n%s' --name-only "$setup..HEAD" > "$out/commits.txt"
+# The completion report, for SC-005's task ids and SC-003's line.
+q "$result | .result" > "$out/report.txt"
 echo ok > "$out/status"

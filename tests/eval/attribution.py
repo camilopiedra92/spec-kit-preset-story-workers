@@ -17,8 +17,14 @@ from pathlib import Path
 from typing import Any
 
 WRITE_TOOLS = {"Write": "file_path", "Edit": "file_path", "NotebookEdit": "notebook_path"}
-# The report line, whatever markup the model wraps it in.
-REPORT_LINE = re.compile(r"^Carried out in this session:\s*(.*?)\s*$", re.MULTILINE)
+# The report line, whatever markup the model wraps it in: emphasis and code
+# marks are stripped first, then list, quote and heading marks and a closing stop.
+REPORT_LINE = re.compile(r"^[\s>#-]*Carried out in this session:\s*(.*?)[\s.]*$", re.MULTILINE)
+
+
+def heading(line: str) -> str:
+    """A phase heading's text, with the heading and emphasis marks around it dropped."""
+    return line.strip().lstrip("#*").rstrip("*").strip()
 
 
 class Unreadable(Exception):
@@ -95,9 +101,10 @@ def check(
     clauses.append(("every worker call in the foreground", ", ".join(background) or None))
 
     firsts = {
-        next(iter(str(w["input"].get("prompt", "")).strip().splitlines()), "") for w in workers
+        heading(next(iter(str(w["input"].get("prompt", "")).strip().splitlines()), ""))
+        for w in workers
     }
-    unopened = [h for h in headings if h not in {f.strip() for f in firsts}]
+    unopened = [h for h in headings if heading(h) not in firsts]
     clauses.append(("each phase opens a worker's brief", "; ".join(unopened) or None))
 
     clauses.append(("no worker starts while another is open", overlap(events, workers)))

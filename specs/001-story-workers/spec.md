@@ -256,7 +256,8 @@ its own.
   outside the release archive (constitution V), with the steps to rerun them.
 - **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline, and its result
   reports no error — and, for `without` and `fallback`, no permission denial and, for `without`, at
-  least one review call (an Agent call with `subagent_type: "general-purpose"`) per user story; and the `init` event shows the hermetic isolation held (output style `default`,
+  least one review call (an Agent call with `subagent_type: "general-purpose"`, the tool's default,
+  that returned without an error) per user story; and the `init` event shows the hermetic isolation held (output style `default`,
   no MCP server, no plugin outside Claude Code's built-in ones); otherwise the harness
   records it as not counted, with the reason, and writes no usage or held-out result for it.
 - **FR-012**: The probes MUST rerun each observation of research.md R1 the design rests on that can
@@ -292,7 +293,8 @@ its own.
   NotebookEdit call the main session makes targets the feature's `tasks.md` (its shell commands are
   listed beside the result, for a reviewer to confirm none writes code); `modelUsage` has a Sonnet
   entry; every worker call (`model: "sonnet"`) is in the foreground (`run_in_background: false`),
-  each phase heading of the fixture's `tasks.md` is the first line of at least one of their briefs, and none
+  each phase heading of the fixture's `tasks.md` is the first line of at least one of their briefs
+  (heading and emphasis marks aside), and none
   starts while another has not returned its result (FR-001); among the commits after the setup commit, at least one changes more than `tasks.md`, and
   every such commit's message starts with `fixture:`; the completion report says `Carried out in this
   session: none`; and the result has no `permission_denials` (a worker reaching for a tool outside
