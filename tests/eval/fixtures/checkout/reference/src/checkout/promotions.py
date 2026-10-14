@@ -41,9 +41,6 @@ def _stacked(
     discounts = [0] * len(items)
 
     def take(i: int, amount: int) -> None:
-        # The spec states no case where a line's net would go below zero (two
-        # buy-X-get-Y on one SKU could); clamping keeps every amount a valid price.
-        amount = min(amount, nets[i])
         nets[i] -= amount
         discounts[i] += amount
 

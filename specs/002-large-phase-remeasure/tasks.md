@@ -74,7 +74,7 @@ finding, the oracle passing, and (later, in US3's eval) a `without` run missing 
 
 - [X] T012 [US1] Write `tests/eval/fixtures/checkout/reference/src/checkout/` implementing T008's interface to T007's spec
 - [X] T013 [US1] Prove the oracle: `tests/eval/oracle.sh --write-n checkout` passes, recording `tests/eval/fixtures/checkout/heldout/N` (data model, "Held-out score"); commit it, then `tests/eval/oracle.sh checkout` passes; then for each story, a wrong version in a scratch copy (tax rounded half-up; stacking order swapped; refunds without largest remainder) turns at least one of its held-out tests red
-- [ ] T014 [US1] Fresh-context review of the held-out tests (FR-002): a reviewer that did not write them checks each against its quoted spec text, the closed list of difficulty sources and the ambiguity test; write its findings and how each was resolved to `specs/002-large-phase-remeasure/heldout-review.md`; close every finding (a fresh review of the changed test finds it settled, or the recorded reason for leaving it unchanged sound); rerun T013 after any change
+- [X] T014 [US1] Fresh-context review of the held-out tests (FR-002): a reviewer that did not write them checks each against its quoted spec text, the closed list of difficulty sources and the ambiguity test; write its findings and how each was resolved to `specs/002-large-phase-remeasure/heldout-review.md`; close every finding (a fresh review of the changed test finds it settled, or the recorded reason for leaving it unchanged sound); rerun T013 after any change
 
 **Checkpoint**: `tests/check.sh` green; T009's counts in range; `heldout-review.md` has no open finding; a fresh review of US1 against spec US1 and FR-001–FR-002, its findings fixed.
 
