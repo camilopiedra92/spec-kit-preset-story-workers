@@ -187,6 +187,9 @@ its own.
 - **The project defines its own `general-purpose` agent**: it is used for workers and reviews, with
   its own prompt; the calls' model and effort still apply (observed, R1).
 - **The main session is already on the smaller model**: the hand-off still happens; not measured.
+- **The project is not a git repository**: core runs without git, the hand-off cannot (per-task
+  commits, the diff from a recorded HEAD, the baseline worktree): the run falls back to core (FR-007).
+  Not measured: the eval's fixture is a git repository.
 
 ## Requirements *(mandatory)*
 
@@ -235,8 +238,10 @@ its own.
   tasks a worker reported finding — and its commits of them; running the suite, the static checks or
   core's extension hooks is not writing code.
 - **FR-007**: When no worker can carry on — no Agent tool, a worker's error (a usage limit included)
-  or missing report, or FR-006's bound — the main session MUST carry out the remaining tasks as core
-  does and say which and why in the completion report (constitution IV). The completion report always
+  or missing report, or a project that is not a git repository (the hand-off's commits, diff and
+  baseline need git) — the main session MUST carry out the remaining tasks as core does and say which
+  and why in the completion report (constitution IV). FR-006's bound is narrower: only that phase's
+  remaining items run in the main session, and the next phase goes to a worker as usual. The completion report always
   carries the line `Carried out in this session: none`, or `Carried out in this session:` followed by
   the task ids and, for fix items, the phase and a short name of each.
 - **FR-008**: The fragment MUST name each core rule it narrows — "For completed tasks, make sure to

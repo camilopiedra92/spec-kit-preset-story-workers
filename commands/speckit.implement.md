@@ -11,8 +11,9 @@ phase's worker, one after another, since two workers would write the same worktr
 
 **The call.** Start each worker with the Agent tool, `subagent_type: "general-purpose"`,
 `model: "sonnet"`, `effort: "medium"` and `run_in_background: false`, so its report is in hand
-before you verify. With no Agent tool, or when the call returns an error, go to **Fallback**
-below: core's own behaviour.
+before you verify. With no Agent tool, when the call returns an error, or when the project is not a
+git repository (the commits, diffs and baseline below need git), go to **Fallback** below: core's
+own behaviour.
 
 **The brief.** It opens with the phase's heading as `tasks.md` writes it, then carries: the phase's
 tasks (for a fix, the finding; on resume, the uncommitted diff); the feature directory; the suite
@@ -20,7 +21,8 @@ and static-check commands, from the project's instructions, else `plan.md`'s Tec
 what earlier workers finished. It tells the worker to follow core's "Load and analyze the
 implementation context", "Project Setup Verification" (first phase only), "Execute
 implementation", "Implementation execution rules" and "Progress tracking and error handling" steps
-of `.claude/skills/speckit-implement/SKILL.md`; that the worker commits each task in a commit of its
+of `.claude/skills/speckit-implement/SKILL.md`, whose Story workers section is the main session's,
+not the worker's; that the worker commits each task in a commit of its
 own; that it follows a call a project hook blocks, or leaves that task unfinished with the hook's
 message in its report; and that it does not edit `tasks.md` (core's "mark the task off as [X]" in
 those steps is yours), start a review or start another worker.
@@ -50,7 +52,7 @@ writing code.
 
 **Reviews.** Start any review the user's or the project's instructions, or a command, call for in a
 fresh context: `subagent_type: "general-purpose"`, with `model` set to this session's model family
-(`opus`, `sonnet`, `haiku`) and no `effort`, so it thinks as hard as this session. Never in a
+(for example `opus`) and no `effort`, so it thinks as hard as this session. Never in a
 worker. Where no fresh context can be started, the review does not run and the completion report
 says so: a review by the context that wrote the code is not one.
 
@@ -61,8 +63,10 @@ which case core's "Halt execution if any non-parallel task fails" applies and th
 report.
 
 **Fallback.** When no worker can carry on (no Agent tool, a worker's error, a usage limit included,
-a missing report, or the bound of two fix hand-offs), carry out the remaining tasks in this session
-as core does, and say which and why in the completion report. The completion report always carries
+a missing report, or a project that is not a git repository), carry out the remaining tasks in this
+session as core does, and say which and why in the completion report. The bound of two fix
+hand-offs is narrower: it moves only that phase's remaining items into this session, and the next
+phase goes to a worker as usual. The completion report always carries
 the line `Carried out in this session: none`, or `Carried out in this session:` followed by the
 task ids and, for fix items, the phase and a short name of each.
 

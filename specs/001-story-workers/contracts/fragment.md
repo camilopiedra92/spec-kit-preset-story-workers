@@ -2,8 +2,9 @@
 
 ## `commands/speckit.implement.md`, appended to core `speckit-implement`
 
-A section `## Story workers`. `tests/compose.sh` greps the composed skill (joined into one line
-first, so rewrapping does not fail it) for each quoted phrase as a fixed string (`grep -F`: `[X]`
+A section `## Story workers`. `tests/compose.sh` greps the fragment (joined into one line first, so
+rewrapping does not fail it; its tail check has already tied the composed skill to the fragment, and
+core's own text would satisfy a grep of the narrowed rules on the composed skill) for each quoted phrase as a fixed string (`grep -F`: `[X]`
 and `[P]` are not character classes). `tests/core-anchors.sh <skill-file>` greps a core skill the
 same way for each narrowed rule and each step the brief names, and exits 1 naming any missing;
 `tests/compose.sh` runs it on core's skill as installed, before the preset is added.
@@ -42,8 +43,9 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
 8. **Hooks**: a call a project hook blocks is the worker's to follow or report; the main session
    never makes it itself, also in the fallback: the task is not handed off again, stays unmarked, is
    reported, and the next phase starts without it.
-9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, or the
-   bound of 6: "carry out the remaining tasks in this session" as core does, and say which and why in
+9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, or a
+   project that is not a git repository: "carry out the remaining tasks in this session" as core does
+   (the bound of 6 is narrower: that phase's remaining items only, then the next phase goes to a worker), and say which and why in
    the completion report. The completion report always carries the line `Carried out in this session:
    none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.
 10. **Resume**: the phase starts after the last commit whose message contains `tasks: mark phase
