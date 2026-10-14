@@ -861,3 +861,43 @@ def test_a_preset_ref_is_refused_where_it_cannot_apply(
     assert result.returncode == 2
     assert "preset" in result.stderr
     assert not (tmp_path / "out").exists()
+
+
+# 003: a state may extend another: the base's layers first, then its own.
+
+
+def test_a_state_extends_its_base(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    add_state(checkout)
+    child = checkout / "tests/eval/fixtures/greet/states/done-1-dirty"
+    (child / "committed/specs/001-greet").mkdir(parents=True)
+    (child / "committed/specs/001-greet/tasks.md").write_text("# Tasks\n\n- [X] T001 b\n")
+    (child / "uncommitted").mkdir()
+    (child / "uncommitted/NOTES.md").write_text("notes\n")
+    (child / "extends").write_text("done-1\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "child state"], check=True)
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "with", out, state="done-1-dirty")
+    assert result.returncode == 0, result.stdout + result.stderr
+    repo = out / "repo"
+    # The base's committed file, the child's tasks.md over the base's.
+    assert (repo / "src/greet.py").read_text() == "def greet() -> str:\n    return 'hi'\n"
+    assert (repo / "specs/001-greet/tasks.md").read_text() == "# Tasks\n\n- [X] T001 b\n"
+    # Both uncommitted layers, uncommitted.
+    seen = (stubs / "status.seen").read_text().splitlines()
+    assert sorted(seen) == [" M specs/001-greet/spec.md", "?? NOTES.md"]
+
+
+def test_a_state_extending_a_missing_state_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    child = checkout / "tests/eval/fixtures/greet/states/orphan"
+    child.mkdir(parents=True)
+    (child / "extends").write_text("no-such-state\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "orphan"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out", state="orphan")
+    assert result.returncode == 2
+    assert "no-such-state" in result.stderr

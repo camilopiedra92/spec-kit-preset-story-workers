@@ -91,10 +91,16 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   so it is expected to brief Phase 1 and fail `first brief opens the first unfinished phase`; its
   0.1.0 handling of uncommitted changes (a worker to finish or discard them) is expected to fail
   `uncommitted changes untouched`. The comparison is the two runs' `resume_check.py` outputs side by
-  side; both are directional (one run each). The rule's parts the state does not exercise (a task
-  that changes the feature directory, carried out and committed by the main session; a run sent to
-  core by uncommitted work outside the feature directory) are recorded in the README for the
-  owner's acceptance, each with its reason.
+  side; both are directional (one run each).
+- **The rule's other parts, measured too** (owner, 2026-10-14): two states extend `phase-2-done`
+  (a state's `extends` file names its base; `run.sh` and `resume_check.py` lay the chain base
+  first). `phase-2-done-doc-task` adds T031, a Phase 4 task that writes `specs/001-checkout/plan.md`:
+  checked by `feature-directory tasks carried out in this session` (on the report's `Carried out in
+  this session:` line, the file changed, in no commit). `phase-2-done-dirty` adds an uncommitted
+  `NOTES.md` at the project root: the run is core's, checked by `no worker started` and `report names
+  the paths outside the feature directory`, the other checks as for any run. One `0.2.0` run each;
+  no `v0.1.0` arm, the comparison being `phase-2-done`'s. *Rejected*: recording these parts for the
+  owner's acceptance unmeasured, since a fixture state measures them for one run each.
 
 ## R4. Uncommitted work: a clean tree outside the feature directory
 
@@ -125,5 +131,6 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   directory against its brief is seen in the commit reading when it commits, and the finding is
   this session's to carry out as core does; an uncommitted write there is not seen. Tasks
   that change the feature's own documents (a quickstart, a contract) are carried out in the main
-  session. The fallback on a dirty tree is core itself, so it is not measured (constitution IV's
-  source); the eval measures the inside case: an uncommitted edit to the feature's spec.
+  session. Both are measured (R3): the fallback on a dirty tree by `phase-2-done-dirty`, a
+  task that changes the feature's documents by `phase-2-done-doc-task`, and the inside case by
+  `phase-2-done`'s uncommitted edit to the feature's spec.

@@ -45,6 +45,9 @@
 
 ## `tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <arm> <out-dir>`
 
+A state may hold an `extends` file naming the state it is laid over; `run.sh` lays the chain base
+first (both parts), refusing a missing state in it or a chain deeper than 5.
+
 `--preset <ref>` installs the preset as `<ref>` archives it (default `HEAD`); refused (exit 2) with
 the `without` arm or an unknown ref. `versions.txt` adds `preset: <ref> <sha>`, a pre-run key.
 
@@ -60,10 +63,10 @@ its old path too.
 
 Reads `status`, `versions.txt` (`fixture`, `state`, `commit`), `commits.txt`, `stream.jsonl`,
 `heldout.txt`, `report.txt`, `repo/<feature>/tasks.md` (the run's final one), and the fixture and
-its state at the run's commit. Prints one line per check (`ok` / `FAIL …`): `finished phases
-untouched` (a file the state's `committed/` holds that no unfinished phase's task names is in no
-commit, and the run's tree holds it as the state does), `uncommitted changes untouched` (each file
-of `uncommitted/` is in no commit, and the tree holds it as the state does), `first
-brief opens the first unfinished phase`, `no brief opens a finished phase`, `every task marked`, `no
-question asked`, `held-out N of N`, `report names the start` (FR-005's whole line). Exit 0 all ok,
-1 one fails, 2 unreadable input or a status other than `ok`.
+its state's layers at the run's commit. Prints nine lines (`ok` / `FAIL …`): `finished phases
+untouched`, `uncommitted changes untouched`, `first brief opens the first unfinished phase`, `no
+brief opens a finished phase`, `every task marked`, `no question asked`, `held-out N of N`, `report
+names the start` (FR-005's whole line), `feature-directory tasks carried out in this session`. When
+the state leaves a path uncommitted outside the feature directory, the run is core's: `no worker
+started` and `report names the paths outside the feature directory` replace the first-brief and
+start-line checks. Exit 0 all ok, 1 one fails, 2 unreadable input or a status other than `ok`.

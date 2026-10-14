@@ -7,7 +7,8 @@
 #         <fixture> is a directory under tests/eval/fixtures/ holding project/
 #         (what the agent gets) and heldout/ (copied in after a counted run);
 #         --baseline names a counted run whose versions this one must match;
-#         --state lays fixtures/<fixture>/states/<name>/ over the project
+#         --state lays fixtures/<fixture>/states/<name>/ over the project, after
+#         the state its extends file names
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
 #         most twice); 2 refused (fix it, do not retry): before the out-dir
 #         exists nothing is written; after, status says why
@@ -64,11 +65,27 @@ done
 fixture_rel=$(git -C "$here" rev-parse --show-prefix)$fixture_dir
 preset_sha=$(git -C "$root" rev-parse --verify --quiet "${preset:-HEAD}^{commit}") ||
   refuse "unknown preset ref '$preset'"
-if [ -n "$state" ]; then
-  case $state in */* | . | ..) refuse "unknown state '$state'" ;; esac
-  git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state/committed" 2> /dev/null ||
-    refuse "fixture '$fixture' has no committed state '$state'"
-fi
+# The state and the states it extends, base first: a state's extends file names
+# the one it is laid over (specs/003-resume-from-head, research R2).
+layers=()
+name=$state
+while [ -n "$name" ]; do
+  case $name in */* | . | ..) refuse "unknown state '$name'" ;; esac
+  git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$name" 2> /dev/null ||
+    refuse "fixture '$fixture' has no committed state '$name'"
+  [ "${#layers[@]}" -lt 5 ] || refuse "state '$state' extends more than 5 deep"
+  layers=("$name" ${layers[@]+"${layers[@]}"})
+  # No extends file: the base of the chain.
+  name=$({ git -C "$root" show "HEAD:$fixture_rel/states/$name/extends" 2> /dev/null || :; } |
+    tr -d '[:space:]')
+done
+lay() { # <committed|uncommitted>: each layer's part, as committed, base first
+  local layer
+  for layer in ${layers[@]+"${layers[@]}"}; do
+    git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$layer/$1" 2> /dev/null || continue
+    git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$layer/$1" | tar -xf - -C "$repo"
+  done
+}
 physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. included
   local dir=$1 rest=
   case $dir in /*) ;; *) dir=$PWD/$dir ;; esac
@@ -94,12 +111,9 @@ repo=$out/repo
 mkdir "$repo"
 (cd "$here/$fixture_dir" && git ls-files -z project | tar --null -T - -cf -) |
   tar -xf - -C "$repo" --strip-components 1
-if [ -n "$state" ]; then
-  # committed/ as committed in this repository, laid over the project before the
-  # setup commit; uncommitted/ comes after it (below).
-  git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$state/committed" |
-    tar -xf - -C "$repo"
-fi
+# committed/ as committed in this repository, laid over the project before the
+# setup commit; uncommitted/ comes after it (below).
+lay committed
 feature=$(jq -r .feature_directory "$repo/.specify/feature.json")
 
 # Every step below runs in this environment: nothing of the caller's but what
@@ -175,9 +189,7 @@ step "setup commit" git commit -qm "fixture: setup"
 setup=$(git rev-parse HEAD)
 # A state's uncommitted/: changes the agent finds in the working tree, as a
 # user leaves them (specs/003-resume-from-head, research R2).
-if [ -n "$state" ] && git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state/uncommitted" 2> /dev/null; then
-  git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$state/uncommitted" | tar -xf - -C "$repo"
-fi
+lay uncommitted
 measured=$(git -C "$root" rev-parse HEAD)
 
 # The versions known before the agent starts, none read from the scratch

@@ -241,7 +241,10 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
   with the first unfinished phase and no brief opens a finished one, the run exits normally with
   every task marked and no question asked, every held-out test passes, and the report carries
   FR-005's line for the phase it started at. Finished phases' files are those the state holds that
-  no unfinished phase's task names.
+  no unfinished phase's task names. Two more states, run once each with the preset, measure the
+  rule's other parts: one adds a task that changes the feature directory (carried out in the main
+  session, in no commit), one leaves a file uncommitted outside the feature directory (the run is
+  core's, no worker, the path named in the report).
 - **FR-009**: `0.2.0` MUST be released only on a passing resume eval, with the README entry,
   CHANGELOG entry and tag of constitutions III and V; then dotfiles' `sdd-init` MUST install it
   (its check seen red first) and supertrader's `main` MUST move to it and be merged into feature

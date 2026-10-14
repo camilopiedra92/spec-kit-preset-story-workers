@@ -29,6 +29,9 @@ DONE = TASKS.replace("- [ ] T001", "- [X] T001").replace("- [ ] T002", "- [x] T0
 PHASE_2 = "## Phase 2: User Story 2 - Two (Priority: P2)"
 STATE = ["tests/test_one.py", "tests/conftest.py", "src/one.py", "src/shared.py"]
 EDITED = "# Spec, edited and not committed\n"
+PLAN = "# Plan\n"
+DOC_TASK = "- [ ] T005 [US2] Record the design in `specs/001-fx/plan.md`\n"
+ALL_MARKED = DONE.replace("- [ ] T003", "- [X] T003").replace("- [ ] T004", "- [X] T004")
 
 
 @pytest.fixture
@@ -51,6 +54,17 @@ def fixtures(tmp_path: Path) -> Path:
     uncommitted = fx / "states/one-done/uncommitted/specs/001-fx"
     uncommitted.mkdir(parents=True)
     (uncommitted / "spec.md").write_text(EDITED)
+    (fx / "project/specs/001-fx/plan.md").write_text(PLAN)
+    # A state extending one-done: a task that changes the feature directory.
+    doc = fx / "states/one-done-doc"
+    (doc / "committed/specs/001-fx").mkdir(parents=True)
+    (doc / "committed/specs/001-fx/tasks.md").write_text(DONE + DOC_TASK)
+    (doc / "extends").write_text("one-done\n")
+    # A state extending one-done: uncommitted work outside the feature directory.
+    dirty = fx / "states/one-done-dirty"
+    (dirty / "uncommitted").mkdir(parents=True)
+    (dirty / "uncommitted/NOTES.md").write_text("notes\n")
+    (dirty / "extends").write_text("one-done\n")
     git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
     subprocess.run([*git, "init", "-q"], check=True)
     subprocess.run([*git, "add", "-A"], check=True)
@@ -78,7 +92,8 @@ def write_run(fixtures: Path, root: Path, **over: Any) -> Path:
     out.mkdir()
     (out / "status").write_text(over.get("status", "ok\n"))
     sha = commit_sha(fixtures)
-    (out / "versions.txt").write_text(f"commit: {sha}\nfixture: fx\nstate: one-done\narm: with\n")
+    state = over.get("state", "one-done")
+    (out / "versions.txt").write_text(f"commit: {sha}\nfixture: fx\nstate: {state}\narm: with\n")
     commits = over.get(
         "commits",
         "commit a1\nfixture: T003\ntests/test_two.py\n"
@@ -100,6 +115,9 @@ def write_run(fixtures: Path, root: Path, **over: Any) -> Path:
     final = repo / "specs/001-fx/tasks.md"
     final.parent.mkdir(parents=True, exist_ok=True)
     (repo / "specs/001-fx/spec.md").write_text(over.get("spec", EDITED))
+    (repo / "specs/001-fx/plan.md").write_text(over.get("plan", PLAN))
+    if state == "one-done-dirty":
+        (repo / "NOTES.md").write_text(over.get("notes", "notes\n"))
     final.write_text(
         over.get(
             "final", DONE.replace("- [ ] T003", "- [X] T003").replace("- [ ] T004", "- [X] T004")
@@ -124,7 +142,7 @@ def test_a_good_resume_passes_every_check(
 ) -> None:
     code, out = check(fixtures, write_run(fixtures, tmp_path), capsys)
     assert code == 0, out
-    assert out.count("ok ") == 8
+    assert out.count("ok ") == 9
 
 
 def test_a_commit_touching_a_finished_only_file_fails(
@@ -264,3 +282,90 @@ def test_an_uncommitted_change_committed_fails(
     code, out = check(fixtures, write_run(fixtures, tmp_path, commits=commits), capsys)
     assert code == 1
     assert "FAIL uncommitted changes untouched: specs/001-fx/spec.md" in out
+
+
+# A task that changes the feature directory: the main session's, never committed.
+
+DOC_FINAL = ALL_MARKED + DOC_TASK.replace("- [ ]", "- [X]")
+DOC_REPORT = (
+    "Started at phase 2: work committed before this run was covered by the whole suite, "
+    "not read as a diff, its static-check findings in the baseline.\n"
+    "Carried out in this session: T005"
+)
+
+
+def doc_run(fixtures: Path, root: Path, **over: Any) -> Path:
+    args: dict[str, Any] = {
+        "state": "one-done-doc",
+        "final": DOC_FINAL,
+        "plan": "# Plan\n\n## As built\n",
+        "report": DOC_REPORT,
+    }
+    return write_run(fixtures, root, **{**args, **over})
+
+
+def test_a_feature_directory_task_carried_out_in_this_session_passes(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out = check(fixtures, doc_run(fixtures, tmp_path), capsys)
+    assert code == 0, out
+    assert "ok feature-directory tasks carried out in this session: T005" in out
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"plan": PLAN},
+        {"commits": "commit a1\nfixture: T005\nspecs/001-fx/plan.md\n"},
+        {"report": DOC_REPORT.replace("T005", "none")},
+    ],
+    ids=["unchanged", "committed", "not-in-carried-out"],
+)
+def test_a_feature_directory_task_not_carried_out_so_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], over: dict[str, Any]
+) -> None:
+    code, out = check(fixtures, doc_run(fixtures, tmp_path, **over), capsys)
+    assert code == 1
+    assert "FAIL feature-directory tasks carried out in this session: T005" in out
+
+
+# Uncommitted work outside the feature directory: the whole run is core's.
+
+DIRTY_REPORT = (
+    "NOTES.md is uncommitted outside the feature directory, so the run was carried out as core does.\n"
+    "Carried out in this session: T003, T004"
+)
+
+
+def dirty_run(fixtures: Path, root: Path, **over: Any) -> Path:
+    args: dict[str, Any] = {"state": "one-done-dirty", "briefs": [], "report": DIRTY_REPORT}
+    return write_run(fixtures, root, **{**args, **over})
+
+
+def test_a_run_sent_to_core_passes(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out = check(fixtures, dirty_run(fixtures, tmp_path), capsys)
+    assert code == 0, out
+    assert "ok no worker started: core's run" in out
+    assert "ok report names the paths outside the feature directory" in out
+
+
+def test_a_worker_on_a_dirty_tree_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = dirty_run(fixtures, tmp_path, briefs=[f"{PHASE_2}\n\nTasks T003, T004."])
+    code, out = check(fixtures, run, capsys)
+    assert code == 1
+    assert "FAIL no worker started" in out
+
+
+@pytest.mark.parametrize(
+    "over", [{"report": "Carried out in this session: T003, T004"}, {"notes": "changed\n"}]
+)
+def test_a_dirty_path_unnamed_or_touched_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], over: dict[str, Any]
+) -> None:
+    code, out = check(fixtures, dirty_run(fixtures, tmp_path, **over), capsys)
+    assert code == 1
+    assert "NOTES.md" in out

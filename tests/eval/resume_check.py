@@ -17,7 +17,14 @@ Prints  one line per check, `ok <check>` or `FAIL <check>: <what>`:
           no question asked: no AskUserQuestion call in the stream;
           held-out N of N;
           report names the start: the fragment's `Started at phase <n>: ...` line, for
-            that phase.
+            that phase;
+          feature-directory tasks carried out in this session: each unmarked task that
+            names a file in the feature directory is on the report's `Carried out in
+            this session:` line, its files changed in the tree and in no commit.
+        When the state leaves work uncommitted outside the feature directory, the run
+        is core's: `no worker started` replaces the first-brief check, and `report names
+        the paths outside the feature directory` replaces the start line. A state may
+        extend another (its `extends` file), laid over it as run.sh lays them.
 Exit:   0 every check holds; 1 one does not; 2 unreadable input, or a run that did
         not count (status other than `ok`).
 
@@ -69,6 +76,20 @@ def state_files(fixtures: Path, commit: str, state_dir: str) -> set[str]:
     return {name.removeprefix(f"{state_dir}/") for name in listed}
 
 
+def layers(fixtures: Path, commit: str, fixture: str, state: str) -> list[str]:
+    """The state and the states it extends, base first, as run.sh lays them."""
+    chain = [state]
+    while len(chain) <= 5:
+        try:
+            base = usage.fixture_file(
+                fixtures, commit, f"{fixture}/states/{chain[0]}/extends"
+            ).strip()
+        except ValueError:
+            return chain
+        chain.insert(0, base)
+    raise Refused(f"state {state!r} extends more than 5 deep")
+
+
 def check(out: Path, fixtures: Path) -> list[str]:
     try:
         status = (out / "status").read_text().strip()
@@ -85,10 +106,20 @@ def check(out: Path, fixtures: Path) -> list[str]:
         feature = json.loads(
             usage.fixture_file(fixtures, commit, f"{project}/.specify/feature.json")
         )["feature_directory"]
-        state_dir = f"{fixture}/states/{state}"
-        tasks = usage.fixture_file(fixtures, commit, f"{state_dir}/committed/{feature}/tasks.md")
-        held = state_files(fixtures, commit, f"{state_dir}/committed") - {f"{feature}/tasks.md"}
-        left = state_files(fixtures, commit, f"{state_dir}/uncommitted")
+        dirs = [f"{fixture}/states/{name}" for name in layers(fixtures, commit, fixture, state)]
+        parts = {
+            part: {d: state_files(fixtures, commit, f"{d}/{part}") for d in dirs}
+            for part in ("committed", "uncommitted")
+        }
+
+        def layered(part: str, name: str) -> str:
+            """A state file as the last layer holding it lays it."""
+            top = next(d for d in reversed(dirs) if name in parts[part][d])
+            return usage.fixture_file(fixtures, commit, f"{top}/{part}/{name}")
+
+        tasks = layered("committed", f"{feature}/tasks.md")
+        held = set().union(*parts["committed"].values()) - {f"{feature}/tasks.md"}
+        left = set().union(*parts["uncommitted"].values())
         final = (out / "repo" / feature / "tasks.md").read_text()
         n = int(usage.fixture_file(fixtures, commit, f"{fixture}/heldout/N").strip())
         commits = parse_commits((out / "commits.txt").read_text())
@@ -97,7 +128,7 @@ def check(out: Path, fixtures: Path) -> list[str]:
         ]
         passed = re.match(r"passed (\d+)/", (out / "heldout.txt").read_text())
         report = (out / "report.txt").read_text()
-    except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, KeyError, StopIteration, subprocess.CalledProcessError) as error:
         raise Refused(str(error)) from error
     if not passed:
         raise Refused("heldout.txt has no `passed x/y` line")
@@ -115,8 +146,22 @@ def check(out: Path, fixtures: Path) -> list[str]:
 
     def as_state(part: str, name: str) -> bool:
         tree = out / "repo" / name
-        want = usage.fixture_file(fixtures, commit, f"{state_dir}/{part}/{name}")
-        return tree.is_file() and tree.read_text() == want
+        return tree.is_file() and tree.read_text() == layered(part, name)
+
+    def before(name: str) -> str | None:
+        """A file as the run found it: the state's, else the project's, else none."""
+        if name in held or f"{feature}/tasks.md" == name:
+            return layered("committed", name)
+        try:
+            return usage.fixture_file(fixtures, commit, f"{project}/{name}")
+        except ValueError:
+            return None
+
+    # Uncommitted work outside the feature directory sends the whole run to core.
+    outside = sorted(f for f in left if not f.startswith(f"{feature}/"))
+    plain = " ".join(report.replace("*", "").replace("`", "").split())
+    carried = re.search(r"Carried out in this session:(.*)", report.replace("`", ""))
+    carried_ids = set(re.findall(r"T\d+", carried.group(1))) if carried else set()
 
     committed_files = {f for c in commits for f in c.files}
     lines = []
@@ -145,11 +190,19 @@ def check(out: Path, fixtures: Path) -> list[str]:
     ]
     opened = [heading(b.split("\n", 1)[0]) for b in briefs]
     first = opened[0] if opened else "(no worker)"
-    lines.append(
-        "ok first brief opens the first unfinished phase"
-        if first == heading(title)
-        else f"FAIL first brief opens the first unfinished phase: {first!r}, not {heading(title)!r}"
-    )
+    if outside:
+        lines.append(
+            "ok no worker started: core's run"
+            if not opened
+            else f"FAIL no worker started: {first!r} with {', '.join(outside)} uncommitted"
+        )
+    else:
+        lines.append(
+            "ok first brief opens the first unfinished phase"
+            if first == heading(title)
+            else "FAIL first brief opens the first unfinished phase: "
+            f"{first!r}, not {heading(title)!r}"
+        )
     done_titles = {heading(t) for t, done, _ in all_phases if done}
     redone = sorted({o for o in opened if o in done_titles})
     lines.append(
@@ -172,12 +225,45 @@ def check(out: Path, fixtures: Path) -> list[str]:
     lines.append(
         f"ok held-out N of N ({n})" if score == n else f"FAIL held-out N of N: {score}/{n}"
     )
-    want = STARTED.format(n=number.group(1) if number else "?")
-    plain = " ".join(report.replace("*", "").replace("`", "").split())
+    if outside:
+        unnamed = [f for f in outside if f not in plain]
+        lines.append(
+            "ok report names the paths outside the feature directory"
+            if not unnamed
+            else f"FAIL report names the paths outside the feature directory: {', '.join(unnamed)}"
+        )
+    else:
+        want = STARTED.format(n=number.group(1) if number else "?")
+        lines.append(
+            "ok report names the start"
+            if want in plain
+            else f"FAIL report names the start: no line {want!r}"
+        )
+    # A task that changes the feature directory is carried out in this session and
+    # left uncommitted: changed in the tree, in no commit, on the Carried out line.
+    doc_tasks = {
+        task: [p for p in re.findall(r"`([^`]+)`", line) if p.startswith(f"{feature}/")]
+        for line in tasks.splitlines()
+        if (match := re.match(r"^- \[ \] (T\d+)", line))
+        for task in [match.group(1)]
+    }
+    doc_tasks = {t: ps for t, ps in doc_tasks.items() if ps}
+    missed = sorted(
+        t
+        for t, ps in doc_tasks.items()
+        if t not in carried_ids
+        or any(
+            p in committed_files
+            or not (out / "repo" / p).is_file()
+            or (out / "repo" / p).read_text() == before(p)
+            for p in ps
+        )
+    )
+    named = ", ".join(sorted(doc_tasks)) or "none"
     lines.append(
-        "ok report names the start"
-        if want in plain
-        else f"FAIL report names the start: no line {want!r}"
+        f"ok feature-directory tasks carried out in this session: {named}"
+        if not missed
+        else f"FAIL feature-directory tasks carried out in this session: {', '.join(missed)}"
     )
     return lines
 
