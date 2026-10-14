@@ -6,3 +6,4 @@ tests/ export-ignore
 specs/ export-ignore
 docs/ export-ignore
 CLAUDE.md export-ignore
+.gitignore export-ignore

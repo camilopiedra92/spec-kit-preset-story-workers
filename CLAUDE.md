@@ -5,6 +5,12 @@ tasks to a worker subagent on a smaller model, while the main session
 verifies, reviews and decides. Projects install it from a tag's archive. This
 repository is itself developed with Spec Kit.
 
+## Commands
+
+```bash
+tests/check.sh        # the checks CI runs
+```
+
 ## Invariants
 
 @.specify/memory/constitution.md

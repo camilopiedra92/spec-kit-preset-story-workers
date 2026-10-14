@@ -30,12 +30,13 @@ name proves only collection: stub it and rerun). Each story closes with the whol
 **Purpose**: the repository's own CI (plan, Phase 1). The Python toolchain arrives with the first
 Python file (T013): before that, mypy and pytest have nothing to check and exit non-zero.
 
-- [ ] T001 [P] Write `.gitignore` (`.venv/`, `__pycache__/`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`) and add `.gitignore export-ignore` to `.gitattributes`
-- [ ] T002 [P] Write `tests/check.sh`, the one command: runs `tests/compose.sh` (T013 adds the Python steps before it), exits non-zero on the first failure and says which
-- [ ] T003 Write `.github/workflows/ci.yml`: job `compose`, matrix `speckit: [pinned, latest]` with latest only on schedule and dispatch, `SPECKIT_PINNED: v1.1.0`, actions pinned by SHA as in `spec-kit-preset-constitution-authoring/.github/workflows/ci.yml`, installs `specify` and uv, runs `tests/check.sh`
-- [ ] T004 Add `CLAUDE.md`'s Commands section with `tests/check.sh` and the eval and probe invocations from `specs/001-story-workers/quickstart.md`, in `CLAUDE.md`
+- [X] T001 [P] Write `.gitignore` (`.venv/`, `__pycache__/`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`) and add `.gitignore export-ignore` to `.gitattributes`
+- [X] T002 [P] Write `tests/check.sh`, the one command: runs `tests/compose.sh` (T013 adds the Python steps before it), exits non-zero on the first failure and says which
+- [X] T003 Write `.github/workflows/ci.yml`: job `compose`, matrix `speckit: [pinned, latest]` with latest only on schedule and dispatch, `SPECKIT_PINNED: v1.1.0`, actions pinned by SHA as in `spec-kit-preset-constitution-authoring/.github/workflows/ci.yml`, installs `specify` and uv, runs `tests/check.sh`; triggers as the sibling's (push to `main`, pull requests, weekly schedule, dispatch)
+- [ ] T003a Push the branch and open the feature's PR as a draft, so CI runs and `compose (pinned)` exists (the owner's rule: with CI on pull requests only, the PR opens as a draft and is marked ready after the review)
+- [X] T004 Add `CLAUDE.md`'s Commands section with `tests/check.sh`, in `CLAUDE.md` (the eval and probe invocations join it with the tasks that write them, T020 and T025)
 
-**Checkpoint**: `tests/check.sh` runs and fails only on the missing `tests/compose.sh`, which US1 writes; CI runs on push and reports `compose (pinned)`.
+**Checkpoint**: `tests/check.sh` runs and fails only on the missing `tests/compose.sh`, which US1 writes; the draft PR's CI reports `compose (pinned)` (red until US1).
 
 ---
 
@@ -43,7 +44,7 @@ Python file (T013): before that, mypy and pytest have nothing to check and exit 
 
 **Purpose**: the ruleset that makes `compose (pinned)` required (constitution, Governance).
 
-- [ ] T005 In dotfiles, on a branch of its own: add `"camilopiedra92/spec-kit-preset-story-workers": {"checks": ["compose (pinned)"]}` to `~/dotfiles/github/repos.json`, run `./check.sh`, open its PR, and once merged run `bin/repo-rules.sh` so the ruleset applies (the check name exists once this branch's push has run CI, T003)
+- [ ] T005 In dotfiles, on a branch of its own: add `"camilopiedra92/spec-kit-preset-story-workers": {"checks": ["compose (pinned)"]}` to `~/dotfiles/github/repos.json`, run `./check.sh`, open its PR, and once merged run `bin/repo-rules.sh` so the ruleset applies (the check name exists once the draft PR has run CI, T003a)
 
 **Checkpoint**: the ruleset is declared; the feature's PR will wait for `compose (pinned)`.
 
@@ -96,7 +97,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 - [ ] T018 [P] [US2] Write `tests/eval/bounded.py`: runs a command in its own process group under a deadline, kills the group (SIGTERM, then SIGKILL after a grace period), exits 124 on the deadline
 - [ ] T019 [P] [US2] Write `tests/eval/attribution.py` (contract `attribution.py`)
-- [ ] T020 [US2] Write `tests/eval/run.sh` (contract `run.sh`): refusals, the clean environment for every step, git isolation, `bounded.py` deadlines (3600 s for the agent, 600 s otherwise), the arm's preset, the counting rules, the outputs, the kept `repo/`
+- [ ] T020 [US2] Write `tests/eval/run.sh` (contract `run.sh`): refusals, the clean environment for every step, git isolation, `bounded.py` deadlines (3600 s for the agent, 600 s otherwise), the arm's preset, the counting rules, the outputs, the kept `repo/`; add its and `attribution.py`'s invocations to `CLAUDE.md`'s Commands, pointing at `quickstart.md` for the full sequence
 - [ ] T021 [US2] Green run: T014–T016 pass unchanged; `tests/check.sh` passes
 
 ### The fixture and its oracle
@@ -107,7 +108,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 ### The probes
 
-- [ ] T025 [US2] Write `tests/eval/probes.sh` (contract `probes.sh`): R1 (1, 3, 4 with `sonnet` and `opus`, 5, 7, 8, 9, 10, 11, 15, 17), hermetic, printing the Claude Code version and `ok`/`FAIL` per probe; exit 1 on any failure
+- [ ] T025 [US2] Write `tests/eval/probes.sh` (contract `probes.sh`): R1 (1, 3, 4 with `sonnet` and `opus`, 5, 7, 8, 9, 10, 11, 15, 17), hermetic, printing the Claude Code version and `ok`/`FAIL` per probe; exit 1 on any failure; add its invocation to `CLAUDE.md`'s Commands
 - [ ] T026 [US2] Break each probe's expectation on purpose once (invert the expected outcome in a scratch copy) and see it go red; then `tests/eval/probes.sh` passes on the installed Claude Code (SC-006)
 
 ### The measurement and the decision
@@ -124,7 +125,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 - [ ] T030 Write `README.md`: what the preset does and what it narrows, install from the tag's archive, update, limits, the evidence (the eval entry, research R1's observations with their versions, Anthropic's multi-agent write-up), and "When not to use it" (a main session already on the smaller model; agents without subagents)
 - [ ] T031 Write `CHANGELOG.md` (Keep a Changelog), entry `1.0.0`; set `preset.yml` version `1.0.0`
-- [ ] T032 Open the feature's PR as a draft, mark it ready once a fresh review of the whole diff is back, merge with `gh pr merge --auto --squash` on green `compose (pinned)`, then tag `v1.0.0` on the merge commit and push the tag
+- [ ] T032 Mark the feature's draft PR (T003a) ready once a fresh review of the whole diff is back, merge with `gh pr merge --auto --squash` on green `compose (pinned)`, then tag `v1.0.0` on the merge commit and push the tag
 
 ---
 
