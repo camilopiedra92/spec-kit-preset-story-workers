@@ -75,15 +75,20 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
   "Agent Bash Edit Write Read Glob Grep TodoWrite" --output-format stream-json --verbose`, plus
   `--disallowedTools Agent` for `fallback`. The environment and git settings are written to
   `versions.txt`.
-- Counts the arm only as research.md R6 "Counting" says; otherwise writes `status` with the reason,
+- Counts the arm only as research.md R6 "Counting" says; otherwise writes `status` (`not counted:
+  <reason>`, a failed setup step included) with the reason,
   no `usage.txt` or `heldout.txt`, and exits 1. A refusal writes nothing and exits 2: it is fixed, not
   retried. Reruns are the caller's (quickstart).
 - On a counted arm: runs the project's suite (`suite.txt`), then copies `heldout/` to
-  `tests_heldout/` and runs it alone (`heldout.txt`: passed/total and the output); writes
-  `usage.txt`, `versions.txt` (this checkout's commit, tools, the main model ID and its effort, the `init` event's output
-  style, plugin and MCP-server counts), `models.txt` (every model ID in `modelUsage` with its effort, and
-  the Agent calls per `subagent_type` and `model` pair), `commits.txt` (`git log --name-only` from the setup commit to
-  HEAD); the scratch repository is kept in `<out-dir>/repo`
+  `tests_heldout/` and runs it alone (`heldout.txt`: `passed <n>/<total>` from its junit report, then
+  the output); writes `usage.txt` (`<model> <costUSD>` per model, `sum <total>`, `five_hour <first>
+  <last>`), `versions.txt` (this checkout's commit, tools, the main model ID and its effort, the `init` event's output
+  style, plugin and MCP-server counts), `models.txt` (`model <id>` for every model in `modelUsage`,
+  the main session's model and effort, and `agent <subagent_type> <model|-> <effort|-> <count>` for
+  the main session's Agent calls), `commits.txt` (`git log --reverse --format='commit %H%n%s'
+  --name-only <setup>..HEAD`: the commits after the setup commit, each a header, its subject and its
+  files); `versions.txt` is `key: value` lines; `setup.log` and `claude.stderr` are kept for
+  diagnosis; the scratch repository is kept in `<out-dir>/repo`
   and `status` = `ok`.
 
 ## `tests/eval/attribution.py <out-dir>`

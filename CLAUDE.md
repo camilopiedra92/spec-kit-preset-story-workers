@@ -9,7 +9,12 @@ repository is itself developed with Spec Kit.
 
 ```bash
 tests/check.sh        # the checks CI runs
+tests/eval/run.sh <without|with|fallback> <out-dir>    # one eval arm; spends real usage
+uv run python tests/eval/attribution.py <out-dir>      # SC-003 on a `with` arm
 ```
+
+The eval's whole sequence, reruns included, is in
+`specs/001-story-workers/quickstart.md`.
 
 ## Invariants
 
