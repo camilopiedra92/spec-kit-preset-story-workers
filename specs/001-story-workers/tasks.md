@@ -114,7 +114,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 ### The measurement and the decision
 
 - [ ] T027 [US2] Run the three arms as `quickstart.md` says, back to back, with every try kept; confirm `versions.txt` matches across arms
-- [ ] T028 [US2] Judge SC-001, SC-002, SC-003 (`attribution.py`), SC-005, SC-006 and SC-007 from the outputs, and write the README entry: the date, the fixture's size, every arm's outputs, reruns and reasons, `versions.txt`, `models.txt`, the probes' output, the isolation, "one counted run per arm, directional", and the limits (FR-009)
+- [ ] T028 [US2] Judge SC-001, SC-002, SC-003 (`attribution.py`), SC-005, SC-006 and SC-007 from the outputs, and write the README entry: the date, the fixture's size, every arm's outputs, reruns and reasons, `versions.txt`, `models.txt`, the probes' output, the isolation, "one counted run per arm, directional", the rules measured (the fragment at the run's commit, every section of it, the worker's brief included) and the one not measured (the non-git fallback, with its cited source), and the limits (FR-009)
 - [ ] T029 [US2] Move research.md R7 to `docs/decisions/0001-worker-effort.md` (MADR: context, options, outcome, consequences, linking R7), and point `CLAUDE.md` at `docs/decisions/`
 
 **Checkpoint**: the whole suite green; a fresh review of US2 (harness, fixture, oracle, the README entry against the raw outputs) before the decision is acted on. **Decision**: every success criterion holds → Phase 5. Any does not → the README entry alone goes to `main` in its own PR, recording the rule as measured and not adopted; tag the branch `measured-not-adopted-<date>`, leave it unmerged, and stop here.

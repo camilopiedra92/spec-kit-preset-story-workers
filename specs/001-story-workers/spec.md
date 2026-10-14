@@ -189,7 +189,9 @@ its own.
 - **The main session is already on the smaller model**: the hand-off still happens; not measured.
 - **The project is not a git repository**: core runs without git, the hand-off cannot (per-task
   commits, the diff from a recorded HEAD, the baseline worktree): the run falls back to core (FR-007).
-  Not measured: the eval's fixture is a git repository.
+  Not measured, the eval's fixture being a git repository; the source is core itself, whose
+  "Project Setup Verification" checks `git rev-parse --git-dir` before relying on git (constitution
+  III's cited source, for a rule that restates core's behaviour).
 
 ## Requirements *(mandatory)*
 
