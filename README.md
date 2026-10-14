@@ -24,6 +24,22 @@ Commit the install before the next `/speckit-implement`: from `0.2.0`, workers n
 uncommitted outside the feature directory, and a run that finds something there is carried out as
 core does.
 
+**Features in parallel, one git worktree each.** Each run stays inside its own worktree. `git
+status` reads only the worktree it runs in ([git-worktree](https://git-scm.com/docs/git-worktree):
+each worktree has its own `HEAD` and index), so uncommitted work in one feature's worktree never
+sends another's run to core. Observed on 2026-10-14 with git 2.56.0: with one worktree dirty, `git
+status --porcelain --untracked-files=all` in the other listed nothing. Each phase's baseline, its
+commits and the `tasks: mark phase` commits stay on that worktree's branch. Workers run in the main
+session's directory, so in its worktree too. Spec Kit's `.specify/.gitignore` ignores
+`.specify/feature.json`, so each worktree points at its own feature. Not measured with a full run in parallel worktrees. Three
+things to keep in mind:
+
+- The install is per branch: a branch made before the preset was installed on `main` runs as core
+  until `main` is merged into it.
+- Usage is shared: every main session and its workers draw on the same usage limits.
+- Each worktree's own uncommitted work outside its feature directory still sends that worktree's run
+  to core, naming the paths.
+
 It appends a `## Story workers` section to core `speckit-implement` and replaces nothing
 (constitution I). Each phase of `tasks.md` goes to one foreground worker started with
 `model: "sonnet"` and `effort: "medium"`; the main session marks a task `[X]` only after its own
