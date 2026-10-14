@@ -7,10 +7,11 @@
 ## Summary
 
 A preset with one fragment appended to core `speckit-implement`: each phase of `tasks.md` goes to a
-worker subagent started with `model: "sonnet"`, the main session verifies in its own runs before
+worker subagent started with `model: "sonnet"` and `effort: "medium"`, the main session verifies in its own runs before
 marking `[X]`, every fix goes back to a worker, and any review is started naming the main session's
 model. Nothing is installed in a project. The release is gated on an eval: a committed fixture
-implemented with and without the preset, compared on total usage and on held-out acceptance tests.
+implemented without the preset, with it, and with it but no Agent tool, run hermetically and
+compared on total usage and on held-out acceptance tests.
 
 ## Technical Context
 
@@ -46,9 +47,9 @@ stories, one small Python module with its tests.
 |---|---|
 | I. Append, never replace | One fragment, `strategy: "append"`, no frontmatter; it names the two core rules it narrows and `tests/compose.sh` greps core for them. |
 | II. Verified against the real CLI | `tests/compose.sh` installs a tag-shaped archive with the real CLI; CI runs `tests/check.sh` pinned on every push and pull request and against the latest release weekly. |
-| III. Behaviour is measured, not asserted | The eval (R6) runs the fixture with and without the preset; the README records usage, held-out results, runs per arm and every tool's version. The preset is released only if SC-001 and SC-002 hold. |
-| IV. Degrades to core | FR-007: no Agent tool, or a failed call before the worker's first tool use, and the session runs the tasks as core does; the fragment states it beside the hand-off. |
-| V. Released by tag | `preset.yml`, CHANGELOG and tag move together at release; `tests/compose.sh` fails if the archive carries `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `CLAUDE.md`, `pyproject.toml` or `uv.lock`. |
+| III. Behaviour is measured, not asserted | The eval (R6) runs the fixture hermetically without the preset, with it and in fallback; the README records the date, usage, held-out results, runs per arm and every tool's and model's version. The preset is released only if SC-001, SC-002 and SC-005 hold. |
+| IV. Degrades to core | FR-007 states the fallback beside the hand-off, and the eval's `fallback` arm (no Agent tool) measures it (SC-005), as IV asks where the capability can be withheld. |
+| V. Released by tag | `preset.yml`, CHANGELOG and tag move together at release; `tests/compose.sh` fails if the archive carries `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `.github/`, `CLAUDE.md`, `pyproject.toml` or `uv.lock`. |
 
 Re-checked after Phase 1: no violation; Complexity Tracking is empty.
 
@@ -83,7 +84,8 @@ tests/
     ├── test_attribution.py
     ├── fixture/                 # two-story Python feature: spec, plan, tasks, no code
     └── heldout/                 # acceptance tests, copied in only after a run ends
-.github/workflows/ci.yml         # tests/check.sh, pinned and latest
+.github/workflows/ci.yml         # job `compose`, matrix pinned/latest, runs tests/check.sh;
+                                 # `compose (pinned)` is the required check (constitution)
 pyproject.toml, uv.lock          # dev tooling only (export-ignore)
 README.md, CHANGELOG.md
 ```
@@ -98,10 +100,12 @@ gets the repository's linter, formatter, type checker and tests at scaffold, as 
    new development files; then the dotfiles ruleset for the required check, in dotfiles' own PR.
 2. **Story 1**: the composition checks first, seen red (no fragment yet; and each narrowed-rule check
    against a core copy with that rule removed), then the fragment and `preset.yml` turn them green.
-3. **Story 2**: `attribution.py` test-first; the fixture, the held-out tests and `run.sh`; one run per
-   arm; the README entry. On a fail of SC-001 or SC-002, the README entry alone goes to `main` and
+3. **Story 2**: `attribution.py` test-first; the fixture, the held-out tests and `run.sh` (its
+   refusals and counting rules driven against stub `claude` streams first); one run per arm; the README entry. On a fail of SC-001 or SC-002, the README entry alone goes to `main` and
    the branch is tagged (Clarifications).
-4. **Release** (on a pass): `preset.yml` version 1.0.0, CHANGELOG, tag `v1.0.0`; then dotfiles'
+4. **Before the PR**: research R7 moves to `docs/decisions/0001-worker-effort.md` (MADR), and the
+   project CLAUDE.md points at `docs/decisions/`.
+5. **Release** (on a pass): `preset.yml` version 1.0.0, CHANGELOG, tag `v1.0.0`; then dotfiles'
    `sdd-init` installs it, as its own change with its check.
 
 ## Complexity Tracking
