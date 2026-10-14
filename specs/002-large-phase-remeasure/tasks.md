@@ -232,5 +232,5 @@ CHANGELOG and the tags.
 - [X] T065 compose.sh refuses a nested path under commands/, per Constitution V (partial)
 
 Notes: T054's "so the README's $13.79 can be rebuilt" overstated it; the README and spent.txt now say
-it cannot be rebuilt from committed files. Constitution V's Check still names the denylist paths,
-true but narrower than compose.sh's allowlist; a PATCH wording amendment is the owner's to make.
+it cannot be rebuilt from committed files. Constitution V's Check, which named the denylist paths, was
+brought to compose.sh's allowlist by a PATCH amendment (v2.0.1), on the owner's instruction.

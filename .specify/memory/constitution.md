@@ -72,9 +72,9 @@ Whatever is not part of the preset is `export-ignore`.
 
 Rationale: the archive is the artifact; a file in the repository that is not export-ignored lands
 in every project that installs it. Check: `tests/compose.sh` builds the archive with `git archive`
-as GitHub does and fails if the installed preset carries this repository's `.specify/`, `.claude/`,
-`specs/`, `tests/`, `docs/` or `CLAUDE.md`; a reviewer checks that `preset.yml`, the CHANGELOG and the
-tag agree.
+as GitHub does and fails if it carries anything but `preset.yml`, the fragments directly under
+`commands/`, `README.md`, `CHANGELOG.md` and `LICENSE`; a reviewer checks that `preset.yml`, the
+CHANGELOG and the tag agree.
 
 ## Governance
 
@@ -91,4 +91,4 @@ This constitution overrides any other practice in this repository where they con
 - Versioning of this file: MAJOR for a principle removed or redefined incompatibly, MINOR for a
   principle or section added or materially expanded, PATCH for wording.
 
-**Version**: 2.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-14
+**Version**: 2.0.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-14
