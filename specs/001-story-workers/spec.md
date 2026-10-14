@@ -62,7 +62,8 @@ verification is counted, and whether it delivers code that is any worse.
 - Q: An eval arm that does not count (a crash, the deadline, an error)? → A: it is not a
   measurement: rerun, up to twice; only counted arms that miss a criterion are recorded as not
   adopted.
-- Q: Does the fixture call for a review per story? → A: yes, in its `CLAUDE.md`, so the measured
+- Q: Does the fixture call for a review per story? → A: yes, in its `CLAUDE.md`, as a
+  `general-purpose` subagent so the stream can tell it from other subagents, so the measured
   usage includes the reviews the owner's own setup asks for (decided on the owner's standing
   instruction to take the recommended option).
 - Q: What bounds fix hand-offs that keep breaking each other? → A: at most two fix hand-offs per
@@ -84,7 +85,7 @@ instructions call for runs in a fresh context on the main session's model, never
 
 **Independent Test**: the `with` arm of the eval (User Story 2) is this story's end-to-end test: in
 its stream the main session edits no tracked file but `tasks.md` (SC-003), the workers' turns ran on
-the smaller model, the fixture's commit-message rule holds on every code commit (so the project's
+the smaller model, one phase at a time with a worker for each, the fixture's commit-message rule holds on every code commit (so the project's
 instructions reached the workers), and each story's review ran on the main session's model
 (SC-007); that each `[X]` follows a whole-suite run by the main session is read from the stream by
 the reviewer of the eval, not checked by a tool.
@@ -220,8 +221,8 @@ its own.
   code is not one.
 - **FR-006**: Every hand-off — unfinished tasks, a failed verification, a review finding — MUST go
   to a worker briefed with it, then verification again; a review finding passes when a fresh review
-  of that finding no longer reports it. A phase gets at most two fix hand-offs, whatever items they
-  carry; when verification — a fresh review still reporting its finding included — still fails after
+  of that finding no longer reports it. A phase gets at most two fix hand-offs — every hand-off of
+  the phase after its first counts, whatever items it carries; when verification — a fresh review still reporting its finding included — still fails after
   them, the main session carries out the phase's
   remaining items itself as core does (FR-007). Tasks a worker reported finding join the current
   phase in `tasks.md` (committed with a message containing `tasks: add found tasks`) and go to its next hand-off. A task a
@@ -245,8 +246,8 @@ its own.
 - **FR-010**: The fixture, its held-out tests, the probes and the harness MUST live under `tests/`,
   outside the release archive (constitution V), with the steps to rerun them.
 - **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline, and its result
-  reports no error — and, for `without` and `fallback`, no permission denial and, for `without`, a
-  review per story; and the `init` event shows the hermetic isolation held (output style `default`,
+  reports no error — and, for `without` and `fallback`, no permission denial and, for `without`, at
+  least one review call (an Agent call with `subagent_type: "general-purpose"`) per user story; and the `init` event shows the hermetic isolation held (output style `default`,
   no MCP server, no plugin outside Claude Code's built-in ones); otherwise the harness
   records it as not counted, with the reason, and writes no usage or held-out result for it.
 - **FR-012**: The probes MUST rerun each observation of research.md R1 the design rests on that can
@@ -281,7 +282,8 @@ its own.
 - **SC-003**: In the `with` arm, as `tests/eval/attribution.py` reports it: every Write, Edit or
   NotebookEdit call the main session makes targets the feature's `tasks.md` (its shell commands are
   listed beside the result, for a reviewer to confirm none writes code); `modelUsage` has a Sonnet
-  entry; among the commits after the setup commit, at least one changes more than `tasks.md`, and
+  entry; the main session makes at least one worker call (`model: "sonnet"`) per phase of the
+  fixture's `tasks.md`, and starts none while another worker call has not returned (FR-001); among the commits after the setup commit, at least one changes more than `tasks.md`, and
   every such commit's message starts with `fixture:`; the completion report says `Carried out in this
   session: none`; and the result has no `permission_denials` (a worker reaching for a tool outside
   the list is the feature misbehaving, not the environment).
@@ -290,10 +292,11 @@ its own.
 - **SC-005**: The `fallback` arm passes at least as many held-out tests as `without`, makes no Agent
   call, and its completion report says `Carried out in this session:` followed by every task id.
 - **SC-006**: Every probe passes on the Claude Code version the eval ran on.
-- **SC-007**: In the `with` arm, the stream holds at least one review Agent call per user story (an
-  Agent call without `model: "sonnet"`), each naming the main session's family (`opus`). The same
-  count in `without` is a condition of the comparison, not of the preset: a `without` arm with fewer
-  reviews than stories is rerun (FR-011).
+- **SC-007**: In the `with` arm, the stream holds at least one review call per user story: an Agent
+  call with `subagent_type: "general-purpose"` and `model: "opus"`, the main session's family (calls
+  of other subagent types, such as `Explore`, are not reviews). The same count in `without`, where a
+  review is any `general-purpose` call, is a condition of the comparison, not of the preset: a
+  `without` arm with fewer reviews than stories is rerun (FR-011).
 
 ## Assumptions
 

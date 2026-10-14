@@ -110,7 +110,8 @@ Observations are dated and name the versions they ran on (constitution III).
 
 ## R5. Fixes go to a worker; reviews name the main session's family
 
-- **Decision**: every hand-off goes to a worker; a phase gets at most two fix hand-offs, after which
+- **Decision**: every hand-off goes to a worker; a phase gets at most two fix hand-offs (every
+  hand-off of the phase after its first counts), after which
   its remaining items run as core does. A review that cannot get a fresh context does not run, and the
   report says so. A review is started with
   `subagent_type: "general-purpose"`, `model` set to the main session's family alias and no
@@ -135,7 +136,8 @@ Observations are dated and name the versions they ran on (constitution III).
   cannot stop a headless run. Its `CLAUDE.md` holds two rules: every commit message starts with
   `fixture:` (checked on the `with` arm's code commits: that is how instructions reaching the worker
   are seen), and each user story closes with a fresh review (so the measured usage includes the
-  reviews the owner's own instructions ask for). `tests/eval/heldout/` holds at least one acceptance test per acceptance scenario
+  reviews the owner's own instructions ask for; the rule names a `general-purpose` subagent, so the
+  stream can tell a review from other subagents). `tests/eval/heldout/` holds at least one acceptance test per acceptance scenario
   of the fixture's spec.
 - **Arms**: `without` (only `specify init`), `with` (this checkout's archive), `fallback` (`with`, run
   with `--disallowedTools Agent`, R1 (11)). They differ only in the preset and, for `fallback`, the
@@ -150,7 +152,8 @@ Observations are dated and name the versions they ran on (constitution III).
   the command in its own process group and killing the group (R1 (15): no `timeout` on macOS).
 - **Counting** (FR-011): `claude` exited 0 within the deadline; the stream holds exactly one `result`
   event, with `is_error: false`; for `without` and `fallback`, no `permission_denials`, and for
-  `without` one review Agent call per story (it is the comparison's baseline, so a missing review there
+  `without` at least one `general-purpose` Agent call per story, the review the fixture asks for
+  (`Explore` and other subagent types are not reviews; it is the comparison's baseline, so a missing review there
   is noise, not the preset's failure); and the `init` event shows the isolation held (output style
   `default`, no MCP server, only Claude Code's built-in plugins — the user's hooks do not show there,
   R1 (12) is the evidence for them). Nothing else decides whether an arm counts: what the feature does — the commit rule, Sonnet usage, the `Carried out in this session`
@@ -168,8 +171,8 @@ Observations are dated and name the versions they ran on (constitution III).
   (date; this checkout's commit; Claude Code, Spec Kit, git, uv, Python, pytest, ruff; the main model
   ID and its effort; the
   environment allowlist and git isolation; the `init` event's output style, plugin and MCP-server
-  counts, and built-in skills), `models.txt` (every model ID in `modelUsage` with its effort, and the Agent calls per `model`
-  value), `commits.txt` (`git log --name-only` from the setup commit), and the scratch repository in
+  counts, and built-in skills), `models.txt` (every model ID in `modelUsage` with its effort, and the Agent calls per
+  `subagent_type` and `model` pair), `commits.txt` (`git log --name-only` from the setup commit), and the scratch repository in
   `repo/`.
 - **SC-003**: `tests/eval/attribution.py <out-dir>` checks every clause of SC-003 from `stream.jsonl`
   (main-session calls have no `parent_tool_use_id`, R1 (1)) and `commits.txt`, and lists the main

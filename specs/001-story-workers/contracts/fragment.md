@@ -4,8 +4,9 @@
 
 A section `## Story workers`. `tests/compose.sh` greps the composed skill (joined into one line
 first, so rewrapping does not fail it) for each quoted phrase as a fixed string (`grep -F`: `[X]`
-and `[P]` are not character classes), and greps core for each narrowed rule
-and each step the brief names.
+and `[P]` are not character classes). `tests/core-anchors.sh <skill-file>` greps a core skill the
+same way for each narrowed rule and each step the brief names, and exits 1 naming any missing;
+`tests/compose.sh` runs it on core's skill as installed, before the preset is added.
 
 1. **Unit**: "hand each phase to a worker", in the order core runs the phases; the next only after
    the previous one's verification; never two at once; `[P]` tasks run inside their phase's worker.
@@ -29,7 +30,7 @@ and each step the brief names.
    message containing `tasks: mark phase <n>` (after any prefix the project requires), and only then starts the next phase's worker.
 6. **Hand-offs**: every unfinished task, failed verification or review finding goes to a worker,
    then verification again; a review finding passes when a fresh review of it no longer reports it.
-   A phase gets "at most two fix hand-offs"; when verification still fails after them, "carry out
+   A phase gets "at most two fix hand-offs" (every hand-off of the phase after its first counts); when verification still fails after them, "carry out
    the phase's remaining items in this session". Tasks a worker reported finding join the current
    phase (committed with a message containing `tasks: add found tasks`) and go to its next hand-off. "Verification still
    fails" includes a fresh review still reporting its finding. The main session's only edits to tracked files are `tasks.md` (checkboxes, tasks a
@@ -53,7 +54,8 @@ and each step the brief names.
 
 ## `tests/eval/run.sh <without|with|fallback> <out-dir>`
 
-- Refuses: an unknown arm, an existing `<out-dir>`, uncommitted changes in this checkout, a missing
+- Refuses: an unknown arm, an existing `<out-dir>`, a checkout whose `git status --porcelain` is not
+  empty (`.gitignore` keeps tool caches and the virtualenv out of it), a missing
   `claude`, `specify`, `uv`, `git`, `python3` or `jq`.
 - Builds a scratch copy of `fixture/` (which carries its `uv.lock` and `.specify/feature.json`),
   `git init`, `specify init --here --force --integration claude`, checks `.specify/feature.json`
@@ -77,7 +79,7 @@ and each step the brief names.
   `tests_heldout/` and runs it alone (`heldout.txt`: passed/total and the output); writes
   `usage.txt`, `versions.txt` (this checkout's commit, tools, the main model ID and its effort, the `init` event's output
   style, plugin and MCP-server counts), `models.txt` (every model ID in `modelUsage` with its effort, and
-  the Agent calls per `model` value), `commits.txt` (`git log --name-only` from the setup commit to
+  the Agent calls per `subagent_type` and `model` pair), `commits.txt` (`git log --name-only` from the setup commit to
   HEAD); the scratch repository is kept in `<out-dir>/repo`
   and `status` = `ok`.
 
@@ -85,7 +87,9 @@ and each step the brief names.
 
 Reads `stream.jsonl` and `commits.txt`, checks every clause of SC-003 and prints each with `ok` or
 what failed: the main session's (no `parent_tool_use_id`) Write, Edit and NotebookEdit calls not on
-the feature's `tasks.md`; a Sonnet entry in `modelUsage`; the commits after the setup commit that
+the feature's `tasks.md`; a Sonnet entry in `modelUsage`; at least one main-session Agent call with
+`model: "sonnet"` per `## Phase` heading of the fixture's `tasks.md`, and no such call started while
+another has no `tool_result` yet; the commits after the setup commit that
 change more than `tasks.md` (at least one, each starting with `fixture:`); the `Carried out in this
 session: none` line; no `permission_denials`. Then it lists the main session's Bash commands. Exit 0
 when every clause holds, 1 when one does not, 2 when an input cannot be read or `status` is not

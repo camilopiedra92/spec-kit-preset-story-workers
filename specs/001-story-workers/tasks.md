@@ -10,7 +10,7 @@ description: "Task list for 001-story-workers"
 **Prerequisites**: plan.md, spec.md, research.md, contracts/fragment.md, quickstart.md
 
 **Tests**: requested for every story with logic of its own (the owner's rules): the composition
-checks (US1), `bounded.py`, `attribution.py`, `run.sh`'s refusals and counting, and the held-out
+and core-anchor checks (US1), `bounded.py`, `attribution.py`, `run.sh`'s refusals and counting, and the held-out
 tests (US2), the `sdd-init` check (US3). Test tasks come first in each story; their red run is one
 per story's test tasks, and each failure is checked against the reason its case predicts (a missing
 name proves only collection: stub it and rerun). Each story closes with the whole suite
@@ -27,15 +27,15 @@ name proves only collection: stub it and rerun). Each story closes with the whol
 
 ## Phase 1: Setup
 
-**Purpose**: the repository's own toolchain and CI (plan, Phase 1).
+**Purpose**: the repository's own CI (plan, Phase 1). The Python toolchain arrives with the first
+Python file (T013): before that, mypy and pytest have nothing to check and exit non-zero.
 
-- [ ] T001 Add the dev tooling with `uv add --dev ruff mypy pytest pytest-timeout` in `pyproject.toml` (package = false, ruff target py311 line length 100, mypy strict over `tests/eval`, pytest testpaths `tests/eval`, timeout 60) and commit `uv.lock`
-- [ ] T002 [P] Add `pyproject.toml` and `uv.lock` to `.gitattributes` as `export-ignore`
-- [ ] T003 Write `tests/check.sh`, the one command: `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, `uv run pytest`, then `tests/compose.sh` (exits non-zero on the first failure, says which)
-- [ ] T004 Write `.github/workflows/ci.yml`: job `compose`, matrix `speckit: [pinned, latest]` with latest only on schedule and dispatch, `SPECKIT_PINNED: v1.1.0`, actions pinned by SHA as in `spec-kit-preset-constitution-authoring/.github/workflows/ci.yml`, installs `specify` and uv, runs `tests/check.sh`
-- [ ] T005 Add `CLAUDE.md`'s Commands section with `tests/check.sh` and the eval and probe invocations from `specs/001-story-workers/quickstart.md`, in `CLAUDE.md`
+- [ ] T001 [P] Write `.gitignore` (`.venv/`, `__pycache__/`, `.mypy_cache/`, `.pytest_cache/`, `.ruff_cache/`) and add `.gitignore export-ignore` to `.gitattributes`
+- [ ] T002 Write `tests/check.sh`, the one command: runs `tests/compose.sh` (T013 adds the Python steps before it), exits non-zero on the first failure and says which
+- [ ] T003 Write `.github/workflows/ci.yml`: job `compose`, matrix `speckit: [pinned, latest]` with latest only on schedule and dispatch, `SPECKIT_PINNED: v1.1.0`, actions pinned by SHA as in `spec-kit-preset-constitution-authoring/.github/workflows/ci.yml`, installs `specify` and uv, runs `tests/check.sh`
+- [ ] T004 Add `CLAUDE.md`'s Commands section with `tests/check.sh` and the eval and probe invocations from `specs/001-story-workers/quickstart.md`, in `CLAUDE.md`
 
-**Checkpoint**: `tests/check.sh` runs (it fails only on the missing `tests/compose.sh`, which US1 writes).
+**Checkpoint**: `tests/check.sh` runs and fails only on the missing `tests/compose.sh`, which US1 writes; CI runs on push and reports `compose (pinned)`.
 
 ---
 
@@ -43,7 +43,7 @@ name proves only collection: stub it and rerun). Each story closes with the whol
 
 **Purpose**: the ruleset that makes `compose (pinned)` required (constitution, Governance).
 
-- [ ] T006 In dotfiles, on a branch of its own: add `"camilopiedra92/spec-kit-preset-story-workers": {"checks": ["compose (pinned)"]}` to `~/dotfiles/github/repos.json`, run `./check.sh`, open its PR, and once merged run `bin/repo-rules.sh` so the ruleset applies (the check name exists once this feature's draft PR has run CI)
+- [ ] T005 In dotfiles, on a branch of its own: add `"camilopiedra92/spec-kit-preset-story-workers": {"checks": ["compose (pinned)"]}` to `~/dotfiles/github/repos.json`, run `./check.sh`, open its PR, and once merged run `bin/repo-rules.sh` so the ruleset applies (the check name exists once this branch's push has run CI, T003)
 
 **Checkpoint**: the ruleset is declared; the feature's PR will wait for `compose (pinned)`.
 
@@ -59,16 +59,16 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 ### Tests for User Story 1 (write first, see them fail)
 
-- [ ] T007 [US1] Write `tests/compose.sh` following `spec-kit-preset-constitution-authoring/tests/compose.sh`: archive HEAD with `git archive`, serve it from localhost, `specify init --here --force --integration claude --ignore-agent-tools` in a scratch repo, copy core's `speckit-implement` aside, `specify preset add`, then check: the composed skill keeps core's body and description and ends with the fragment; the archive carries none of `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `.github/`, `CLAUDE.md`, `pyproject.toml`, `uv.lock`
-- [ ] T008 [US1] Add to `tests/compose.sh` the core anchors, fixed-string (`grep -F`): `For completed tasks, make sure to mark the task off as [X]`, `parallel tasks [P] can run together`, `Halt execution if any non-parallel task fails`, `Load and analyze the implementation context`, `Project Setup Verification`, `Execute implementation`, `Implementation execution rules`, `Progress tracking and error handling`
-- [ ] T009 [US1] Add to `tests/compose.sh` the composed-skill phrases of `contracts/fragment.md` §1–§11, each joined into one line first and matched with `grep -F`: the call's `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`; "hand each phase to a worker"; "commits each task"; "marks a task [X] only after"; "at most two fix hand-offs"; `tasks: mark phase`; `tasks: add found tasks`; "with `model` set to this session's model family"; "carry out the remaining tasks in this session"; `Carried out in this session:`; each narrowed rule named
-- [ ] T010 [US1] Red run: `tests/compose.sh` before the preset exists, expecting the install to fail for want of `preset.yml`; then a placeholder `preset.yml` and an empty `commands/speckit.implement.md` (stubs), rerun, and check each composed-phrase check fails for its own phrase; then, for each anchor of T008, a core copy with that phrase deleted turns its anchor check red — record the red outputs for the PR description
+- [ ] T006 [US1] Write `tests/compose.sh` following `spec-kit-preset-constitution-authoring/tests/compose.sh`: archive HEAD with `git archive`, serve it from localhost, `specify init --here --force --integration claude --ignore-agent-tools` in a scratch repo, copy core's `speckit-implement` aside, `specify preset add`, then check: the composed skill keeps core's body and description and ends with the fragment; the archive carries none of `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `.github/`, `CLAUDE.md`, `.gitignore`, `pyproject.toml`, `uv.lock`
+- [ ] T007 [US1] Write `tests/core-anchors.sh <skill-file>` (contract): the core anchors, joined into one line and matched fixed-string (`grep -F`): `For completed tasks, make sure to mark the task off as [X]`, `parallel tasks [P] can run together`, `Halt execution if any non-parallel task fails`, `Load and analyze the implementation context`, `Project Setup Verification`, `Execute implementation`, `Implementation execution rules`, `Progress tracking and error handling`; exit 1 naming each missing one; `tests/compose.sh` runs it on the core copy it set aside
+- [ ] T008 [US1] Add to `tests/compose.sh` the composed-skill phrases of `contracts/fragment.md` §1–§11, each joined into one line first and matched with `grep -F`: the call's `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`; "hand each phase to a worker"; "follow core's"; "commits each task"; "marks a task [X] only after"; "at most two fix hand-offs"; "carry out the phase's remaining items in this session"; `tasks: mark phase`; `tasks: add found tasks`; "with `model` set to this session's model family"; "carry out the remaining tasks in this session"; `Carried out in this session:`; each narrowed rule named
+- [ ] T009 [US1] Red run: `tests/compose.sh` before the preset exists, expecting the install to fail for want of `preset.yml`; then a placeholder `preset.yml` and an empty `commands/speckit.implement.md` (stubs), rerun, and check each composed-phrase check fails for its own phrase; then, for each anchor of T007, `tests/core-anchors.sh` on a copy of core's skill with that phrase deleted goes red naming it — record the red outputs for the PR description
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Write `preset.yml`: id `story-workers`, version `0.1.0` (1.0.0 only at release), `requires.speckit_version: ">=1.1.0"`, one `command` template `speckit.implement` from `commands/speckit.implement.md`, `strategy: "append"`, a description of what the fragment changes
-- [ ] T012 [US1] Write the fragment `commands/speckit.implement.md` (no frontmatter): a `## Story workers` section stating `contracts/fragment.md` §1–§11 in imperative prose for the main session, naming each narrowed core rule by its exact text, with the fallback beside the hand-off (constitution IV)
-- [ ] T013 [US1] Green run: `tests/compose.sh` and `tests/check.sh` pass; the tests are unchanged since T010
+- [ ] T010 [US1] Write `preset.yml`: id `story-workers`, version `0.1.0` (1.0.0 only at release), `requires.speckit_version: ">=1.1.0"`, one `command` template `speckit.implement` from `commands/speckit.implement.md`, `strategy: "append"`, a description of what the fragment changes
+- [ ] T011 [US1] Write the fragment `commands/speckit.implement.md` (no frontmatter): a `## Story workers` section stating `contracts/fragment.md` §1–§11 in imperative prose for the main session, naming each narrowed core rule by its exact text, with the fallback beside the hand-off (constitution IV)
+- [ ] T012 [US1] Green run: `tests/compose.sh` and `tests/check.sh` pass locally, and CI's `compose (pinned)` passes on Spec Kit v1.1.0; the tests are unchanged since T009. If v1.1.0 lacks an anchor, `SPECKIT_PINNED` and `requires.speckit_version` move together to the first release that has it (constitution II)
 
 **Checkpoint**: the whole suite green; a fresh review of US1 against spec FR-001–FR-008 and `contracts/fragment.md`, its findings fixed, before Phase 4.
 
@@ -81,12 +81,16 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 **Independent Test**: `tests/eval/probes.sh` and `tests/eval/run.sh` produce the outputs
 `quickstart.md` reads; the README entry carries everything US2's Independent Test lists.
 
+### Toolchain for User Story 2
+
+- [ ] T013 [US2] Add the Python toolchain: `uv init --bare`, then `uv add --dev ruff mypy pytest pytest-timeout` in `pyproject.toml` (`[tool.uv] package = false`, ruff target py311 line length 100, mypy strict over `tests/eval`, pytest testpaths `tests/eval`, timeout 60), commit `uv.lock`, add `pyproject.toml` and `uv.lock` to `.gitattributes` as `export-ignore`, and add `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, `uv run pytest` to `tests/check.sh` before `tests/compose.sh`
+
 ### Tests for User Story 2 (write first, see them fail)
 
 - [ ] T014 [P] [US2] Write `tests/eval/test_bounded.py`: a command that exits in time returns its status; one past the deadline is killed with its whole process group (a child that ignores SIGTERM included) and `bounded.py` exits 124; a missing command exits 127
-- [ ] T015 [P] [US2] Write `tests/eval/test_attribution.py` against stub `stream.jsonl`/`commits.txt`/`status` files: each SC-003 clause passes and fails on its own (a main-session Write outside `tasks.md`; no Sonnet entry; no code commit; a code commit without `fixture:`; the setup commit ignored; the `Carried out in this session` line missing or not `none`; a permission denial), exit 2 on an unreadable input or a non-`ok` status, and the main session's Bash commands listed
-- [ ] T016 [P] [US2] Write `tests/eval/test_run.py` with a stub `claude` (and stub `specify`) on `PATH` that emit canned streams: refusals exit 2 and write nothing (unknown arm, existing out-dir, uncommitted checkout, each missing tool); a run counts only as research.md R6 "Counting" says — exit non-zero, past the deadline, zero or two `result` events, `is_error: true`, a denial in `without`/`fallback`, fewer reviews than stories in `without`, a non-default output style or a non-built-in plugin or an MCP server in `init` — each writing `status` with its reason, no `usage.txt`/`heldout.txt`, exit 1; a counted run writes every output file of `contracts/fragment.md`
-- [ ] T017 [US2] Red run of T014–T016 with stub modules (`bounded.py`, `attribution.py` raising `NotImplementedError`, `run.sh` exiting 99), each failure checked against its case's predicted reason
+- [ ] T015 [P] [US2] Write `tests/eval/test_attribution.py` against stub `stream.jsonl`/`commits.txt`/`status` files: each SC-003 clause passes and fails on its own (a main-session Write outside `tasks.md`; no Sonnet entry; fewer worker calls than `## Phase` headings; a worker call started before the previous one's `tool_result`; no code commit; a code commit without `fixture:`; the setup commit ignored; the `Carried out in this session` line missing or not `none`; a permission denial), exit 2 on an unreadable input or a non-`ok` status, and the main session's Bash commands listed
+- [ ] T016 [P] [US2] Write `tests/eval/test_run.py` with a stub `claude` (and stub `specify`) on `PATH` that emit canned streams: refusals exit 2 and write nothing (unknown arm, existing out-dir, a tracked change and an untracked file not ignored, each missing tool); a run counts only as research.md R6 "Counting" says — exit non-zero, past the deadline, zero or two `result` events, `is_error: true`, a denial in `without`/`fallback`, fewer `general-purpose` Agent calls than stories in `without` (an `Explore` call not counted as one), a non-default output style or a non-built-in plugin or an MCP server in `init` — each writing `status` with its reason, no `usage.txt`/`heldout.txt`, exit 1; a counted run writes every output file of `contracts/fragment.md`
+- [ ] T017 [US2] Red run of T014–T016 through `tests/check.sh` with stub modules (`bounded.py`, `attribution.py` raising `NotImplementedError`, `run.sh` exiting 99), each failure checked against its case's predicted reason
 
 ### Implementation for User Story 2
 
@@ -97,7 +101,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 ### The fixture and its oracle
 
-- [ ] T022 [US2] Write `tests/eval/fixture/`: a uv Python project with a committed `uv.lock` (pytest, ruff), `CLAUDE.md` with the two rules of research.md R6, `.specify/feature.json`, and `specs/001-<slug>/spec.md`, `plan.md` (Technical Context naming `uv run pytest` and `uv run ruff check`, fixing the module and function names) and `tasks.md` for a two-story feature with a setup phase; no `checklists/`; no code yet
+- [ ] T022 [US2] Write `tests/eval/fixture/`: a uv Python project with a committed `uv.lock` (pytest, ruff), `CLAUDE.md` with the two rules of research.md R6 (the review started as a `general-purpose` subagent), `.specify/feature.json`, and `specs/001-<slug>/spec.md`, `plan.md` (Technical Context naming `uv run pytest` and `uv run ruff check`, fixing the module and function names) and `tasks.md` for a two-story feature with a setup phase; no `checklists/`; no code yet
 - [ ] T023 [US2] Write `tests/eval/heldout/`: at least one acceptance test per acceptance scenario of the fixture's spec, against the interface its plan fixes; and `tests/eval/reference/`, a correct implementation kept outside the fixture
 - [ ] T024 [US2] Prove the oracle: the held-out tests fail on the fixture as committed (no code, each for the predicted reason), and pass against `tests/eval/reference/`; then one wrong version per story in a scratch copy turns them red
 
@@ -138,10 +142,10 @@ owner's policies stay true.
 
 ### Implementation for User Story 3
 
-- [ ] T034 [US3] Add `PRESET_STORY_WORKERS_URL` (the `v1.0.0` archive) and its `specify preset add` to `~/dotfiles/bin/sdd-init.sh`, update the header comment and the commit message it writes; `./check.sh` green
+- [ ] T034 [US3] Add `PRESET_STORY_WORKERS_URL` (the `v1.0.0` archive) and its `specify preset add` to `~/dotfiles/bin/sdd-init.sh`, update the header comment and the commit message it writes; `./check.sh` green; then `sdd-init` in a scratch repository installs both presets (US3 Independent Test)
 - [ ] T035 [US3] In `~/dotfiles/docs/claude-settings.md`, under "`effortLevel` is absent on purpose", name the one exception — the story-workers preset sets `effort: "medium"` on its worker's call — with its reason in one line and a link to the preset's `docs/decisions/0001-worker-effort.md`
 - [ ] T036 [US3] Open the dotfiles PR (draft → fresh review → ready → `gh pr merge --auto --squash` on green CI)
-- [ ] T037 [US3] For each of `~/Development/renta`, `~/Development/RENPHO`, `~/Development/supertrader` and `~/dotfiles`: ask the owner; on a yes, `specify preset add --from <v1.0.0 archive>` and commit only `.specify/presets/` and `.claude/skills/speckit-implement/` in a commit of its own, through that repository's own PR rules
+- [ ] T037 [US3] For each of `~/Development/renta`, `~/Development/RENPHO`, `~/Development/supertrader` and `~/dotfiles`: ask the owner; on a yes, `specify preset add --from <v1.0.0 archive>`, read `git status` to confirm it wrote only the preset's files (`.specify/presets/`, the composed `.claude/skills/speckit-implement/` and any registry it keeps) and commit exactly those in a commit of its own, through that repository's own PR rules
 
 **Checkpoint**: the whole suite green in dotfiles; a fresh review of the dotfiles diff.
 
@@ -149,13 +153,13 @@ owner's policies stay true.
 
 ## Dependencies & Execution Order
 
-- Setup (T001–T005) → Foundational (T006) → US1 (T007–T013) → US2 (T014–T029) → decision → Release (T030–T032) → US3 (T033–T037).
+- Setup (T001–T004) → Foundational (T005) → US1 (T006–T012) → US2 (T013–T029) → decision → Release (T030–T032) → US3 (T033–T037).
 - US2 needs US1: the `with` arm installs the fragment. US3 needs the released tag.
 - Within US1 and US2, tests (and their red run) precede the code they drive.
 
 ## Parallel Opportunities
 
-- T002 beside T001's lockfile commit; T014, T015, T016 together; T018 and T019 together.
+- T001 beside T002; T014, T015, T016 together; T018 and T019 together.
 - Under this preset's own rule, `[P]` tasks still run one after another inside one worker; here they mark independence, not concurrency.
 
 ## Implementation Strategy

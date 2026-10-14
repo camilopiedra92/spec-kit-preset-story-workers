@@ -29,7 +29,9 @@ pytest-timeout through uv.
 **Testing**: `tests/check.sh`, the one command CI runs: ruff (lint and format), mypy, pytest (for
 `attribution.py`, `bounded.py`, and `run.sh`'s refusals and counting driven against stub `claude`
 streams), then
-`tests/compose.sh`. The eval and the probes run by hand: they call a model and spend usage.
+`tests/compose.sh`. The Python steps join it with the first Python file (Story 2): before that there
+is nothing for mypy or pytest to check, and both exit non-zero on an empty tree (mypy 2, pytest 5,
+observed 2026-10-13). The eval and the probes run by hand: they call a model and spend usage.
 
 **Target Platform**: projects using Spec Kit with Claude Code; other agents fall back to core.
 
@@ -54,7 +56,7 @@ dotfiles changes and one commit per approved project at rollout.
 | II. Verified against the real CLI | `tests/compose.sh` installs a tag-shaped archive with the real CLI; CI runs `tests/check.sh` pinned on every push and pull request and against the latest release weekly. |
 | III. Behaviour is measured, not asserted | The eval (R6) runs the fixture hermetically in three arms and the probes rerun R1; the README records the date, usage, held-out results, runs and reruns, probes, and every tool's and model's version and effort. Released only if every success criterion holds. |
 | IV. Degrades to core | FR-007: no Agent tool, a worker's error or usage limit, or the hand-off bound, and the session carries on as core does; the `fallback` arm measures it (SC-005). |
-| V. Released by tag | `preset.yml`, CHANGELOG and tag move together at release; `tests/compose.sh` fails if the archive carries `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `.github/`, `CLAUDE.md`, `pyproject.toml` or `uv.lock`. |
+| V. Released by tag | `preset.yml`, CHANGELOG and tag move together at release; `tests/compose.sh` fails if the archive carries `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `.github/`, `CLAUDE.md`, `.gitignore`, `pyproject.toml` or `uv.lock`. |
 
 Re-checked after Phase 1: no violation; Complexity Tracking is empty.
 
@@ -83,6 +85,7 @@ commands/
 tests/
 ├── check.sh                     # the one command: ruff, mypy, pytest, compose.sh
 ├── compose.sh                   # archive → real CLI → composed skill checks
+├── core-anchors.sh              # <skill-file>: core still carries each narrowed rule and step
 └── eval/
     ├── run.sh                   # one arm, hermetic, outputs into <out-dir>
     ├── probes.sh                # reruns research R1's observations
@@ -93,11 +96,13 @@ tests/
     ├── test_bounded.py          # the deadline kills the whole group
     ├── fixture/                 # two-story Python feature: spec, plan, tasks, uv.lock, and a
     │                            # CLAUDE.md with the commit rule and a review per story
-    └── heldout/                 # acceptance tests, copied in only after a run ends
+    ├── heldout/                 # acceptance tests, copied in only after a run ends
+    └── reference/               # a correct implementation of the fixture, proving the oracle
 .github/workflows/ci.yml         # job `compose`, matrix pinned/latest, runs tests/check.sh;
                                  # `compose (pinned)` is the required check (constitution)
 docs/decisions/0001-worker-effort.md   # MADR, from research R7, before the PR opens
 pyproject.toml, uv.lock          # dev tooling only (export-ignore)
+.gitignore                       # virtualenv and tool caches (export-ignore)
 README.md, CHANGELOG.md
 ```
 
@@ -111,13 +116,14 @@ linter, formatter, type checker and tests at scaffold, as a new project does.
 
 ## Phases after this plan
 
-1. **Scaffold**: `pyproject.toml` with the dev tools, `tests/check.sh`, CI, `.gitattributes` for the
-   new development files. Then, in dotfiles' own PR, this repository's ruleset in
+1. **Scaffold**: `.gitignore`, `tests/check.sh` (running `tests/compose.sh`), CI, `.gitattributes`
+   for the new development files. Then, in dotfiles' own PR, this repository's ruleset in
    `github/repos.json`.
 2. **Story 1**: the composition checks first, seen red (no fragment yet; and each narrowed-rule and
    step check against a core copy with that phrase removed), then the fragment and `preset.yml` turn
    them green.
-3. **Story 2**: `attribution.py` and `run.sh`'s counting test-first against stub streams; the
+3. **Story 2**: the Python toolchain (`pyproject.toml` with the dev tools, `uv.lock`, and its steps in
+   `tests/check.sh`) with the first Python files; `attribution.py` and `run.sh`'s counting test-first against stub streams; the
    fixture, the held-out tests, `run.sh` and `probes.sh`; the probes, then one counted run per arm;
    the README entry. If any success criterion does not hold, the README entry alone goes
    to `main` and the branch is tagged (Clarifications).

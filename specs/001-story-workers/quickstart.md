@@ -29,6 +29,6 @@ cat /tmp/eval-{without,with,fallback}/models.txt      # models, efforts and Agen
 - **SC-002**: `with` passes at least as many held-out tests as `without`, and its `suite.txt` is green.
 - **SC-005**: `fallback` passes at least as many held-out tests as `without`, makes no Agent call
   (`models.txt`), and its report says `Carried out in this session:` with every task id.
-- **SC-007**: `models.txt` of `with` shows one `opus` Agent call per story at least.
+- **SC-007**: `models.txt` of `with` shows at least one `general-purpose`/`opus` Agent call per story.
 - Record in the README: the date, the fixture's size, every arm's outputs, any rerun and its reason,
   `versions.txt`, the probes' output, the isolation used, and "one counted run per arm, directional".
