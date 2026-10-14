@@ -141,3 +141,13 @@ def test_uncommitted_changes_stay_out_of_the_copy(checkout: Path, stubs: Path) -
     stray.write_text('def greet() -> str:\n    return "ho"\n')
     result = oracle(checkout, stubs)
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_write_n_does_not_record_a_count_from_a_failing_run(checkout: Path, stubs: Path) -> None:
+    n = checkout / "tests/eval/fixtures/greet/heldout/N"
+    n.unlink()
+    ref = checkout / "tests/eval/fixtures/greet/reference/src/greet.py"
+    ref.write_text('def greet() -> str:\n    return "ho"\n')
+    commit(checkout)
+    assert oracle(checkout, stubs, "--write-n").returncode == 1
+    assert not n.exists()

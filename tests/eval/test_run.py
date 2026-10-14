@@ -69,6 +69,10 @@ code = int((here / "usage.exit").read_text()) if (here / "usage.exit").exists() 
 if code == 0:
     (out / "usage.txt").write_text("reconciled yes\\n")
     (out / "usage.json").write_text("{}\\n")
+elif code == 3:
+    # Python's own exit 1: an exception before main() could run.
+    print("Traceback (most recent call last):\\nTypeError: unsupported operand")
+    code = 1
 else:
     print("unreconciled: no transcript" if code == 1 else "Traceback: bug")
 (here / "usage.args").write_text(" ".join(sys.argv[1:]))
@@ -645,3 +649,36 @@ def test_the_probes_disable_the_auto_updater(tmp_path: Path) -> None:
     )
     seen = (bin_ / "probes.autoupdater").read_text().split()
     assert seen and set(seen) == {"1"}, seen
+
+
+def test_an_exit_1_that_is_not_unreconciled_is_a_harness_fault(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (checkout / "tests/eval/usage.exit").write_text("3\n")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 2
+    assert (out / "status").read_text().startswith("refused: harness fault: TypeError")
+    assert "Traceback (most recent call last)" in (out / "usage.log").read_text()
+
+
+def test_a_run_through_the_real_usage_py(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    shutil.copy2(HERE / "usage.py", checkout / "tests/eval/usage.py")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "commit", "-qam", "real usage.py"], check=True)
+    u = {
+        "input_tokens": 1000,
+        "output_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+    }
+    entry = {"type": "assistant", "message": {"id": "m1", "model": "claude-opus-5-5", "usage": u}}
+    project = stubs / "home/.claude/projects/-tmp-some-repo"
+    (project / "sess-1.jsonl").write_text(json.dumps(entry) + "\n")
+    shutil.rmtree(project / "sess-1")
+    model_usage = {"claude-opus-5-5": {"inputTokens": 1000, "costUSD": 0.004}}
+    script(stubs, stream(modelUsage=model_usage))
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "without", out)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "reconciled yes" in (out / "usage.txt").read_text()
+    assert "part main phase - claude-opus-5-5 cost 0.0040000" in (out / "usage.txt").read_text()

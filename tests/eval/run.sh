@@ -8,7 +8,8 @@
 #         (what the agent gets) and heldout/ (copied in after a counted run);
 #         --baseline names a counted run whose versions this one must match
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
-#         most twice); 2 refused (nothing written; fix it, do not retry)
+#         most twice); 2 refused (fix it, do not retry): before the out-dir
+#         exists nothing is written; after, status says why
 #
 # The contract is specs/001-story-workers/contracts/fragment.md, run.sh, as
 # specs/002-large-phase-remeasure/contracts/harness.md amends it.
@@ -249,11 +250,14 @@ fi
 # The usage, reconciled with what Claude Code reported and attributed: a run
 # without it is no measurement (spec Clarifications).
 attributed=0
-message=$(python3 "$here/usage.py" "$out" 2>&1) || attributed=$?
-case $attributed in
-  0) ;;
-  1) not_counted "${message##*$'\n'}" ;;
-  *) refused "harness fault: usage.py: ${message##*$'\n'}" ;;
+python3 "$here/usage.py" "$out" > "$out/usage.log" 2>&1 || attributed=$?
+last=$(tail -n 1 "$out/usage.log")
+# Only usage.py's own verdict makes a run not counted; any other exit, Python's
+# exit 1 on an exception before main() included, is the harness's fault.
+case $attributed:$last in
+  0:*) ;;
+  1:unreconciled:*) not_counted "$last" ;;
+  *) refused "harness fault: $last (usage.log)" ;;
 esac
 
 # A counted run: the project's own suite, then the held-out tests alone.

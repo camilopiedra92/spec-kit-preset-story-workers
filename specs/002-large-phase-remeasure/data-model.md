@@ -42,9 +42,9 @@ rule for a run that does not count).
 ## Usage attribution (`usage.json`)
 
 ```text
-models:   {<model id>: {reported: Tokens + {cost},       # modelUsage
+models:   {<model id>: {reported: {input, output, cache_read, cache_write, cost},  # modelUsage
                         transcripts: Tokens + {cost}}}  # summed and priced; equal, within SC-008
-parts:    [{part, phase|null, model, Tokens, cost}]
+parts:    [{part, phase|null, model, subagents, Tokens, cost}]   # in session order
 Tokens:   input, output, cache_read, cache_write_5m, cache_write_1h
 ```
 
@@ -57,8 +57,10 @@ Tokens:   input, output, cache_read, cache_write_5m, cache_write_1h
 - A worker's `phase` is the phase its brief's first line names, `null` when it names none; a review's
   or other's is the phase whose span holds its Agent call, `null` when that turn is outside every
   phase or its `toolUseId` matches no Agent call in the main transcript.
-- Invariant: per model and token type, `transcripts` equals `reported` and the parts' tokens sum
-  exactly to it; `transcripts.cost` and the parts' summed cost are each within $0.000001 of
+- Synthetic messages (zero usage, e.g. Claude Code's API-error messages) are no turn; a model named
+  with no tokens and no cost needs no price.
+- Invariant: per model, `transcripts`' input, output and cache read equal `reported`'s and its two
+  cache writes sum to `reported.cache_write`; the parts' tokens sum exactly to `transcripts`; `transcripts.cost` and the parts' summed cost are each within $0.000001 of
   `reported.cost` (floating-point rounding of prices). Both halves of SC-008 can thus be re-judged
   from the committed `usage.json`.
 - Reconciliation reasons (each makes the run not counted): `no transcript`, `unreadable <file>`,

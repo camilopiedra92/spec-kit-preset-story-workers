@@ -60,11 +60,14 @@ print(total - n("failures") - n("errors") - n("skipped"), total)' "$work/heldout
   exit 1
 }
 read -r passed total <<< "$counts"
+all_passed=no
+[ "$status" -eq 0 ] && [ "$passed" -eq "$total" ] && all_passed=yes
 if [ "$write_n" = yes ]; then
-  echo "$total" > "$n_file"
   n=$total
+  # A count from a failing run would make a wrong N look proven once committed.
+  [ "$all_passed" = no ] || echo "$total" > "$n_file"
 fi
 echo "passed $passed/$total (N $n)"
-[ "$status" -eq 0 ] && [ "$passed" -eq "$total" ] && [ "$total" -eq "$n" ] && exit 0
+[ "$all_passed" = yes ] && [ "$total" -eq "$n" ] && exit 0
 cat "$work/heldout.log"
 exit 1

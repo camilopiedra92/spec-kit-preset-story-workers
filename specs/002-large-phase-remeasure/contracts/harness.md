@@ -19,9 +19,11 @@
   transcripts (`$HOME/.claude/projects/*/<session_id>.jsonl` and its `<session_id>/subagents/`) are
   copied into `<out-dir>/transcripts/`.
 - Counting adds, after 001's checks and the `init`-key comparison, before the suite: `usage.py
-  <out-dir>`. Its exit 1 makes the run not counted (`status`: `not counted: unreconciled: <reasons>`,
-  exit 1, no `usage.*`, `suite.txt` or `heldout.txt`). Its exit 2 is a harness fault: `status`:
-  `refused: harness fault: <message>`, exit 2.
+  <out-dir>`, its output kept in `usage.log`. Its exit 1 with a last line `unreconciled: …` makes the
+  run not counted (`status`: `not counted: unreconciled: <reasons>`, exit 1, no `usage.*`,
+  `suite.txt` or `heldout.txt`). Any other non-zero exit — its own 2, or Python's 1 on an exception
+  before `main()` — is a harness fault: `status`: `refused: harness fault: <last line> (usage.log)`,
+  exit 2.
 - 001's `usage.txt` block (jq over `modelUsage`) is removed: `usage.py` writes `usage.txt`.
 - Exit codes are 001's: 0 counted, 1 not counted (rerun within the bound), 2 refused (stop and fix).
 

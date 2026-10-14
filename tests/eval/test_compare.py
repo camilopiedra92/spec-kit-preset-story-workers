@@ -64,7 +64,9 @@ def usage_json(costs: dict[str, float]) -> dict[str, Any]:
     parts = []
     for model, c in costs.items():
         t = {"input": 1, "output": 2, "cache_read": 3, "cache_write_5m": 4, "cache_write_1h": 5}
-        models[model] = {"reported": {**t, "cost": c}, "transcripts": {**t, "cost": c}}
+        # As usage.py writes it: `reported` is modelUsage's, one cache-write total.
+        reported = {"input": 1, "output": 2, "cache_read": 3, "cache_write": 9, "cost": c}
+        models[model] = {"reported": reported, "transcripts": {**t, "cost": c}}
         parts.append({"part": "main", "phase": None, "model": model, **t, "cost": c})
     return {"models": models, "parts": parts}
 
@@ -462,3 +464,15 @@ def test_next_before_any_counted_run_is_scaled_from_001(
 def test_help_prints_the_usage(capsys: pytest.CaptureFixture[str]) -> None:
     assert compare.main(["--help"]) == 0
     assert "--spent <root>" in capsys.readouterr().out
+
+
+def test_sc008_a_cache_write_total_that_differs_from_the_split_fails(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = env["root"]
+    runs = nine(root)
+    data = json.loads((root / "with-3/usage.json").read_text())
+    data["models"][OPUS]["reported"]["cache_write"] += 1
+    (root / "with-3/usage.json").write_text(json.dumps(data))
+    _, out = verdict(env, runs, capsys)
+    assert line(out, "SC-008").startswith("SC-008 FAIL")

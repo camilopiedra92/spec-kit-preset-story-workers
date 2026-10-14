@@ -153,11 +153,14 @@ def usage_holds(data: dict[str, Any]) -> bool:
     for model, totals in data["models"].items():
         reported, transcripts = totals["reported"], totals["transcripts"]
         mine = [p for p in data["parts"] if p["model"] == model]
-        if any(reported[f] != transcripts[f] for f in FIELDS):
+        # `reported` is modelUsage's (one cache-write total); `transcripts` splits it.
+        if any(reported[f] != transcripts[f] for f in ("input", "output", "cache_read")):
+            return False
+        if reported["cache_write"] != transcripts["cache_write_5m"] + transcripts["cache_write_1h"]:
             return False
         if abs(reported["cost"] - transcripts["cost"]) > usage.TOLERANCE:
             return False
-        if any(sum(p[f] for p in mine) != reported[f] for f in FIELDS):
+        if any(sum(p[f] for p in mine) != transcripts[f] for f in FIELDS):
             return False
         if abs(sum(p["cost"] for p in mine) - reported["cost"]) > usage.TOLERANCE:
             return False

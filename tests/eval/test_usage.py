@@ -256,7 +256,14 @@ def test_a_reconciled_run_writes_both_files(tmp_path: Path) -> None:
     assert "reconciled yes" in text
     assert "\npart phase phase 2 claude-opus-5-5 cost " in text  # contract: part <part> phase <n>
     data = json.loads((out / "usage.json").read_text())
-    assert data["models"][OPUS]["reported"]["input"] == opus["inputTokens"]
+    # `reported` is modelUsage's own numbers: one cache-write total, no split.
+    assert data["models"][OPUS]["reported"] == {
+        "input": opus["inputTokens"],
+        "output": opus["outputTokens"],
+        "cache_read": opus["cacheReadInputTokens"],
+        "cache_write": opus["cacheCreationInputTokens"],
+        "cost": opus["costUSD"],
+    }
     assert data["models"][OPUS]["transcripts"]["cache_write_1h"] == 2 * opus["inputTokens"]
 
 
@@ -269,7 +276,7 @@ def test_parts_sum_to_the_totals(tmp_path: Path) -> None:
     for model, totals in data["models"].items():
         mine = [p for p in data["parts"] if p["model"] == model]
         for key in ("input", "output", "cache_read", "cache_write_5m", "cache_write_1h"):
-            assert sum(p[key] for p in mine) == totals["reported"][key], (model, key)
+            assert sum(p[key] for p in mine) == totals["transcripts"][key], (model, key)
         assert abs(sum(p["cost"] for p in mine) - totals["reported"]["cost"]) <= 1e-6
 
 
@@ -309,7 +316,9 @@ def test_no_transcript_is_unreconciled(tmp_path: Path) -> None:
     assert not (out / "usage.json").exists()
 
 
-@pytest.mark.parametrize("field_", ["inputTokens", "outputTokens", "cacheReadInputTokens"])
+@pytest.mark.parametrize(
+    "field_", ["inputTokens", "outputTokens", "cacheReadInputTokens", "cacheCreationInputTokens"]
+)
 def test_a_token_count_off_by_one_is_unreconciled(
     tmp_path: Path, field_: str, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -616,3 +625,158 @@ def test_price_only_without_transcripts_is_zero(
     out.mkdir()
     assert usage.main(["--price-only", str(out)], fixtures=tmp_path) == 0
     assert capsys.readouterr().out == "spent 0\n"
+
+
+# Found by the review of US2 (2026-10-14): each case below was red first.
+
+
+def test_a_synthetic_zero_token_message_is_no_turn(tmp_path: Path) -> None:
+    # Claude Code writes API-error messages as model "<synthetic>" with zero usage.
+    run = Run(arm="without")
+    run.main.turn(weight=2)
+    zero = {k: 0 for k in ("input_tokens", "output_tokens", "cache_read_input_tokens")}
+    run.main.entries.append(
+        {
+            "type": "assistant",
+            "message": {
+                "id": "msg_err",
+                "model": "<synthetic>",
+                "usage": {**zero, "cache_creation_input_tokens": 0},
+                "content": [],
+            },
+        }
+    )
+    code, out = attribute(run, tmp_path)
+    assert code == 0
+    assert {p["model"] for p in parts(out)} == {OPUS}
+
+
+def test_a_reported_model_with_no_tokens_and_no_cost_needs_no_price(tmp_path: Path) -> None:
+    run = Run(arm="without")
+    run.main.turn()
+    reported = run.reported()
+    reported["claude-mystery-9"] = {"inputTokens": 0, "outputTokens": 0, "costUSD": 0.0}
+    code, _ = attribute(run, tmp_path, reported=reported)
+    assert code == 0
+
+
+def test_a_rate_limit_event_without_the_window_is_skipped(tmp_path: Path) -> None:
+    run = Run(arm="without")
+    run.main.turn()
+    out = run.write(tmp_path)
+    events = [json.loads(line) for line in (out / "stream.jsonl").read_text().splitlines()]
+    for e in events:
+        if e["type"] == "rate_limit_event":
+            del e["rate_limit_info"]["unifiedWindows"]
+    (out / "stream.jsonl").write_text(lines(events))
+    assert usage.main([str(out)], fixtures=tmp_path / "fixtures") == 0
+    assert "five_hour - -" in (out / "usage.txt").read_text()
+
+
+def test_the_last_entry_of_a_message_carries_its_usage(tmp_path: Path) -> None:
+    run = Run(arm="without")
+    run.main.turn(bash("a", "ls"), bash("b", "pwd"), weight=3)
+    first = run.main.entries[0]["message"]
+    first["usage"] = {**first["usage"], "output_tokens": 1}  # streamed early, then final
+    code, out = attribute(run, tmp_path)
+    assert code == 0
+    assert parts(out)[0]["output"] == 30
+
+
+def test_price_only_skips_a_truncated_last_line_and_counts_subagents(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = Run(arm="without")
+    run.main.turn(weight=2)
+    run.sub("x", SONNET)
+    out = run.write(tmp_path)
+    with (out / f"transcripts/{SESSION}.jsonl").open("a") as f:
+        f.write('{"type": "assistant", "message": {"id": "cut"')
+    assert usage.main(["--price-only", str(out)], fixtures=tmp_path / "fixtures") == 0
+    expected = run.reported()[OPUS]["costUSD"] + run.reported()[SONNET]["costUSD"]
+    assert capsys.readouterr().out == f"spent {expected:.7f}\n"
+
+
+def test_start_and_marking_in_one_turn_hold(tmp_path: Path) -> None:
+    run = Run()
+    run.main.turn(agent("w1", brief(1), "sonnet"), bash("m1", mark(1)), weight=1)
+    run.main.result("w1")
+    run.main.result("m1")
+    for n in (2, 3, 4):
+        run.main.turn(agent(f"w{n}", brief(n), "sonnet"), weight=2)
+        run.main.result(f"w{n}")
+        run.main.turn(bash(f"m{n}", mark(n)), weight=2)
+        run.main.result(f"m{n}")
+    _, out = attribute(run, tmp_path)
+    assert main_turn_weights(out)[("phase", 1)] == 1
+    assert ("unattributed", None) not in main_turn_weights(out)
+
+
+def test_marking_and_the_next_start_in_one_turn_break(tmp_path: Path) -> None:
+    run = Run()
+    run.main.turn(agent("w1", brief(1), "sonnet"), weight=1)
+    run.main.result("w1")
+    run.main.turn(bash("m1", mark(1)), agent("w2", brief(2), "sonnet"), weight=2)
+    run.main.result("m1")
+    run.main.result("w2")
+    _, out = attribute(run, tmp_path)
+    assert main_turn_weights(out) == {("unattributed", None): 3}
+
+
+def test_a_marking_without_a_tool_result_is_no_marking(tmp_path: Path) -> None:
+    run = Run()
+    run.main.turn(agent("w1", brief(1), "sonnet"), weight=1)
+    run.main.result("w1")
+    run.main.turn(bash("m1", mark(1)), weight=2)  # its result never came
+    _, out = attribute(run, tmp_path)
+    assert main_turn_weights(out) == {("unattributed", None): 3}
+
+
+def test_a_marking_through_git_dash_c_counts(tmp_path: Path) -> None:
+    run = Run()
+    well_formed(run)
+    call = next(
+        block
+        for e in run.main.entries
+        if e["type"] == "assistant"
+        for block in e["message"]["content"]
+        if block.get("id") == "m1"
+    )
+    call["input"]["command"] = 'git -C . commit -qm "fixture: tasks: mark phase 1"'
+    _, out = attribute(run, tmp_path)
+    assert ("unattributed", None) not in main_turn_weights(out)
+
+
+def test_a_subagent_matching_no_call_has_no_phase(tmp_path: Path) -> None:
+    run = Run()
+    well_formed(run)
+    run.sub("ghost-w", SONNET)
+    run.sub("ghost-r", OPUS, model="opus")
+    _, out = attribute(run, tmp_path)
+    nulls = {(p["part"], p["phase"]) for p in parts(out) if p["phase"] is None}
+    assert ("worker", None) in nulls and ("review", None) in nulls
+
+
+def test_parts_count_their_subagents(tmp_path: Path) -> None:
+    run = Run(arm="without")
+    run.main.turn()
+    for n in (1, 2):
+        run.main.turn(agent(f"r{n}", "Review", "opus"))
+        run.main.result(f"r{n}")
+        run.sub(f"r{n}", OPUS, model="opus")
+    _, out = attribute(run, tmp_path)
+    review = next(p for p in parts(out) if p["part"] == "review")
+    assert review["subagents"] == 2
+    assert next(p for p in parts(out) if p["part"] == "main")["subagents"] == 0
+
+
+def test_usage_txt_lists_parts_in_session_order(tmp_path: Path) -> None:
+    run = Run()
+    well_formed(run)
+    _, out = attribute(run, tmp_path)
+    order = [
+        line.split()[1] + (line.split()[3] if line.split()[1] == "phase" else "")
+        for line in (out / "usage.txt").read_text().splitlines()
+        if line.startswith("part ") and OPUS in line
+    ]
+    assert order == ["before", "phase1", "phase2", "phase3", "phase4", "after"]

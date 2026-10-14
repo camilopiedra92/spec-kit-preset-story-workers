@@ -82,11 +82,23 @@ class Transcript:
     results: dict[str, bool]
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
+def read_jsonl(path: Path, tolerant: bool = False) -> list[dict[str, Any]]:
+    """The file's JSON lines; Unreconciled on a bad one, or skipped when tolerant
+    (a try killed at its deadline can leave a partial last line)."""
+    entries = []
     try:
-        return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
-    except (OSError, ValueError) as error:
+        lines = path.read_text().splitlines()
+    except OSError as error:
         raise Unreconciled([f"unreadable {path.name}"]) from error
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            entries.append(json.loads(line))
+        except ValueError as error:
+            if not tolerant:
+                raise Unreconciled([f"unreadable {path.name}"]) from error
+    return entries
 
 
 def usage_tokens(u: dict[str, Any]) -> Tokens:
@@ -100,18 +112,23 @@ def usage_tokens(u: dict[str, Any]) -> Tokens:
     )
 
 
-def parse_transcript(path: Path) -> Transcript:
+def parse_transcript(path: Path, tolerant: bool = False) -> Transcript:
     turns: dict[str, Turn] = {}
     results: dict[str, bool] = {}
-    for entry in read_jsonl(path):
+    for entry in read_jsonl(path, tolerant):
         message = entry.get("message") or {}
         content = message.get("content")
         blocks = content if isinstance(content, list) else []
         if entry.get("type") == "assistant" and message.get("usage"):
+            tokens = usage_tokens(message["usage"])
+            if tokens == Tokens():
+                # Claude Code's synthetic messages (API errors, model "<synthetic>")
+                # carry zero usage: no request was billed, so they are no turn.
+                continue
             msg_id = message.get("id", "")
             # Each entry repeats the message's usage; the last one counts (research R1 2).
             turn = turns.setdefault(msg_id, Turn(message.get("model", ""), Tokens()))
-            turn.tokens = usage_tokens(message["usage"])
+            turn.tokens = tokens
             turn.calls += [b for b in blocks if b.get("type") == "tool_use"]
         elif entry.get("type") == "user":
             for b in blocks:
@@ -154,7 +171,7 @@ def spans(main: Transcript, headings: dict[int, str]) -> list[tuple[str, int | N
                     starts.setdefault(n, i)
             if call.get("name") == "Bash" and not main.results.get(call.get("id", ""), True):
                 command = str(input_.get("command", ""))
-                if "git commit" in command:
+                if re.search(r"\bgit\b(\s+-C\s+\S+)?\s+commit\b", command):
                     for n in headings:
                         if re.search(rf"tasks: mark phase {n}\b", command):
                             markings.setdefault(n, i)
@@ -194,14 +211,20 @@ class Run:
     session: str
 
 
+def five_hour(event: dict[str, Any]) -> Any:
+    """A rate_limit_event's five-hour utilization, None when the event lacks it."""
+    windows = (event.get("rate_limit_info") or {}).get("unifiedWindows") or {}
+    return (windows.get("five_hour") or {}).get("utilization")
+
+
 def read_run(out: Path) -> Run:
     events = read_jsonl(out / "stream.jsonl")
     results = [e for e in events if e.get("type") == "result"]
     init = next((e for e in events if e.get("type") == "system" and e.get("subtype") == "init"), {})
     windows = [
-        e["rate_limit_info"]["unifiedWindows"]["five_hour"]["utilization"]
+        window
         for e in events
-        if e.get("type") == "rate_limit_event"
+        if e.get("type") == "rate_limit_event" and (window := five_hour(e)) is not None
     ]
     versions = {
         key: value
@@ -265,6 +288,8 @@ def reconcile(run: Run, transcripts: list[Transcript]) -> dict[str, dict[str, An
             if a != b
         ]
         reported_cost = float(theirs.get("costUSD", 0.0))
+        if mine == Tokens() and not reported_cost and all(b == 0 for _, b in pairs.values()):
+            continue  # a model named with nothing on it: nothing to price or split
         if model not in PRICES:
             reasons.append(f"{model} price unknown")
             continue
@@ -272,9 +297,15 @@ def reconcile(run: Run, transcripts: list[Transcript]) -> dict[str, dict[str, An
         if abs(priced - reported_cost) > TOLERANCE:
             reasons.append(f"{model} cost priced={priced:.7f} reported={reported_cost:.7f}")
         models[model] = {
-            # Every count is equal by now; modelUsage gives one cache-write total, so
-            # the 5-minute/1-hour split shown under `reported` is the transcripts'.
-            "reported": {**mine.as_dict(), "cost": reported_cost},
+            # modelUsage's own numbers, so the committed file shows both sides of the
+            # check; it gives one cache-write total, the transcripts give the split.
+            "reported": {
+                "input": theirs.get("inputTokens", 0),
+                "output": theirs.get("outputTokens", 0),
+                "cache_read": theirs.get("cacheReadInputTokens", 0),
+                "cache_write": theirs.get("cacheCreationInputTokens", 0),
+                "cost": reported_cost,
+            },
             "transcripts": {**mine.as_dict(), "cost": priced},
         }
     if reasons:
@@ -284,10 +315,12 @@ def reconcile(run: Run, transcripts: list[Transcript]) -> dict[str, dict[str, An
 
 def attribute(run: Run, main: Transcript, subs: list[Sub], fixtures: Path) -> list[dict[str, Any]]:
     totals: dict[tuple[str, int | None, str], Tokens] = {}
+    counts: dict[tuple[str, int | None, str], int] = {}
 
     def add(part: str, phase: int | None, model: str, t: Tokens) -> None:
         key = (part, phase, model)
         totals[key] = totals.get(key, Tokens()) + t
+        counts.setdefault(key, 0)
 
     if run.arm == "with":
         headings = phase_headings(fixtures, run.fixture)
@@ -312,10 +345,21 @@ def attribute(run: Run, main: Transcript, subs: list[Sub], fixtures: Path) -> li
                 phase = labels[found[0]][1]
         for turn in sub.transcript.turns:
             add(part, phase, turn.model, turn.tokens)
+        for model in {turn.model for turn in sub.transcript.turns}:
+            counts[(part, phase, model)] += 1
+    order = ["main", "before", "phase", "after", "unattributed", "worker", "review", "other"]
     return [
-        {"part": part, "phase": phase, "model": model, **t.as_dict(), "cost": price(model, t)}
+        {
+            "part": part,
+            "phase": phase,
+            "model": model,
+            "subagents": counts[(part, phase, model)],
+            **t.as_dict(),
+            "cost": price(model, t),
+        }
+        # Session order: the main session's parts as they happened, then subagents.
         for (part, phase, model), t in sorted(
-            totals.items(), key=lambda kv: (kv[0][0], kv[0][1] or 0, kv[0][2])
+            totals.items(), key=lambda kv: (order.index(kv[0][0]), kv[0][1] or 0, kv[0][2])
         )
     ]
 
@@ -325,7 +369,8 @@ def render(run: Run, models: dict[str, dict[str, Any]], parts: list[dict[str, An
         return " ".join(f"{f} {d[f]}" for f in FIELDS)
 
     lines = [
-        f"{m} cost {v['reported']['cost']:.7f} {counts(v['reported'])}" for m, v in models.items()
+        f"{m} cost {v['reported']['cost']:.7f} {counts(v['transcripts'])}"
+        for m, v in models.items()
     ]
     lines.append(f"sum {sum(v['reported']['cost'] for v in models.values()):.7f}")
     lines.append(f"five_hour {run.five_hour[0]} {run.five_hour[1]}")
@@ -344,7 +389,7 @@ def price_only(out: Path) -> float:
     if not tr.is_dir():
         return total
     for path in [*tr.glob("*.jsonl"), *(tr / "subagents").glob("agent-*.jsonl")]:
-        for turn in parse_transcript(path).turns:
+        for turn in parse_transcript(path, tolerant=True).turns:
             total += price(turn.model, turn.tokens) if turn.model in PRICES else 0.0
     return total
 
