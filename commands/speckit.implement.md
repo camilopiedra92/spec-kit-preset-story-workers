@@ -16,7 +16,7 @@ git repository (the commits, diffs and baseline below need git), go to **Fallbac
 own behaviour.
 
 **The brief.** It opens with the phase's heading as `tasks.md` writes it, then carries: the phase's
-tasks (for a fix, the finding; on resume, the uncommitted diff); the feature directory; the suite
+tasks (for a fix, the finding; on resume, as Resume says); the feature directory; the suite
 and static-check commands, from the project's instructions, else `plan.md`'s Technical Context; and
 what earlier workers finished. It tells the worker to follow core's "Load and analyze the
 implementation context", "Project Setup Verification" (first phase only), "Execute
@@ -70,9 +70,13 @@ phase goes to a worker as usual. The completion report always carries
 the line `Carried out in this session: none`, or `Carried out in this session:` followed by the
 task ids and, for fix items, the phase and a short name of each.
 
-**Resume.** A run starts at the phase after the last commit whose message contains
-`tasks: mark phase <n>`, or at the first phase when there is none. Take that phase's baseline at
-that commit (with none, at the commit before the first phase's first commit) in a temporary
-`git worktree`, and verify the phase's existing commits as above. Uncommitted changes to files other
-than `tasks.md` go to a worker briefed with the diff, to finish or discard; uncommitted changes to
-`tasks.md` are yours to keep or drop.
+**Resume.** `tasks.md`'s marks, `[X]` or `[x]`, are core's record of what is done, whoever made
+them; nothing about past work is read from commit messages. A run resumes at the first phase that
+has a task not marked (marks as committed at HEAD, or as in the working tree when `tasks.md` is
+not committed), and the baseline is HEAD at the run's start, as for any phase. The brief carries
+only the phase's unmarked tasks and says that some may already be done, in whole or in part: check
+each against the code and `git log`, and complete only what is missing. Uncommitted changes stay as
+core leaves them: do not ask about them or stop for them. Work committed before the run is covered
+by the whole-suite run but not read as a diff, so the completion report adds the line `Resumed at
+phase <n>: work committed before this run was covered by the whole suite, not read as a diff.`
+With no task marked, the run is a fresh run, from Phase 1.
