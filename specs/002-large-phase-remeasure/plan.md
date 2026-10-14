@@ -20,7 +20,7 @@ or a second "measured and not adopted".
 
 **Language/Version**: bash (`tests/eval/run.sh`); Python 3.11+ for `tests/eval/usage.py`,
 `tests/eval/compare.py` and the existing `attribution.py` and `bounded.py`; the `checkout` fixture is
-Python 3.12 under uv, as `wordstats`.
+a uv project declaring Python `>=3.11` as `wordstats` does (it runs on 3.12).
 
 **Primary Dependencies**: as 001 — Spec Kit CLI (1.1.0 pinned in CI, 1.1.3 locally), Claude Code
 (whatever the eval runs on, in `versions.txt`), `jq`; dev: ruff, mypy, pytest, pytest-timeout via uv.
