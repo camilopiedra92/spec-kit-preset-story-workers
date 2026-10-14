@@ -6,8 +6,11 @@ Reads   <out-dir>/status, versions.txt (`commit`, `fixture`, `state`), commits.t
         fixture and its state as committed at the run's commit
         (tests/eval/fixtures/<fixture>/).
 Prints  one line per check, `ok <check>` or `FAIL <check>: <what>`:
-          finished phases untouched: no commit of the run changes a file the state
-            holds that no unfinished phase's task names;
+          finished phases untouched: a file the state's committed/ holds that no
+            unfinished phase's task names is in no commit of the run, and the run's
+            tree holds it as the state does;
+          uncommitted changes untouched: each file of the state's uncommitted/ is in
+            no commit of the run, and the run's tree holds it as the state does;
           first brief opens the first unfinished phase;
           no brief opens a finished phase;
           every task marked, in the run's final tasks.md;
@@ -83,8 +86,9 @@ def check(out: Path, fixtures: Path) -> list[str]:
             usage.fixture_file(fixtures, commit, f"{project}/.specify/feature.json")
         )["feature_directory"]
         state_dir = f"{fixture}/states/{state}"
-        tasks = usage.fixture_file(fixtures, commit, f"{state_dir}/{feature}/tasks.md")
-        held = state_files(fixtures, commit, state_dir) - {f"{feature}/tasks.md"}
+        tasks = usage.fixture_file(fixtures, commit, f"{state_dir}/committed/{feature}/tasks.md")
+        held = state_files(fixtures, commit, f"{state_dir}/committed") - {f"{feature}/tasks.md"}
+        left = state_files(fixtures, commit, f"{state_dir}/uncommitted")
         final = (out / "repo" / feature / "tasks.md").read_text()
         n = int(usage.fixture_file(fixtures, commit, f"{fixture}/heldout/N").strip())
         commits = parse_commits((out / "commits.txt").read_text())
@@ -109,12 +113,26 @@ def check(out: Path, fixtures: Path) -> list[str]:
     title = all_phases[first_open][0]
     number = re.match(r"## Phase (\d+)", title)
 
+    def as_state(part: str, name: str) -> bool:
+        tree = out / "repo" / name
+        want = usage.fixture_file(fixtures, commit, f"{state_dir}/{part}/{name}")
+        return tree.is_file() and tree.read_text() == want
+
+    committed_files = {f for c in commits for f in c.files}
     lines = []
-    touched = sorted({f for c in commits for f in c.files if f in finished_only})
+    touched = sorted(
+        f for f in finished_only if f in committed_files or not as_state("committed", f)
+    )
     lines.append(
         "ok finished phases untouched"
         if not touched
         else f"FAIL finished phases untouched: {', '.join(touched)}"
+    )
+    altered = sorted(f for f in left if f in committed_files or not as_state("uncommitted", f))
+    lines.append(
+        "ok uncommitted changes untouched"
+        if not altered
+        else f"FAIL uncommitted changes untouched: {', '.join(altered)}"
     )
     briefs = [
         str(block.get("input", {}).get("prompt", ""))

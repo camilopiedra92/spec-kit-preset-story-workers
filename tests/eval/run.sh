@@ -59,7 +59,7 @@ done
 fixture_rel=$(git -C "$here" rev-parse --show-prefix)$fixture_dir
 if [ -n "$state" ]; then
   case $state in */* | . | ..) refuse "unknown state '$state'" ;; esac
-  git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state" 2> /dev/null ||
+  git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state/committed" 2> /dev/null ||
     refuse "fixture '$fixture' has no committed state '$state'"
 fi
 physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. included
@@ -88,8 +88,10 @@ mkdir "$repo"
 (cd "$here/$fixture_dir" && git ls-files -z project | tar --null -T - -cf -) |
   tar -xf - -C "$repo" --strip-components 1
 if [ -n "$state" ]; then
-  # The state as committed, laid over the project before the setup commit.
-  git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$state" | tar -xf - -C "$repo"
+  # committed/ as committed in this repository, laid over the project before the
+  # setup commit; uncommitted/ comes after it (below).
+  git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$state/committed" |
+    tar -xf - -C "$repo"
 fi
 feature=$(jq -r .feature_directory "$repo/.specify/feature.json")
 
@@ -164,6 +166,11 @@ fi
 step "git add" git add -A
 step "setup commit" git commit -qm "fixture: setup"
 setup=$(git rev-parse HEAD)
+# A state's uncommitted/: changes the agent finds in the working tree, as a
+# user leaves them (specs/003-resume-from-head, research R2).
+if [ -n "$state" ] && git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state/uncommitted" 2> /dev/null; then
+  git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$state/uncommitted" | tar -xf - -C "$repo"
+fi
 measured=$(git -C "$root" rev-parse HEAD)
 
 # The versions known before the agent starts, none read from the scratch
@@ -318,7 +325,8 @@ result='.[] | select(.type == "result")'
     | \"agent \(.[0].subagent_type) \(.[0].model // \"-\") \(.[0].effort // \"-\") \(length)\""
 } > "$out/models.txt"
 
-clean 600 git log --reverse --format='commit %H%n%s' --name-only "$setup..HEAD" > "$out/commits.txt"
+# --no-renames: a moved file shows its old path too.
+clean 600 git log --reverse --no-renames --format='commit %H%n%s' --name-only "$setup..HEAD" > "$out/commits.txt"
 # The completion report, for SC-005's task ids and SC-003's line.
 q "$result | .result" > "$out/report.txt"
 echo ok > "$out/status"

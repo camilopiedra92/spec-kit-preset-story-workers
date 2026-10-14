@@ -27,6 +27,8 @@ TASKS = """# Tasks
 """
 DONE = TASKS.replace("- [ ] T001", "- [X] T001").replace("- [ ] T002", "- [x] T002")
 PHASE_2 = "## Phase 2: User Story 2 - Two (Priority: P2)"
+STATE = ["tests/test_one.py", "tests/conftest.py", "src/one.py", "src/shared.py"]
+EDITED = "# Spec, edited and not committed\n"
 
 
 @pytest.fixture
@@ -39,12 +41,16 @@ def fixtures(tmp_path: Path) -> Path:
     (fx / "project/specs/001-fx/tasks.md").write_text(TASKS)
     (fx / "heldout").mkdir()
     (fx / "heldout/N").write_text(f"{N}\n")
-    (fx / "states/one-done/specs/001-fx").mkdir(parents=True)
-    (fx / "states/one-done/specs/001-fx/tasks.md").write_text(DONE)
+    committed = fx / "states/one-done/committed"
+    (committed / "specs/001-fx").mkdir(parents=True)
+    (committed / "specs/001-fx/tasks.md").write_text(DONE)
     # The state's files: what its finished phases left, whatever tasks.md calls them.
-    for name in ["tests/test_one.py", "tests/conftest.py", "src/one.py", "src/shared.py"]:
-        (fx / "states/one-done" / name).parent.mkdir(parents=True, exist_ok=True)
-        (fx / "states/one-done" / name).write_text("")
+    for name in STATE:
+        (committed / name).parent.mkdir(parents=True, exist_ok=True)
+        (committed / name).write_text(f"# {name}\n")
+    uncommitted = fx / "states/one-done/uncommitted/specs/001-fx"
+    uncommitted.mkdir(parents=True)
+    (uncommitted / "spec.md").write_text(EDITED)
     git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
     subprocess.run([*git, "init", "-q"], check=True)
     subprocess.run([*git, "add", "-A"], check=True)
@@ -82,8 +88,18 @@ def write_run(fixtures: Path, root: Path, **over: Any) -> Path:
     briefs = over.get("briefs", [f"{PHASE_2}\n\nTasks T003, T004."])
     events = [worker(b) for b in briefs] + over.get("extra_events", [])
     (out / "stream.jsonl").write_text("".join(json.dumps(e) + "\n" for e in events))
-    final = out / "repo/specs/001-fx/tasks.md"
-    final.parent.mkdir(parents=True)
+    repo = out / "repo"
+    for name in STATE:
+        (repo / name).parent.mkdir(parents=True, exist_ok=True)
+        (repo / name).write_text(f"# {name}\n")
+    for name, text in over.get("tree", {}).items():
+        if text is None:
+            (repo / name).unlink()
+        else:
+            (repo / name).write_text(text)
+    final = repo / "specs/001-fx/tasks.md"
+    final.parent.mkdir(parents=True, exist_ok=True)
+    (repo / "specs/001-fx/spec.md").write_text(over.get("spec", EDITED))
     final.write_text(
         over.get(
             "final", DONE.replace("- [ ] T003", "- [X] T003").replace("- [ ] T004", "- [X] T004")
@@ -108,7 +124,7 @@ def test_a_good_resume_passes_every_check(
 ) -> None:
     code, out = check(fixtures, write_run(fixtures, tmp_path), capsys)
     assert code == 0, out
-    assert out.count("ok ") == 7
+    assert out.count("ok ") == 8
 
 
 def test_a_commit_touching_a_finished_only_file_fails(
@@ -220,3 +236,31 @@ def test_a_question_in_the_stream_fails(
     code, out = check(fixtures, write_run(fixtures, tmp_path, extra_events=[event]), capsys)
     assert code == 1
     assert "FAIL no question asked" in out
+
+
+@pytest.mark.parametrize("text", ["# rewritten\n", None])
+def test_a_finished_file_changed_in_the_tree_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], text: str | None
+) -> None:
+    # Left uncommitted, or deleted: no commit names it, the tree still shows it.
+    run = write_run(fixtures, tmp_path, tree={"tests/test_one.py": text})
+    code, out = check(fixtures, run, capsys)
+    assert code == 1
+    assert "FAIL finished phases untouched: tests/test_one.py" in out
+
+
+def test_an_uncommitted_change_altered_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out = check(fixtures, write_run(fixtures, tmp_path, spec="# Spec\n"), capsys)
+    assert code == 1
+    assert "FAIL uncommitted changes untouched: specs/001-fx/spec.md" in out
+
+
+def test_an_uncommitted_change_committed_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    commits = "commit a1\nfixture: T003\ntests/test_two.py\nspecs/001-fx/spec.md\n"
+    code, out = check(fixtures, write_run(fixtures, tmp_path, commits=commits), capsys)
+    assert code == 1
+    assert "FAIL uncommitted changes untouched: specs/001-fx/spec.md" in out

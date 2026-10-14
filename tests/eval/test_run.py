@@ -40,8 +40,13 @@ printf '%s\n' "$@" > "$here/claude.args"
 echo "${DISABLE_AUTOUPDATER-unset}" > "$here/claude.autoupdater"
 # What versions.txt holds when the agent starts (the cwd is <out>/repo).
 cp ../versions.txt "$here/versions.seen" 2> /dev/null || : > "$here/versions.seen"
+git status --porcelain --untracked-files=all > "$here/status.seen"
 # A worker's commit, so commits.txt has something after the setup commit.
 git commit -q --allow-empty -m "fixture: work"
+if [ -e "$here/claude.rename" ]; then
+  echo x > moved-from.txt && git add moved-from.txt && git commit -qm "fixture: add"
+  git mv moved-from.txt moved-to.txt && git commit -qm "fixture: rename"
+fi
 cat "$here/stream.jsonl"
 exit "$(cat "$here/claude.exit")"
 """
@@ -728,8 +733,11 @@ def test_no_junit_report_is_scored_zero_not_unreadable(
 
 
 def add_state(checkout: Path, commit: bool = True) -> None:
-    state = checkout / "tests/eval/fixtures/greet/states/done-1"
+    root = checkout / "tests/eval/fixtures/greet/states/done-1"
+    state = root / "committed"
     (state / "src").mkdir(parents=True)
+    (root / "uncommitted/specs/001-greet").mkdir(parents=True)
+    (root / "uncommitted/specs/001-greet/spec.md").write_text("# Spec, edited\n")
     (state / "src/greet.py").write_text("def greet() -> str:\n    return 'hi'\n")
     (state / "specs/001-greet").mkdir(parents=True)
     (state / "specs/001-greet/tasks.md").write_text(
@@ -759,6 +767,9 @@ def test_a_state_is_laid_over_the_project_in_the_setup_commit(
     ).stdout.split()
     assert log[-2:] == ["fixture:", "setup"]
     assert "state: done-1" in (stubs / "versions.seen").read_text()
+    # uncommitted/ is laid over after every commit: the agent finds it changed, not committed.
+    assert (stubs / "status.seen").read_text() == " M specs/001-greet/spec.md\n"
+    assert (repo / "specs/001-greet/spec.md").read_text() == "# Spec, edited\n"
 
 
 def test_without_a_state_versions_say_none(checkout: Path, stubs: Path, tmp_path: Path) -> None:
@@ -780,3 +791,12 @@ def test_a_state_not_committed_is_refused(
     assert result.returncode == 2
     assert "state" in result.stderr
     assert not (tmp_path / "out").exists()
+
+
+def test_commits_name_both_sides_of_a_rename(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    # A run that moves a finished file away must not hide the old path (resume_check).
+    (stubs / "claude.rename").write_text("")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    rename = (out / "commits.txt").read_text().split("fixture: rename\n")[1]
+    assert "moved-from.txt" in rename and "moved-to.txt" in rename

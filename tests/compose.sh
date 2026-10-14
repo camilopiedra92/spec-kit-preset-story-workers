@@ -183,14 +183,25 @@ phrases=(
   'the static checks and its reading of the commit or file the worker cites'
   'staging only the files it changed, never `git add -A` or `-a`'
   "(Phase 1's worker only)"
-  'record `git status --porcelain`'
   'neither asks about them nor stops for them'
-  'no worker edits, stages, commits or reverts them'
-  'carry `tasks.md` as it stands'
-  'A task that needs a file changed before the run'
   'the commits made since the recorded HEAD'
-  'lists nothing beyond that record and `tasks.md`'
   'In a git repository the completion report carries the line'
+  # A clean tree outside the feature directory (the third review's design).
+  'commits what Project Setup Verification changes in a commit of its own'
+  'never edits, stages, commits or reverts a file in the feature directory'
+  'run before its own suite and static-check runs, lists nothing outside the feature directory'
+  'goes back to it as a finding'
+  'Outside the items this session carries out, your only edits'
+  'Before the first worker, run `git status --porcelain --untracked-files=all`'
+  'When it lists a path outside the feature directory'
+  'carry out the run in this session as core does'
+  'they are not a finding'
+  'no worker edits, stages, commits or reverts a file there'
+  'carry `tasks.md` as it stands, its earlier edits included'
+  'A task that changes a file in the feature directory is carried out in this session as core does'
+  "it commits before the next phase's worker starts"
+  '`tasks: carried out in this session`'
+  'uncommitted changes outside the feature directory'
   'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
@@ -204,7 +215,8 @@ done
 # partway through at Phase 1.
 for phrase in 'A run starts at the phase after the last commit whose message contains' \
   'on resume, the uncommitted diff' 'temporary `git worktree`' 'Resumed at phase' \
-  "the baseline is HEAD at the run's start" 'what earlier workers finished'; do
+  "the baseline is HEAD at the run's start" 'what earlier workers finished' \
+  'Changes made before the run' 'beyond that record'; do
   ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
