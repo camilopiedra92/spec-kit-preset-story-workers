@@ -31,10 +31,14 @@ output style `default`, no MCP server, and only Claude Code's built-in plugins.
 **Versions.** Spec Kit 1.1.3; Claude Code 2.1.299; main session `claude-opus-5-5` at
 `--effort medium`; workers `claude-sonnet-5-5` at `effort: "medium"`; reviews `claude-opus-5-5`,
 inheriting the session's effort; git 2.56.0; uv 0.13.0; Python 3.12.12; pytest 9.1.1; ruff 0.17.0.
-Harness commit `965d079`. `versions.txt` matched across arms but for the date.
+Harness commit `965d079`; the tag carries a later `run.sh` that differs only in disowning its local
+server (two lines, cosmetic, not rerun). `versions.txt` matched across arms but for the date. No
+other main-session model or effort was measured.
 
 **Results.** Usage is the per-model `costUSD` Claude Code reports for a headless run, at list
-price, subagents included.
+price, subagents included. The subscription window's utilization (`five_hour`, first and last in
+the run) is recorded beside it and not used for SC-001, since other sessions move it: `without`
+0.08 → 0.09, `with` 0.09 → 0.11, `fallback` 0.11 → 0.11.
 
 | Arm | Opus | Sonnet | Total | vs `without` | Held-out | Own suite | Agent calls | Wall time |
 |---|---|---|---|---|---|---|---|---|
@@ -49,14 +53,17 @@ price, subagents included.
 | SC-001 | `with` total usage at least 30% below `without` | **Not met**: 65% above |
 | SC-002 | `with` held-out ≥ `without`, its suite green | Met: 12/12 vs 12/12, green |
 | SC-003 | `attribution.py`: main session writes only `tasks.md`, Sonnet used, one foreground worker per phase in order, `fixture:` code commits, report line `none`, no denials | Met: every clause ok |
-| SC-004 | Composition test red when a narrowed rule or step is removed | Met: seen red for each of the 8 anchors and 19 phrases |
+| SC-004 | Composition test red when a narrowed rule or step is removed | Met: seen red for each of the 8 core anchors |
 | SC-005 | `fallback` held-out ≥ `without`, no Agent call, report lists every task | Met: 12/12, no Agent call, `T001`–`T005` |
 | SC-006 | Every probe passes on the eval's Claude Code | Met: 14 of 14 checks on 2.1.299 |
 | SC-007 | `with` has a `general-purpose`/`opus` review per story | Met: 2 reviews for 2 stories |
 
 **Reading.** The design delegated what it was meant to: Sonnet wrote every line of code, and
-Opus only verified and decided. But on a feature this small, Opus's part cost more than the whole
-of core's run did ($0.753 against $0.599). The likely reason, an inference not measured on its own:
+Opus only verified, reviewed and decided. But on a feature this small, the Opus share (main
+session and reviews together) cost more than core's whole run did ($0.753 against $0.599). The
+arms also differ in commits, as observed: `without` made none after setup (core does not commit;
+its report says so), while `with` and `fallback` made eight each, one per task plus one per phase
+for `tasks.md`, as the fragment asks. The likely reason, an inference not measured on its own:
 each phase adds a brief to write, a report to read, a suite and static checks to rerun, and a diff
 to read, and none of that work shrinks with the size of the phase. The saving the hypothesis counts on, implementation work moving to the cheaper
 model, needs phases large enough for it to outweigh that fixed cost. This fixture's phases were
@@ -70,7 +77,7 @@ Verification".
 
 **Alternative measured and not adopted.** Hand each phase to a Sonnet worker, with the main
 session verifying in its own runs before marking `[X]`. Not adopted because SC-001 failed: on this
-fixture the main session's verification alone cost more than core's whole run. A remeasure needs a
+fixture the Opus share (main session and reviews) alone cost more than core's whole run. A remeasure needs a
 fixture whose phases carry enough work for delegation to pay for its per-phase verification, and
 that is a new feature with its own spec.
 
