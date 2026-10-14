@@ -34,6 +34,11 @@ i the cents ⌊A·wᵢ / W⌋, then hands the cents still unallocated, one each,
 largest remainders (A·wᵢ mod W), so the shares always sum to exactly A. When two items have equal
 remainders, the earlier item gets the cent first. Allocating 0 gives every item 0.
 
+**Inputs this feature does not cover.** Each SKU has at most one buy-X-get-Y promotion in a call;
+X and Y are at least 1; a percentage is between 0% and 100%; a fixed amount and a cap are at least 0.
+A call that breaks two rules at once (an unknown SKU with quantity 0, say) is rejected with one of
+their errors, and which one is not specified. No scenario uses such inputs.
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Price a cart with tax (Priority: P1)
@@ -146,7 +151,7 @@ promotions below, give the amounts below.
 6. **US2-6** **Given** 20% off `books`, 10% off `toys`, 200 off the order and a discount cap of
    800, **When** a cart with `JOURNAL` ×3 and `TOY` ×1 is priced, **Then** the discounts before the
    cap are 745 and 155 (percentages 600 and 100; the 200 off allocated 145 and 55 over current nets
-   2400 and 900), 900 in all, so the cap is reached partway through the fixed amount; the cap of
+   2400 and 900), 900 in all, more than the cap; the cap of
    800 is allocated over 745 and 155, giving discounts 662 and 138, nets 2338 and 862, taxes 117
    and 86, and an order net of 3200, tax 203 and total 3403. With a cap of 1000 instead, the cap is
    not reached: discounts 745 and 155, nets 2255 and 845, taxes 113 (112.75 rounded) and 84 (84.5
