@@ -178,6 +178,38 @@ def test_us1_8_category_without_rate_rejected(co: Modules) -> None:
         priced(co, [("PEN", 1), ("LAMP", 1)])
 
 
+def test_us1_9_bulk_price_on_the_merged_line(co: Modules) -> None:
+    """US1-9: "When `PEN` ×9 then `PEN` ×1 are added and the cart is priced, Then the line holds 10
+    units at the bulk unit price 189 (95% of 199 is 189.05, rounded half-even): net 1890, tax 156
+    (155.925 rounded); given `PEN` ×9 alone, the unit price stays 199: net 1791, tax 148."
+    """
+    bulk = priced(co, [("PEN", 9), ("PEN", 1)])
+    assert line_amounts(bulk, "unit_price") == [189]
+    assert line_amounts(bulk, "net") == [1890]
+    assert line_amounts(bulk, "tax") == [156]
+    single = priced(co, [("PEN", 9)])
+    assert line_amounts(single, "unit_price") == [199]
+    assert (line_amounts(single, "net"), line_amounts(single, "tax")) == ([1791], [148])
+
+
+@pytest.mark.parametrize(
+    ("sku", "quantity", "unit_price", "net", "tax"),
+    [("PEN", 12, 189, 2268, 187), ("ATLAS", 10, 978, 9780, 489)],
+)
+def test_us1_9_bulk_price_rounded_per_unit(
+    co: Modules, sku: str, quantity: int, unit_price: int, net: int, tax: int
+) -> None:
+    """US1-9: "Given `PEN` ×12, Then the unit price is 189, the net 2268 (189 × 12; 95% of the
+    line's 2388 rounded, 2269, is not the rule) and the tax 187 (187.11 rounded); given `ATLAS` ×10,
+    the unit price is 978 (978.5 rounded half-even), the net 9780 and the tax 489."
+    """
+    receipt = priced(co, [(sku, quantity)])
+    assert line_amounts(receipt, "unit_price") == [unit_price]
+    assert line_amounts(receipt, "gross") == [net]
+    assert line_amounts(receipt, "net") == [net]
+    assert line_amounts(receipt, "tax") == [tax]
+
+
 # User Story 2 - Promotions
 
 
@@ -415,6 +447,95 @@ def test_us2_8_tie_after_cap_exclusive_applies(co: Modules) -> None:
     assert uncapped.total == 1720
 
 
+def test_us2_9_free_units_at_the_bulk_unit_price(co: Modules) -> None:
+    """US2-9: "Given buy 2 get 1 free on `TOY`, When a cart with `TOY` ×12 is priced, Then 4 units
+    are free, each worth the line's bulk unit price 950: discount 3800, net 7600, tax 760."
+    """
+    receipt = priced(co, [("TOY", 12)], (co.promotions.BuyXGetY("TOY", 2, 1),))
+    assert line_amounts(receipt, "discount") == [3800]
+    assert line_amounts(receipt, "net") == [7600]
+    assert line_amounts(receipt, "tax") == [760]
+
+
+@pytest.mark.parametrize(("min_net", "discount", "net"), [(2000, 200, 1800), (1800, 500, 1500)])
+def test_us2_10_minimum_net_on_the_current_net(
+    co: Modules, min_net: int, discount: int, net: int
+) -> None:
+    """US2-10: "Given 10% off `toys` and 300 off the order with a minimum net of 2000, When a cart
+    with `TOY` ×2 is priced, Then the order's current net when the fixed amount applies is 1800
+    (after the percentage), below the minimum, so it takes nothing: discount 200, net 1800; with a
+    minimum net of 1800 instead, it applies: discount 500, net 1500."
+    """
+    p = co.promotions
+    promos = (p.PercentOff("toys", 1000), p.FixedOff(300, min_net=min_net))
+    receipt = priced(co, [("TOY", 2)], promos)
+    assert (receipt.discount, receipt.net) == (discount, net)
+
+
+def test_us2_10_minimum_net_after_earlier_fixed_amounts(co: Modules) -> None:
+    """US2-10: "Given 100 off the order with a minimum net of 1600 given first and 500 off the order
+    given second, When a cart with `TOY` ×2 is priced, Then the 100 applies at 2000 and the 500
+    after it: discount 600, net 1400; given in the other order, the 500 leaves 1500, below 1600, and
+    the 100 takes nothing: discount 500, net 1500."
+    """
+    p = co.promotions
+    gated = p.FixedOff(100, min_net=1600)
+    first = priced(co, [("TOY", 2)], (gated, p.FixedOff(500)))
+    assert (first.discount, first.net) == (600, 1400)
+    second = priced(co, [("TOY", 2)], (p.FixedOff(500), gated))
+    assert (second.discount, second.net) == (500, 1500)
+
+
+def test_us2_11_exclusive_minimum_net_priced_alone(co: Modules) -> None:
+    """US2-11: "Given an exclusive 300 off the order with a minimum net of 2000 and a non-exclusive
+    10% off `toys`, When a cart with `TOY` ×2 is priced, Then the exclusive pricing, priced alone,
+    meets its minimum at 2000 and discounts 300, more than the non-exclusive 200: discount 300, net
+    1700, tax 170."
+    """
+    p = co.promotions
+    promos = (p.FixedOff(300, exclusive=True, min_net=2000), p.PercentOff("toys", 1000))
+    receipt = priced(co, [("TOY", 2)], promos)
+    assert (receipt.discount, receipt.net, receipt.tax) == (300, 1700, 170)
+
+
+def free_unit_promotions(co: Modules) -> tuple[Any, ...]:
+    return (co.promotions.BuyXGetY("TOY", 2, 1), co.promotions.FixedOff(300))
+
+
+def test_us2_12_free_units_never_capped(co: Modules) -> None:
+    """US2-12: "Given buy 2 get 1 free on `TOY`, 300 off the order and a discount cap of 200, When a
+    cart with `TOY` ×3 and `JOURNAL` ×1 is priced, Then the free unit takes 1000 from `TOY` and is
+    not capped; the 300 off (200 and 100, allocated over current nets 2000 and 1000) is more than
+    the cap, so the cap of 200 is allocated over 200 and 100, giving 133 and 67; the line discounts
+    are 1133 and 67, the nets 1867 and 933, the taxes 187 (186.7 rounded) and 47 (46.65 rounded),
+    and the order's discount is 1200, its net 2800, its tax 234 and its total 3034."
+    """
+    receipt = priced(co, [("TOY", 3), ("JOURNAL", 1)], free_unit_promotions(co), 200)
+    assert line_amounts(receipt, "discount") == [1133, 67]
+    assert line_amounts(receipt, "net") == [1867, 933]
+    assert line_amounts(receipt, "tax") == [187, 47]
+    assert (receipt.discount, receipt.net, receipt.tax, receipt.total) == (1200, 2800, 234, 3034)
+
+
+def test_us2_12_cap_compared_without_free_units(co: Modules) -> None:
+    """US2-12: "With a cap of 300 instead, the 300 off is not more than the cap: discounts 1200 and
+    100."
+    """
+    receipt = priced(co, [("TOY", 3), ("JOURNAL", 1)], free_unit_promotions(co), 300)
+    assert line_amounts(receipt, "discount") == [1200, 100]
+
+
+def test_us2_13_exclusivity_compares_free_units_too(co: Modules) -> None:
+    """US2-13: "Given the promotions and the cap of 200 of US2-12 and also an exclusive 1100 off the
+    order, When the same cart is priced, Then the exclusive pricing discounts 200 after the cap and
+    the non-exclusive pricing 1200, free units included, so the non-exclusive pricing applies:
+    discounts 1133 and 67."
+    """
+    promos = (*free_unit_promotions(co), co.promotions.FixedOff(1100, exclusive=True))
+    receipt = priced(co, [("TOY", 3), ("JOURNAL", 1)], promos, 200)
+    assert line_amounts(receipt, "discount") == [1133, 67]
+
+
 # User Story 3 - Returns
 
 
@@ -544,3 +665,34 @@ def test_us3_7_rejections_leave_the_order_unchanged(co: Modules) -> None:
     with pytest.raises(co.catalog.UnknownSku):
         order.return_units("TOY", 1)
     assert order.return_units("PEN", 3).total == 646
+
+
+def fee_amounts(refund: Any) -> tuple[int, int, int, int]:
+    return (refund.net, refund.tax, refund.fee, refund.total)
+
+
+def test_us3_8_fee_rounded_once_on_the_refund_net(co: Modules) -> None:
+    """US3-8: "Given the order of US3-2 (per-unit nets 667, 667, 666; per-unit taxes 34, 33, 33)
+    with a restocking fee of 2.5% and no fee cap, When 2 units are returned, Then the refund's net
+    is 1334, its tax 67, its fee 33 (2.5% of 1334 is 33.35; per unit it would be 17 + 17 = 34) and
+    its total 1368; when the last unit is then returned, its fee is 17 (16.65 rounded) and its total
+    682 (666 + 33 − 17)."
+    """
+    order = co.returns.Order(priced(co, [("JOURNAL", 3)], (co.promotions.FixedOff(1000),)), 250)
+    assert fee_amounts(order.return_units("JOURNAL", 2)) == (1334, 67, 33, 1368)
+    assert fee_amounts(order.return_units("JOURNAL", 1)) == (666, 33, 17, 682)
+
+
+def test_us3_9_fee_cap_across_returns(co: Modules) -> None:
+    """US3-9: "Given the order of US3-2 with a restocking fee of 2.5% and a fee cap of 30, When 1
+    unit is returned, Then its fee is 17 (16.675 rounded) and its total 684 (667 + 34 − 17); when 3
+    more are asked for, Then the return is rejected with `OverReturn` and charges no fee; when the
+    remaining 2 are returned, Then their fee before the cap is 33 (33.325 rounded), but the cap has
+    13 left, so the fee is 13 and the total 1386 (1333 + 66 − 13)."
+    """
+    receipt = priced(co, [("JOURNAL", 3)], (co.promotions.FixedOff(1000),))
+    order = co.returns.Order(receipt, 250, 30)
+    assert fee_amounts(order.return_units("JOURNAL", 1)) == (667, 34, 17, 684)
+    with pytest.raises(co.returns.OverReturn):
+        order.return_units("JOURNAL", 3)
+    assert fee_amounts(order.return_units("JOURNAL", 2)) == (1333, 66, 13, 1386)

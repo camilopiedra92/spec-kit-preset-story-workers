@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from checkout.allocation import per_unit
-from checkout.catalog import Catalog, Product
+from checkout.catalog import Catalog, Product, line_unit_price
 from checkout.promotions import Promotion, line_discounts
 from checkout.tax import TaxTable, line_tax
 
@@ -78,14 +78,15 @@ def price(
     discounts = line_discounts(items, promotions, discount_cap)
     lines = []
     for (product, quantity), discount in zip(items, discounts, strict=True):
-        gross = product.unit_price * quantity
+        unit_price = line_unit_price(product, quantity)
+        gross = unit_price * quantity
         net = gross - discount
         tax = line_tax(net, taxes.rate(product.category))
         lines.append(
             PricedLine(
                 sku=product.sku,
                 quantity=quantity,
-                unit_price=product.unit_price,
+                unit_price=unit_price,
                 gross=gross,
                 discount=discount,
                 net=net,
