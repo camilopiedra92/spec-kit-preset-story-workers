@@ -1,0 +1,31 @@
+# Development tooling for the eval harness only: export-ignored, never part of
+# the preset. The preset's version lives in preset.yml; uv requires one here,
+# and 0.0.0 says it is not that.
+[project]
+name = "spec-kit-preset-story-workers"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "pytest-timeout>=2.4.0",
+    "ruff>=0.17.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.mypy]
+files = ["tests/eval/*.py"]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests/eval"]
+# The fixture, the held-out tests and the reference implementation are run by
+# the eval and by T024's oracle proof, against their own interpreter setup.
+norecursedirs = ["fixture", "heldout", "reference"]
+timeout = 60

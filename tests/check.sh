@@ -13,4 +13,8 @@ step() {
   }
 }
 
+step uv run --locked ruff check
+step uv run --locked ruff format --check
+step uv run --locked mypy
+step uv run --locked pytest
 step tests/compose.sh

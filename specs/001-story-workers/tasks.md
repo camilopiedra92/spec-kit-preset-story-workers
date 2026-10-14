@@ -84,7 +84,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 ### Toolchain for User Story 2
 
-- [ ] T013 [US2] Add the Python toolchain: `uv init --bare --python 3.11` (`requires-python = ">=3.11"`; with no build system uv installs no package), then `uv add --dev ruff mypy pytest pytest-timeout` in `pyproject.toml` (ruff target py311 line length 100; mypy strict over `tests/eval/*.py`; pytest testpaths `tests/eval` with `norecursedirs` `fixture`, `heldout`, `reference`; timeout 60), commit `uv.lock`, add `pyproject.toml` and `uv.lock` to `.gitattributes` as `export-ignore`, and add `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, `uv run pytest` to `tests/check.sh` before `tests/compose.sh`
+- [X] T013 [US2] Add the Python toolchain: `uv init --bare --python 3.11` (`requires-python = ">=3.11"`; with no build system uv installs no package), then `uv add --dev ruff mypy pytest pytest-timeout` in `pyproject.toml` (ruff target py311 line length 100; mypy strict over `tests/eval/*.py`; pytest testpaths `tests/eval` with `norecursedirs` `fixture`, `heldout`, `reference`; timeout 60), commit `uv.lock`, add `pyproject.toml` and `uv.lock` to `.gitattributes` as `export-ignore`, and add `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, `uv run pytest` to `tests/check.sh` before `tests/compose.sh`
 
 ### Tests for User Story 2 (write first, see them fail)
 
