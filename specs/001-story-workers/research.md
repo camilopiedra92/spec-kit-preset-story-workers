@@ -24,7 +24,8 @@ Observations are dated and name the versions they ran on (constitution III).
      `effort: "low"`: 161; main `medium`, call `"max"`: 1081. The subagent inherits the main
      session's effort, and the call's `effort` wins. On an easier problem all four arms were within
      316–353, while the main session's own thinking moved from 49 (low) to 395 (high).
-  6. `--setting-sources project,local --strict-mcp-config`, with the variables unset: the project's
+  6. `--setting-sources project,local --strict-mcp-config`, with `CLAUDE_CODE_SUBAGENT_MODEL` and
+     `CLAUDE_CODE_EFFORT_LEVEL` unset: the project's
      `CLAUDE.md` and skills loaded, for the main session and the subagent; the user's instructions,
      output style, skills, plugins and MCP servers did not; OAuth worked. Claude Code's built-in
      skills and plugins still loaded.
@@ -50,13 +51,22 @@ Observations are dated and name the versions they ran on (constitution III).
       `--bare` ended with `Not logged in` (`is_error: true`) under the owner's OAuth login.
   14. The stream carries `rate_limit_event`s with the subscription window's utilization
       (`five_hour.utilization`, two decimals) and the `result` event a `subagent_stats` block.
+  15. A headless core `/speckit-implement` (no preset) on a one-task feature, hermetic, with git
+      isolated (`GIT_CONFIG_GLOBAL=/dev/null`, `GIT_CONFIG_NOSYSTEM=1`, an `eval` identity) and the
+      eval's tool list: exit 0, one `result` event, `is_error: false`, no `permission_denials`, the
+      task marked `[X]`, its test passing. Core wrote the code and an ignore file and committed
+      nothing. The first attempt exited 127: macOS has no `timeout` command.
+  16. `env -i` with only `HOME`, `USER`, `LOGNAME`, `PATH`, `TMPDIR`, `LANG` and `TERM`: the OAuth
+      login still worked (`apiKeySource: none`, a normal reply), and `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`,
+      set in the calling shell, read as unset inside.
 - **Not observed**: that `fable` is accepted as a `model` alias; the Agent tool's schema lists
   `sonnet`, `opus`, `haiku` and `fable`, and only the first three were run.
 - **Alternatives considered**: *an agent definition in `.claude/agents/`*: works, but needs an
   installer, an upgrade path and a rule for owners' edits, and (7) shows a project's own definition
   would collide with it. *`CLAUDE_CODE_SUBAGENT_MODEL`*: a user setting a preset cannot set, and (4)
   it moves reviews too. *`/model` before implement*: one session, so the larger model's prompt
-  cache is lost at each switch.
+  cache is lost at each switch (prompt caches are per model in Anthropic's prompt-caching
+  documentation; not observed here).
 
 ## R2. One worker per phase, in order, in this worktree
 
@@ -100,15 +110,19 @@ Observations are dated and name the versions they ran on (constitution III).
 
 ## R5. Fixes go to a worker; reviews name the main session's family
 
-- **Decision**: every hand-off goes to a worker; after two consecutive hand-offs on the same items
-  that verification still fails, the main session does them as core does. A review is started with
+- **Decision**: every hand-off goes to a worker; a phase gets at most two fix hand-offs, after which
+  its remaining items run as core does. A review that cannot get a fresh context does not run, and the
+  report says so. A review is started with
   `subagent_type: "general-purpose"`, `model` set to the main session's family alias and no
   `effort`.
 - **Rationale**: one rule keeps code writes in workers, which SC-003 checks, and the bound ends in
   core's behaviour rather than a stop (constitution IV). The Agent tool's schema takes family
   aliases, so the family is what can be named; R1 (4) shows a review without `model` would follow
-  `CLAUDE_CODE_SUBAGENT_MODEL`, and R1 (5) that without `effort` it thinks as hard as the session.
-- **Alternatives considered**: *stop and report at the bound or at a usage limit*: protects the larger
+  `CLAUDE_CODE_SUBAGENT_MODEL` (that `opus` on the call also wins over it is inferred from the
+  `sonnet` case; the probes run both), and R1 (5) that without `effort` it thinks as hard as the session.
+- **Alternatives considered**: *a bound per item* (two consecutive failing hand-offs on the same
+  items): fixes that break each other alternate items and never reach it (checklist pass 3).
+  *Stop and report at the bound or at a usage limit*: protects the larger
   model's budget, but a refusal where core would have finished breaks constitution IV; the owner
   chose core (Clarifications).
 
@@ -118,37 +132,46 @@ Observations are dated and name the versions they ran on (constitution III).
   ruff) with a two-story feature: `specs/001-*/spec.md`, `plan.md` (its Technical Context names
   `uv run pytest` and `uv run ruff check`, and fixes the module and function names) and `tasks.md`,
   plus `.specify/feature.json` pointing at it; no `checklists/` directory, so core's checklist gate
-  cannot stop a headless run. Its `CLAUDE.md` holds one rule — every commit message starts with
-  `fixture:` — checked on the `with` arm's code commits: that is how instructions reaching the
-  worker are seen. `tests/eval/heldout/` holds at least one acceptance test per acceptance scenario
+  cannot stop a headless run. Its `CLAUDE.md` holds two rules: every commit message starts with
+  `fixture:` (checked on the `with` arm's code commits: that is how instructions reaching the worker
+  are seen), and each user story closes with a fresh review (so the measured usage includes the
+  reviews the owner's own instructions ask for). `tests/eval/heldout/` holds at least one acceptance test per acceptance scenario
   of the fixture's spec.
 - **Arms**: `without` (only `specify init`), `with` (this checkout's archive), `fallback` (`with`, run
   with `--disallowedTools Agent`, R1 (11)). They differ only in the preset and, for `fallback`, the
   tool.
-- **Run** `tests/eval/run.sh <arm> <out-dir>`, hermetic per R1 (6, 12), with
-  `SPECKIT_PYTHON_EXECUTABLE` set to the specify CLI's own Python (preset installs need PyYAML):
-  `env -u CLAUDE_CODE_SUBAGENT_MODEL -u CLAUDE_CODE_EFFORT_LEVEL claude -p "/speckit-implement" --model
+- **Run** `tests/eval/run.sh <arm> <out-dir>`, hermetic per R1 (6, 12, 16): `env -i` with only
+  `HOME`, `USER`, `LOGNAME`, `PATH`, `TMPDIR`, `LANG`, `TERM` and `SPECKIT_PYTHON_EXECUTABLE` (the
+  specify CLI's own Python: preset installs need PyYAML, as dotfiles' `sdd-init.sh` and the sibling
+  preset's `tests/compose.sh` record), git isolated as in R1 (15), then `claude -p "/speckit-implement" --model
   claude-opus-5-5 --effort medium --setting-sources project,local --strict-mcp-config --allowedTools
   "Agent Bash Edit Write Read Glob Grep TodoWrite" --output-format stream-json --verbose` (the same
-  list in every arm), under a 3600-second deadline that kills its process group.
+  list in every arm), under a 3600-second deadline that `tests/eval/bounded.py` enforces by running
+  the command in its own process group and killing the group (R1 (15): no `timeout` on macOS).
 - **Counting** (FR-011): `claude` exited 0 within the deadline; the stream holds exactly one `result`
   event, with `is_error: false` and no `permission_denials`; for `with`, `modelUsage` has a Sonnet
-  entry and every commit after the setup commit that changes more than `tasks.md` starts with
-  `fixture:`, and there is at least one; for `fallback`, the stream has no Agent `tool_use`. An arm
+  entry, every commit after the setup commit that changes more than `tasks.md` starts with
+  `fixture:`, there is at least one, and the completion report names no item carried out in the
+  session; for `fallback`, the stream has no Agent `tool_use`. An arm
   that does not count is rerun, at most twice (Clarifications).
 - **After a counted run**: the project's own suite runs first (`suite.txt`); then `heldout/` is copied
   to `tests_heldout/`, a directory the fixture does not use, and run alone (`heldout.txt`).
 - **Outputs**: `status`, `stream.jsonl`, `usage.txt` (`costUSD` per model and the sum; the first and
   last `five_hour.utilization` beside them, R1 (14)), `heldout.txt`, `suite.txt`, `versions.txt`
-  (date; Claude Code, Spec Kit, git, uv, Python, pytest, ruff; each model ID in `modelUsage` with the
-  effort it was given; the `init` event's built-in skills and plugins).
+  (date; Claude Code, Spec Kit, git, uv, Python, pytest, ruff; the main model ID and its effort; the
+  environment allowlist and git isolation; the `init` event's output style, plugin and MCP-server
+  counts, and built-in skills), `models.txt` (every model ID in `modelUsage` with its effort).
 - **SC-003**: `tests/eval/attribution.py <out-dir>` lists the main session's (no
   `parent_tool_use_id`, R1 (1)) Write, Edit and NotebookEdit calls not on `tasks.md` (exit 1 if
   any), then its Bash commands.
-- **Comparison**: every arm's `versions.txt` must match `without`'s but for the date and the model
-  efforts; otherwise the comparison is refused and the arms are rerun.
-- **Probes** `tests/eval/probes.sh`: reruns R1 (1, 3, 4, 5, 8, 9, 10, 11) headless in scratch
-  repositories and checks each expected outcome (FR-012), so a Claude Code release that breaks one is
+- **Comparison**: every arm's `versions.txt` must match `without`'s but for the date; otherwise the
+  comparison is refused and the arms are rerun. Worker models differ between arms by design and live
+  in `models.txt`.
+- **Probes** `tests/eval/probes.sh`: reruns R1 (1, 3, 4 with `sonnet` and `opus`, 5, 7, 8, 9, 10,
+  11, 15) headless in scratch repositories, prints the Claude Code version, and checks each expected
+  outcome (FR-012). R1 (6, 12) are not probed — a probe would have to write to the user's own
+  configuration — and are checked on every eval run from its `init` event (output style, plugins,
+  MCP servers); R1 (2) is covered by (9); R1 (14) and (16) are recorded, not relied on, so a Claude Code release that breaks one is
   a red probe, not a silent change in the eval.
 - **Rationale**: per-model cost is the closest per-run observable to a subscription's usage, and
   summing every model is stricter than counting the larger one; the window's utilization moves with
@@ -165,7 +188,8 @@ Observations are dated and name the versions they ran on (constitution III).
 - **Decision**: `effort: "medium"` on the worker's call; nothing on the review's.
 - **Rationale**: R1 (5): without it the worker inherits the main session's effort, so raising the
   session's effort to plan a hard feature would raise every worker's, the opposite of the feature's
-  aim. Medium is Opus's default today, so at default settings the eval measures what an unset value
+  aim. Medium is Opus's default today (dotfiles `docs/claude-settings.md`, citing the model-config
+  docs), so at default settings the eval measures what an unset value
   would. The owner's policy (dotfiles `docs/claude-settings.md`) leaves effort at each model's
   default because a written level freezes and nobody revisits it; here the eval reruns at every
   release that changes a rule (constitution III), records each model's effort in `versions.txt`,
