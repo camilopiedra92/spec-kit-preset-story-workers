@@ -11,9 +11,8 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   alike: the brief always says an unmarked task may already be done (check against the code and
   `git log`, complete only what is missing), the worker's report lists tasks found done, and the
   completion report always carries `Started at phase <n>:`, since work committed before the run is
-  covered by the suite and not read as a diff. Changes uncommitted at the start are not the run's:
-  the diff reading covers the run's commits, a worker stages only its own files, and nobody commits
-  or reverts them.
+  covered by the suite and not read as a diff. Uncommitted work is kept apart by a clean tree
+  outside the feature directory (R4).
 - **Rationale**: the marks are core's own record ("For completed tasks, make sure to mark the task
   off as [X]"); everything else a run could read about past work (commit messages, which commit
   touched what) comes from several writers and was misread in every reconstruction reviewed.
@@ -38,13 +37,43 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   report, so the user knows which work had only the suite. A task a hook blocks stays unmarked, so
   each later run starts at its phase and costs one worker to find it still blocked.
 
+## R4. Uncommitted work: a clean tree outside the feature directory
+
+- **Decision** (owner, 2026-10-14, after the third fresh review): before the first worker the run
+  runs `git status --porcelain --untracked-files=all`; a path outside the feature directory sends
+  the whole run to core (Fallback), naming those paths. Inside the feature directory, uncommitted
+  changes stay as they are: no worker edits, stages, commits or reverts a file there, and a task that
+  changes one is carried out in the main session as core does, left uncommitted. The run's
+  `tasks.md` commits carry the file as it stands. A worker stages only its own files and commits
+  Project Setup Verification's changes on their own; the main session commits what it changes
+  outside the feature directory before the next worker. Verification requires the same `git status`,
+  run before its own runs, to list nothing outside the feature directory.
+- **Rationale**: with nothing uncommitted outside the feature directory, every change there after a
+  worker is that worker's, so no record is needed and none can be misread; spec artifacts, the usual
+  uncommitted files at implement time, live inside the feature directory, which workers never write.
+- **Alternatives considered**: *a record of `git status --porcelain` taken at the start, workers
+  never touching a listed file* (second review's fix): a worker's edit to an already changed file
+  leaves its status line as it was; untracked directories collapse to one line; the main session's
+  own uncommitted work reads as a worker's; a red suite cannot be traced to the user's file. Patching
+  it needs per-file hashes, untracked files listed one by one and a suite at the start, and each
+  round found more. *Falling back to core on any uncommitted change*: spec files are usually
+  uncommitted at implement time, so the preset would rarely run. *Letting a worker finish
+  uncommitted partial work*: its commit would carry the user's changes.
+- **Accepted limits**: a project with uncommitted work outside the feature directory (supertrader's
+  owner's `CLAUDE.md` and decision records, today) runs as core until that work is committed. Tasks
+  that change the feature's own documents (a quickstart, a contract) are carried out in the main
+  session. The fallback on a dirty tree is core itself, so it is not measured (constitution IV's
+  source); the eval measures the inside case: an uncommitted edit to the feature's spec.
+
 ## R2. The resumed state for the eval
 
-- **Decision**: `tests/eval/run.sh --state <name>` overlays `fixtures/<fixture>/states/<name>/`
-  onto the copied project before the setup commit; `versions.txt` records `state: <name>`. The
+- **Decision**: `tests/eval/run.sh --state <name>` overlays `fixtures/<fixture>/states/<name>/
+  committed/` onto the copied project before the setup commit, and `uncommitted/`, when present,
+  after every commit, so the agent finds it changed; `versions.txt` records `state: <name>`. The
   state `phase-2-done` of `checkout` holds Phases 1–2 implemented (the reference's US1 code, without
   US2 and US3, and the US1 test files a worker would have written) and `tasks.md` with T001–T011
-  marked `[X]`. `price` keeps `plan.md`'s signature (`promotions`, `discount_cap`) and refuses a
+  marked `[X]`, and in `uncommitted/` an HTML comment appended to the feature's `spec.md`, as an
+  owner's note left uncommitted (R4). `price` keeps `plan.md`'s signature (`promotions`, `discount_cap`) and refuses a
   promotion or a cap with `NotImplementedError` until User Story 2: the held-out helper always
   passes both, so without them no US1 pricing test could pass; US1's literal signature, the
   alternative, would leave the state unproven. Proven 2026-10-14: the state's suite 19 passed;
@@ -61,9 +90,12 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
 
 - **Decision**: `tests/eval/resume_check.py <out-dir>` reads the run's committed files and the
   fixture (at the run's commit) and prints, each `ok` or `FAIL`: no commit of the run changes a
-  file the state holds that no unfinished phase's task names (for `phase-2-done`:
+  file the state's `committed/` holds that no unfinished phase's task names, and the run's tree
+  holds each as the state does (for `phase-2-done`:
   `src/checkout/__init__.py`, `src/checkout/tax.py`, `tests/conftest.py`, `tests/test_cart.py`,
-  `tests/test_catalog.py`, `tests/test_pricing.py`, `tests/test_tax.py`); the first worker's brief
+  `tests/test_catalog.py`, `tests/test_pricing.py`, `tests/test_tax.py`; `commits.txt` is written
+  with `--no-renames`, so a move shows the old path); the state's `uncommitted/` edit is in no
+  commit and unchanged in the tree; the first worker's brief
   opens with the first unfinished phase's heading and no brief opens a finished one; every task of
   the run's final `tasks.md` is marked and the stream holds no `AskUserQuestion`, since a headless
   run that ends its turn on a question still exits 0; the held-out score is N of N; the report
@@ -71,7 +103,10 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   precondition.
 - **Limit**: US1's parts of the modules later phases also name (`cart.py`, `catalog.py`,
   `money.py`) are those phases' to change, so a rewrite of them is not seen by the first check; the
-  held-out tests, US1's included, are what guard them.
+  held-out tests, US1's included, are what guard them. `tests/conftest.py` and
+  `src/checkout/__init__.py` count as finished: a later worker that adds a fixture or an export to
+  them fails the check, though the fixture's tasks call for neither (T001 keeps `conftest.py`
+  empty).
 - **Rationale**: a behaviour check, not a comparison, so one counted run decides it; the script
   makes the verdict reproducible, as `compare.py` does for 002: its output and every input but the
   stream are committed (the stream holds local paths and session ids, so it stays local).

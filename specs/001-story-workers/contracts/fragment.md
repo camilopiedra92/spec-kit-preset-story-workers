@@ -19,7 +19,7 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    `Load and analyze the implementation context`, `Project Setup Verification` (Phase 1's worker only, 0.2.0),
    `Execute implementation`, `Implementation execution rules` and `Progress tracking and error
    handling` steps of `.claude/skills/speckit-implement/SKILL.md`; the worker "commits each task",
-   staging only the files it changed and never a file changed before the run (0.2.0),
+   staging only the files it changed and never a file in the feature directory (0.2.0),
    returns the report of 4, follows or reports a call a project hook blocks, and does not edit
    `tasks.md` (core's "mark the task off as [X]" in those steps is the main session's), start a
    review or start a worker.
@@ -30,8 +30,9 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    static checks as the baseline. It "marks a task [X] only after" its own runs show the whole suite
    passing and no static-check finding the baseline lacked, and its reading of the diff from the
    recorded HEAD finds nothing the phase's tasks do not call for (suite and checks when named);
-   0.2.0 reads the commits since that HEAD and `git status` against the record taken at the start,
-   and marks a task found done on the suite, the static checks and the commit or file cited. A
+   0.2.0 reads the commits since that HEAD, requires nothing uncommitted outside the feature
+   directory, and marks a task found done on the suite, the static checks and the commit or file
+   cited. A
    review the phase calls for, and its fixes, resolve first; then it commits `tasks.md` with a
    message containing `tasks: mark phase <n>` (after any prefix the project requires; 0.2.0: none
    when the phase marked nothing new), and only then starts the next phase's worker.
@@ -55,8 +56,8 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.
 10. **Where a run starts** (0.2.0): as `specs/003-resume-from-head/contracts/harness.md` states
     it: the first phase with an unmarked task, all-marked phases skipped, each phase's baseline as
-    Verification says, the worker checking what is already done, changes uncommitted at the start
-    not the run's, a `Started at phase <n>:` report line.
+    Verification says, the worker checking what is already done, a clean tree outside the feature
+    directory (else core), a `Started at phase <n>:` report line.
 11. **Narrowed, by name**: core's `For completed tasks, make sure to mark the task off as [X]`,
     `parallel tasks [P] can run together` and `Halt execution if any non-parallel task fails`.
 

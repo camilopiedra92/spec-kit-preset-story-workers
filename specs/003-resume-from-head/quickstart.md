@@ -10,7 +10,7 @@ tests/eval/run.sh --state phase-2-done checkout with "$A/with-1"   # rerun at mo
 uv run python tests/eval/resume_check.py "$A/with-1" | tee "$A/with-1/resume.txt"
 ```
 
-Passes when `resume_check.py` exits 0. `attribution.py` is not run: its "each phase opens a
+Passes when `resume_check.py` exits 0 (its eight checks: contract `resume_check.py`). `attribution.py` is not run: its "each phase opens a
 worker's brief" reads the final `tasks.md`, whose Phases 1–2 never get a worker here by design.
 Record: copy the run's committed files (no stream, no transcripts) and `repo/<feature>/tasks.md` to
 `tests/eval/results/003-resume-from-head/`, write the README's Eval 003 entry, then

@@ -11,16 +11,20 @@
   reading covers the commits made since it.
 - Every brief carries only the phase's unmarked tasks and says some may already be done, in whole
   or in part: check each against the code and `git log`, complete only what is missing. The
-  worker's report lists tasks found already done, with the commit or file holding each; the main
-  session marks them on the suite and the static checks. A phase that marks nothing new has no
+  worker's report lists tasks found already done, with the commit or file holding each. A phase that marks nothing new has no
   `tasks: mark phase` commit.
 - A worker stages only the files it changed, never `git add -A` or `-a`.
-- Before the first worker the run records `git status --porcelain`: the files it lists were changed
-  before the run and are the user's: no finding, no question, no stop; no worker edits, stages,
-  commits or reverts them; a task that needs one, or a suite red because of one, goes to the main
-  session, which carries out that phase's remaining items as core does. Verification also requires
-  `git status --porcelain` to list nothing beyond that record and `tasks.md`. The run's `tasks:`
-  commits carry `tasks.md` as it stands.
+- Before the first worker the run runs `git status --porcelain --untracked-files=all`. A path
+  outside the feature directory sends the whole run to core (Fallback), the completion report
+  naming those paths. Inside the feature directory, uncommitted changes stay as they are: no
+  finding, no question, no stop; no worker edits, stages, commits or reverts a file there; a task
+  that changes one is carried out in the main session as core does and left uncommitted. The run's
+  `tasks:` commits carry `tasks.md` as it stands. A worker commits Project Setup Verification's
+  changes in a commit of their own. The main session commits what it changes outside the feature
+  directory before the next phase's worker (`tasks: carried out in this session`). Verification
+  requires `git status --porcelain --untracked-files=all`, run before its own runs, to list nothing
+  outside the feature directory; what it lists is the worker's, and goes back to it as a
+  finding.
 - A task found already done is marked on the suite, the static checks and the main session's
   reading of the commit or file the worker cites.
 - `Project Setup Verification` is Phase 1's worker's only.
@@ -36,8 +40,11 @@
 
 ## `tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <arm> <out-dir>`
 
-`--state <name>` copies `fixtures/<fixture>/states/<name>/` as committed (`git archive`) over the
-scratch project before the setup commit; refused (exit 2) when the directory is not committed.
+`--state <name>` copies `fixtures/<fixture>/states/<name>/committed/` as committed (`git archive`)
+over the scratch project before the setup commit, and `states/<name>/uncommitted/`, when there is
+one, after every commit, so the agent finds it changed and not committed; refused (exit 2) when
+`committed/` is not committed. `commits.txt` is written with `--no-renames`, so a moved file shows
+its old path too.
 `versions.txt` adds `state: <name>` (`state: -` without the flag), a pre-run key.
 
 ## `tests/eval/resume_check.py <out-dir>`
@@ -45,7 +52,9 @@ scratch project before the setup commit; refused (exit 2) when the directory is 
 Reads `status`, `versions.txt` (`fixture`, `state`, `commit`), `commits.txt`, `stream.jsonl`,
 `heldout.txt`, `report.txt`, `repo/<feature>/tasks.md` (the run's final one), and the fixture and
 its state at the run's commit. Prints one line per check (`ok` / `FAIL …`): `finished phases
-untouched` (no commit changes a file the state holds that no unfinished phase's task names), `first
+untouched` (a file the state's `committed/` holds that no unfinished phase's task names is in no
+commit, and the run's tree holds it as the state does), `uncommitted changes untouched` (each file
+of `uncommitted/` is in no commit, and the tree holds it as the state does), `first
 brief opens the first unfinished phase`, `no brief opens a finished phase`, `every task marked`, `no
 question asked`, `held-out N of N`, `report names the start` (FR-005's whole line). Exit 0 all ok,
 1 one fails, 2 unreadable input or a status other than `ok`.

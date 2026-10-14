@@ -181,7 +181,8 @@ its own.
 - **A run resumes** (rule of 0.2.0, feature 003): every run starts at the first phase with a task
   not marked `[X]` or `[x]`, skipping all-marked phases; each phase's baseline is taken as
   Verification says; the worker gets only the unmarked tasks and checks what the repository already
-  holds; changes uncommitted at the start are not the run's; the completion report says where the
+  holds; a run that finds uncommitted changes outside the feature directory is
+  carried out as core does; the completion report says where the
   run started and that work committed before it had the suite but no diff reading.
   (0.1.0 resumed after the last `tasks: mark phase <n>` commit, which restarted a feature adopted
   partway through at Phase 1.)
@@ -218,14 +219,14 @@ its own.
   Verification" (Phase 1's worker only, 0.2.0), "Execute implementation", "Implementation execution rules" and
   "Progress tracking and error handling" steps in the composed skill rather than repeating them; and
   it MUST say the worker commits each task in a commit of its own (0.2.0: staging only the files it
-  changed, never a file changed before the run), returns the worker report, follows
+  changed, never a file in the feature directory), returns the worker report, follows
   or reports a call a project hook blocks, and does not edit `tasks.md` (core's "mark the task off as
   [X]" in those steps is the main session's), start a review or start another worker.
 - **FR-004**: The main session MUST mark a task `[X]` only after, in its own runs, the whole suite
   passes (when one is named), the static checks report no finding the baseline it took before the
   phase's first worker did not have (when they are named), and its reading of the phase's diff finds
   nothing the phase's tasks do not call for (0.2.0: the commits since the recorded HEAD, and `git
-  status` listing nothing beyond the record taken at the run's start and `tasks.md`; a task found
+  status` listing nothing uncommitted outside the feature directory; a task found
   already done is marked on the suite, the static checks and the commit or file cited). A review the phase calls for (FR-005), and every fix
   it leads to, resolves before the phase is marked; then the main session commits `tasks.md` with a
   message containing `tasks: mark phase <n>` (after any prefix the project's instructions require), and only then does the next phase's worker start. A worker's report
