@@ -51,7 +51,7 @@ commit per approved project at rollout.
 |---|---|
 | I. Append, never replace | One fragment, `strategy: "append"`, no frontmatter; it names the three core rules it narrows, and `tests/compose.sh` greps core for them and for each step the brief names. |
 | II. Verified against the real CLI | `tests/compose.sh` installs a tag-shaped archive with the real CLI; CI runs `tests/check.sh` pinned on every push and pull request and against the latest release weekly. |
-| III. Behaviour is measured, not asserted | The eval (R6) runs the fixture hermetically in three arms and the probes rerun R1; the README records the date, usage, held-out results, runs and reruns, probes, and every tool's and model's version and effort. Released only if SC-001, SC-002, SC-005 and SC-006 hold. |
+| III. Behaviour is measured, not asserted | The eval (R6) runs the fixture hermetically in three arms and the probes rerun R1; the README records the date, usage, held-out results, runs and reruns, probes, and every tool's and model's version and effort. Released only if every success criterion holds. |
 | IV. Degrades to core | FR-007: no Agent tool, a worker's error or usage limit, or the hand-off bound, and the session carries on as core does; the `fallback` arm measures it (SC-005). |
 | V. Released by tag | `preset.yml`, CHANGELOG and tag move together at release; `tests/compose.sh` fails if the archive carries `.specify/`, `.claude/`, `specs/`, `tests/`, `docs/`, `.github/`, `CLAUDE.md`, `pyproject.toml` or `uv.lock`. |
 
@@ -65,7 +65,7 @@ Re-checked after Phase 1: no violation; Complexity Tracking is empty.
 specs/001-story-workers/
 ├── spec.md
 ├── plan.md
-├── research.md          # R1 observations (14 runs), R2–R7 decisions and alternatives
+├── research.md          # R1 observations (16 runs), R2–R7 decisions and alternatives
 ├── quickstart.md        # running the probes and the eval
 ├── contracts/
 │   └── fragment.md      # the fragment's rules, the harness's and the probes' interface
@@ -85,10 +85,13 @@ tests/
 └── eval/
     ├── run.sh                   # one arm, hermetic, outputs into <out-dir>
     ├── probes.sh                # reruns research R1's observations
+    ├── bounded.py               # runs a command in its own process group under a deadline
     ├── attribution.py           # SC-003 from stream.jsonl
     ├── test_attribution.py
     ├── test_run.py              # run.sh's refusals and counting, against stub claude streams
-    ├── fixture/                 # two-story Python feature: spec, plan, tasks, uv.lock, CLAUDE.md
+    ├── test_bounded.py          # the deadline kills the whole group
+    ├── fixture/                 # two-story Python feature: spec, plan, tasks, uv.lock, and a
+    │                            # CLAUDE.md with the commit rule and a review per story
     └── heldout/                 # acceptance tests, copied in only after a run ends
 .github/workflows/ci.yml         # job `compose`, matrix pinned/latest, runs tests/check.sh;
                                  # `compose (pinned)` is the required check (constitution)
@@ -115,7 +118,7 @@ linter, formatter, type checker and tests at scaffold, as a new project does.
    them green.
 3. **Story 2**: `attribution.py` and `run.sh`'s counting test-first against stub streams; the
    fixture, the held-out tests, `run.sh` and `probes.sh`; the probes, then one counted run per arm;
-   the README entry. If SC-001, SC-002, SC-005 or SC-006 does not hold, the README entry alone goes
+   the README entry. If any success criterion does not hold, the README entry alone goes
    to `main` and the branch is tagged (Clarifications).
 4. **Before the PR**: research R7 moves to `docs/decisions/0001-worker-effort.md` (MADR), and the
    project CLAUDE.md points at `docs/decisions/`.
@@ -125,7 +128,8 @@ linter, formatter, type checker and tests at scaffold, as a new project does.
    for each existing Spec Kit project the owner approves (`renta`, `RENPHO`, `supertrader`,
    `dotfiles`), `specify preset add` of the tag in a commit of its own. The global `CLAUDE.md` is left
    as it is: its "each story closes with the whole suite, the project's mutation check … and a fresh
-   review" already holds under the preset, a phase's rules belong in a preset, and it is at 199 of
+   review" is a review the user's instructions call for, which FR-005 starts on the main session's
+   model, a phase's rules belong in a preset, and it is at 199 of
    200 lines.
 
 ## Complexity Tracking

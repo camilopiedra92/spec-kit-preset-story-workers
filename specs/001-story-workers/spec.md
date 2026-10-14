@@ -62,6 +62,12 @@ verification is counted, and whether it delivers code that is any worse.
 - Q: An eval arm that does not count (a crash, the deadline, an error)? → A: it is not a
   measurement: rerun, up to twice; only counted arms that miss a criterion are recorded as not
   adopted.
+- Q: Does the fixture call for a review per story? → A: yes, in its `CLAUDE.md`, so the measured
+  usage includes the reviews the owner's own setup asks for (decided on the owner's standing
+  instruction to take the recommended option).
+- Q: What bounds fix hand-offs that keep breaking each other? → A: at most two fix hand-offs per
+  phase, whatever items they carry; after that the phase's remaining items run as core does
+  (same standing instruction).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -79,7 +85,8 @@ instructions call for runs in a fresh context on the main session's model, never
 **Independent Test**: the `with` arm of the eval (User Story 2) is this story's end-to-end test: in
 its stream the main session edits no tracked file but `tasks.md` (SC-003), the workers' turns ran on
 the smaller model, the fixture's commit-message rule holds on every code commit (so the project's
-instructions reached the workers), and each `[X]` follows a whole-suite run by the main session.
+instructions reached the workers), each `[X]` follows a whole-suite run by the main session, and
+each story's review ran on the main session's model.
 
 **Acceptance Scenarios**:
 
@@ -90,14 +97,14 @@ instructions reached the workers), and each `[X]` follows a whole-suite run by t
    fails, or of the static checks reports a finding its baseline did not have, **Then** no task of
    the phase is marked done, and the failure goes to a worker briefed with it.
 3. **Given** a phase whose diff changes files no task of the phase calls for, **When** the main
-   session reads it, **Then** those changes go back to a worker or into the completion report, and
-   nothing is marked until they are resolved.
+   session reads it, **Then** those changes go back to a worker, and nothing is marked until a
+   reading of the diff finds them resolved.
 4. **Given** a project whose instructions call for a review per story, **When** a story's phase is
    verified, **Then** the reviewer is started in a fresh context with the main session's model
    family named on the call, and each finding it proves goes to a worker, then verification again.
-5. **Given** two consecutive hand-offs on the same items after which verification still fails them,
-   **When** the second returns, **Then** the main session carries out those items itself as core
-   does, and says so in the completion report.
+5. **Given** a phase that has had two fix hand-offs, **When** verification still fails, **Then** the
+   main session carries out the phase's remaining items itself as core does, and says so in the
+   completion report.
 6. **Given** a session with no Agent tool, or a worker that returns an error or no report, **When**
    it happens, **Then** the main session carries out the remaining tasks itself as core does, and
    says why in the completion report.
@@ -123,9 +130,9 @@ the versions of Spec Kit, Claude Code, the model IDs and efforts, git, uv, Pytho
 
 **Acceptance Scenarios**:
 
-1. **Given** all three arms counted, **When** SC-001, SC-002 and SC-005 hold, **Then** the README
-   records the result and the preset is released.
-2. **Given** all three arms counted, **When** any of SC-001, SC-002 or SC-005 does not hold, **Then**
+1. **Given** all three arms counted, **When** every success criterion SC-001 to SC-006 holds,
+   **Then** the README records the result and the preset is released.
+2. **Given** all three arms counted, **When** any success criterion does not hold, **Then**
    the preset is not released; the README entry alone reaches `main`, recording the rule as measured
    and not adopted with the reason, and the branch is tagged and left unmerged.
 3. **Given** an arm that does not count, **When** it is rerun twice without counting, **Then** no
@@ -161,10 +168,12 @@ its own.
   fires at the end of the main session's turn, not at a subagent's (observed, R1).
 - **A project hook blocks a worker's call**: the worker receives the hook's message (observed) and
   follows it or leaves the task unfinished with the message in its report; the main session never
-  makes the blocked call itself.
+  makes the blocked call itself, also under FR-007: such a task stays unfinished and goes into the
+  completion report.
 - **A run resumes** after an interruption: the phase starts at the last commit that changed
-  `tasks.md`; its commits are verified as FR-004 says; uncommitted changes go to a worker briefed
-  with the diff, to finish or discard. The static-check baseline is taken at that commit.
+  `tasks.md` (FR-004 makes the main session commit it after each phase); its commits are verified
+  as FR-004 says; uncommitted changes go to a worker briefed with the diff, to finish or discard. The
+  static-check baseline is taken at that commit, in a temporary `git worktree` of it.
 - **The project names no suite, or no static check**: verification runs what is named, says in the
   completion report what was not, and the diff is read as always.
 - **`[P]` tasks** run inside their phase's worker, one after another: two workers would write the
@@ -190,19 +199,26 @@ its own.
   MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
   Verification" (first phase only), "Execute implementation", "Implementation execution rules" and
   "Progress tracking and error handling" steps in the composed skill rather than repeating them; and
-  it MUST say the worker commits each task in a commit of its own, and does not edit `tasks.md`,
-  start a review or start another worker.
+  it MUST say the worker commits each task in a commit of its own, returns the worker report, follows
+  or reports a call a project hook blocks, and does not edit `tasks.md` (core's "mark the task off as
+  [X]" in those steps is the main session's), start a review or start another worker.
 - **FR-004**: The main session MUST mark a task `[X]` only after, in its own runs, the whole suite
-  passes, the static checks report no finding the baseline it took before the phase's first worker
-  did not have, and its reading of the phase's diff finds nothing the phase's tasks do not call for.
-  A worker's report never marks a task.
-- **FR-005**: Any review the project's instructions or a command call for MUST be started in a fresh
-  context with `subagent_type: "general-purpose"`, `model` set to the main session's model family and
-  no `effort`, so it inherits the main session's; never run by a worker.
+  passes (when one is named), the static checks report no finding the baseline it took before the
+  phase's first worker did not have (when they are named), and its reading of the phase's diff finds
+  nothing the phase's tasks do not call for; it commits `tasks.md` after marking each phase. A
+  worker's report never marks a task.
+- **FR-005**: Any review the user's or the project's instructions, or a command, call for MUST be
+  started in a fresh context with `subagent_type: "general-purpose"`, `model` set to the main
+  session's model family and no `effort`, so it inherits the main session's; never run by a worker.
+  Where no fresh context can be started (no Agent tool, or the call errors), the review does not run
+  and the completion report says so: core has no review, and a review by the context that wrote the
+  code is not one.
 - **FR-006**: Every hand-off — unfinished tasks, a failed verification, a review finding — MUST go
   to a worker briefed with it, then verification again; a review finding passes when a fresh review
-  of that finding no longer reports it. After two consecutive hand-offs on the same items that
-  verification still fails, the main session carries them out itself as core does (FR-007). Apart
+  of that finding no longer reports it. A phase gets at most two fix hand-offs, whatever items they
+  carry; when verification still fails after them, the main session carries out the phase's
+  remaining items itself as core does (FR-007). Tasks a worker reported finding join the current
+  phase in `tasks.md` and go to its next hand-off. Apart
   from that, the main session's only edits to tracked files are `tasks.md` — its checkboxes, and the
   tasks a worker reported finding — and its commits of them; running the suite, the static checks or
   core's extension hooks is not writing code.
@@ -218,10 +234,13 @@ its own.
 - **FR-010**: The fixture, its held-out tests, the probes and the harness MUST live under `tests/`,
   outside the release archive (constitution V), with the steps to rerun them.
 - **FR-011**: An eval arm MUST count only when the agent exited 0 within its deadline, its result
-  reports no error and no permission denial, and the arm's own checks hold; otherwise the harness
+  reports no error and no permission denial, and the arm's own checks hold — for `with`, that the
+  completion report names no item carried out in the session, so the arm measures workers only; otherwise the harness
   records it as not counted, with the reason, and writes no usage or held-out result for it.
-- **FR-012**: The probes MUST rerun each observation of research.md R1 the design rests on, and
-  fail when one no longer holds.
+- **FR-012**: The probes MUST rerun each observation of research.md R1 the design rests on that can
+  be rerun without writing to the user's own configuration, print the Claude Code version they ran
+  on, and fail when one no longer holds; the isolation observations (R1 6, 12) are checked instead on
+  every eval run, from its `init` event.
 - **FR-013**: On release, dotfiles' `sdd-init` MUST install the preset beside `constitution-authoring`,
   with its check seen red; dotfiles' effort policy MUST name the exception and link the decision; and
   each existing Spec Kit project MUST get the preset only with the owner's approval, in a commit of its

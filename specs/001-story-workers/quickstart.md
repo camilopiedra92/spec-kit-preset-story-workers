@@ -9,17 +9,17 @@ hooks, skills, plugins and MCP servers do not load.
 tests/eval/probes.sh                                   # SC-006: every probe ok
 for arm in without with fallback; do
   for try in 1 2 3; do                                 # one counted run; rerun at most twice
-    rm -rf "/tmp/eval-$arm"; tests/eval/run.sh "$arm" "/tmp/eval-$arm" && break
+    tests/eval/run.sh "$arm" "/tmp/eval-$arm-$try" && ln -sfn "eval-$arm-$try" "/tmp/eval-$arm" && break
   done
 done
-cat /tmp/eval-*/status                                 # each must say ok
+cat /tmp/eval-*-*/status                               # every try, with each rerun's reason
 cat /tmp/eval-*/usage.txt                              # costUSD per model, the sum, the window
 cat /tmp/eval-*/heldout.txt                            # held-out passed / total
 uv run python tests/eval/attribution.py /tmp/eval-with # SC-003: exit 0
-for arm in with fallback; do                           # same versions, or rerun
-  diff <(grep -vE '^(date|effort)' /tmp/eval-without/versions.txt) \
-       <(grep -vE '^(date|effort)' "/tmp/eval-$arm/versions.txt")
+for arm in with fallback; do                           # same tools and main model, or rerun
+  diff <(grep -v '^date' /tmp/eval-without/versions.txt) <(grep -v '^date' "/tmp/eval-$arm/versions.txt")
 done
+cat /tmp/eval-*/models.txt                             # worker models and efforts, per arm
 ```
 
 - **SC-001**: `1 - with.sum / without.sum >= 0.30`.
