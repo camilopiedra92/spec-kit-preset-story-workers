@@ -27,3 +27,21 @@ Closure, 2026-10-14: the same reviewer, which did not write the changes, re-chec
 docstring quote still verbatim, 46 of 46 passing against the reference, 10 failed and 36 passed
 without `returns.py`; F1–F5 closed, no new finding. The reference's clamp of a line's net at zero,
 there only for the input F3 now rules out, was removed; the held-out tests still pass 46 of 46.
+
+## Hardening 1 (attempt 2)
+
+Attempt 1's gate closed: three `without` runs each passed 46 of 46. The fixture was hardened in
+commit 866a3bc (bulk price US1-9; free units at the bulk price US2-9; a minimum net on a fixed
+amount US2-10, US2-11; free units never capped US2-12, US2-13; a restocking fee US3-8, US3-9): 59
+held-out tests, task lines per story phase 10, 10 and 9. Each new rule's wrong reading, applied to a
+copy of the reference, turned its tests red (re-run by the author after the builder).
+
+A fresh-context reviewer, who wrote none of it, checked the 13 new test cases and every interaction
+of the new rules with the old ones, 2026-10-14: every value recomputed by hand from the spec and
+matching; every docstring quote verbatim (a script, 0 mismatches); no second reading of any asserted
+value; no existing scenario made inconsistent but for H1's prose.
+
+| ID | Finding | Resolution | Closed |
+|---|---|---|---|
+| H1 (low) | "gets back exactly what those units cost" and US3-3's "a full return refunds all of it" read as general rules, false once a restocking fee exists; no asserted value rests on them. | Now "…tax included, less any restocking fee" and "without a restocking fee, a full return refunds all of it", in the spec and the docstring quoting it; the quote script finds 0 mismatches and the oracle passes 59 of 59. | yes |
+| H2 (info) | "A rejected return charges no fee" is guarded only nominally by `test_us3_9_fee_cap_across_returns`. | Left as is: a test strength note, not an ambiguity; no expected value is at stake. | yes |
