@@ -1,0 +1,18 @@
+All 30 tasks in `specs/001-checkout/tasks.md` are done and checked off. `uv run pytest` passes (72 tests) and `uv run ruff check` is clean. Nothing is committed yet.
+
+**What was built** (`src/checkout/`):
+- **User Story 1, pricing a cart with tax:** the cart, the catalog, tax, the bulk unit price at 10 or more units, and rounding half to even.
+- **User Story 2, promotions:** buy X get Y free, percentage off, fixed amount off with a minimum order net, the order in which promotions apply, and the discount cap (free units are never capped). An exclusive promotion wins a tie with the other promotions; between two tied exclusive promotions, the one given first wins.
+- **User Story 3, returns:** each line's net and tax are split per unit when the order is priced, and returns take units in order. Over-returns, quantities below 1, and SKUs not in the order are rejected without changing the order. The restocking fee is rounded once per return and capped across all of the order's returns.
+
+**Tests:** every acceptance scenario from the spec is tested with its exact numbers, and each story's tests were run and seen failing before its code was written. The spec's catalog and tax table are in `tests/spec_data.py`, because `conftest.py` has to stay empty except for its docstring.
+
+**Story reviews** (one fresh reviewer per story, as `CLAUDE.md` requires):
+- **Story 1:** the reviewer showed that `Cart.add` accepted quantities like `1.5` or `True`, which led to fractional-cent amounts. I fixed it so quantities must be whole numbers from 1 to 99, and added a test.
+- **Story 2:** no defects. I added one missing check the reviewer pointed out: the order's total discount of 2050 in scenario US2-4.
+- **Story 3:** no defects.
+
+**Other notes:**
+- There are no checklists and no `.specify/extensions.yml`, so there were no checklist checks or hooks to run.
+- I added `*.pyc`, `*.egg-info/`, `dist/` and `.DS_Store` to `.gitignore`.
+- You're on `master`, not a `001-checkout` branch. Should I create that branch and commit with a `fixture:` message?

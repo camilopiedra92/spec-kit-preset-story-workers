@@ -1,0 +1,21 @@
+I've implemented all 24 tasks in `specs/001-checkout/tasks.md` and marked them `[X]`. All 58 tests pass (`uv run pytest`) and `uv run ruff check` is clean.
+
+| Story | What was built | Review |
+|---|---|---|
+| Setup (T001) | Package skeleton and `tests/`; added the missing Python entries to `.gitignore` | — |
+| US1: price a cart with tax (T002–T010) | `money.py`, `catalog.py`, `tax.py`, `cart.py` | One gap found and fixed (below) |
+| US2: promotions (T011–T018) | `allocation.py`, `promotions.py`, and promotions plus the discount cap in `price` | Nothing found |
+| US3: returns (T019–T024) | `per_unit`, per-unit amounts on each priced line, `returns.py` | Nothing found |
+
+For each story I wrote the tests first, saw them fail, then implemented. After each story a separate review agent checked the changes against `spec.md`, as `CLAUDE.md` requires.
+
+**The US1 gap:** the spec says a quantity must be a whole number from 1 to 99, but `Cart.add` accepted `1.5` and `True`, and a fractional quantity then produced fractions of a cent. Both are now rejected with `InvalidQuantity` and have tests; returns apply the same check.
+
+**Choices you may want to look at:**
+- The spec's catalog and tax table are shared fixtures in `tests/conftest.py`. T001 created that file holding only a docstring.
+- In `promotions.py`, a buy-X-get-Y discount can't exceed the line's net. That only matters for two such promotions on one SKU, which the spec doesn't cover.
+
+**Other things to know:**
+- There are no checklists in the spec folder, no `.specify/extensions.yml` (so no hooks ran), and `.specify/memory/constitution.md` is still the unfilled template.
+- `pyproject.toml` has no build-system section, so `checkout` imports under pytest but `uv run python -c "import checkout"` fails. That comes from the original setup, not this work.
+- Nothing is committed. The work is uncommitted on `master`; if you want it committed, messages will start with `fixture:` as `CLAUDE.md` requires.

@@ -1,0 +1,21 @@
+I implemented the whole checkout feature: all 30 tasks in `specs/001-checkout/tasks.md` are done and marked `[X]`. `uv run pytest` gives 76 passed and `uv run ruff check` is clean.
+
+**What was built**, in `src/checkout/`:
+- **Money and allocation** (`money.py`, `allocation.py`): half-even rounding to the cent, largest-remainder allocation, and the per-unit split used for returns.
+- **Catalog and tax** (`catalog.py`, `tax.py`): product lookup, the bulk unit price at 10 or more units, and the tax table.
+- **Promotions** (`promotions.py`): buy X get Y free, percentage off and fixed amount off, applied in the fixed stacking order, plus the minimum net, the discount cap (free units are never capped) and exclusivity with its tie-breaks.
+- **Cart and pricing** (`cart.py`): cart lines, the quantity checks, and the receipt with each line's per-unit amounts.
+- **Returns** (`returns.py`): refunds built from the amounts fixed at purchase, the rejected returns, and the restocking fee with its cap across returns.
+
+**How it was done:** for each story the tests came first, and I watched them fail before writing the code. There is one test file per area as named in `tasks.md`. The spec's catalog and tax table live in `tests/scenario.py`, because `conftest.py` has to stay docstring-only.
+
+**Story reviews:** after each story, a fresh subagent checked the changes against `spec.md`, as `CLAUDE.md` asks. I fixed everything they proved:
+- **Story 1:** `Cart.add` accepted a quantity of `1.5`, which produced amounts in fractions of a cent. Quantities must now be whole numbers, for both cart additions and returns, and there are tests for it.
+- **Story 2:** nothing failed. The reviewer also tried edge cases, such as a cap of 0, a fixed amount on an order worth 0, and an exclusive buy-X-get-Y, and all came out right.
+- **Story 3:** the code was fine, but two numbers the spec gives weren't checked by any test: the per-unit amounts in US3-6 and the first refund's net and tax in US3-9. I added both.
+
+**Other notes:**
+- I added a few standard Python ignore patterns to `.gitignore`.
+- The project's constitution file is still the blank template, so it set no extra rules.
+- There were no checklists and no `.specify/extensions.yml`, so no hooks ran before or after.
+- Nothing is committed; the work is uncommitted on `master`. Per `CLAUDE.md`, a commit message would need to start with `fixture:`. Say if you want me to commit.

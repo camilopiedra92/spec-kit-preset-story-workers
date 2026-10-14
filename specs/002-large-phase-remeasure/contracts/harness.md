@@ -70,7 +70,9 @@ counting (the eval stops: spec US3 scenario 3); 2 on any refusal, `run.sh`'s inc
   Prints, per arm, each run and the median and spread, then `gate`, `SC-001`, `SC-002`, `SC-003`,
   `SC-005`, `SC-006`, `SC-007` and `SC-008`, each `ok` or `FAIL` with its numbers. Exit 0 when the gate
   is open and every one holds, 1 otherwise.
-- Held-out N comes from `fixtures/<fixture>/heldout/N` (data model, "Held-out score").
+- Held-out N, the story count and the task ids come from `fixtures/<fixture>/` as committed at the
+  runs' `commit:` (data model, "Comparison"), so committed results stay re-judgeable after a
+  hardening.
 - `compare.py --gate <without-run-dir>...`: three counted `without` runs; prints the scores and
   `gate open` (exit 0) or `gate closed` (exit 1); 2 on refused input.
 - `compare.py --spent <root> [--fixture <name> --next <arm>...]`: the data model's "Spend"; the

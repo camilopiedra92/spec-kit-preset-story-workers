@@ -1,0 +1,18 @@
+All 24 tasks in `specs/001-checkout/tasks.md` are done and checked off. `uv run pytest` passes (63 tests) and `uv run ruff check` is clean.
+
+**What was built** (`src/checkout/`, matching the interface in `plan.md`):
+- **Story 1, cart and tax:** money rounding, the catalog, the tax table, the cart and pricing. Adding a SKU twice merges it into its first line, quantities must be 1–99, and a rejected addition leaves the cart unchanged.
+- **Story 2, promotions:** buy-X-get-Y, percentage off and fixed amount off, always applied in the spec's stacking order. The discount cap and exclusive promotions work, including the tie-break rules.
+- **Story 3, returns:** each line's amounts are split per unit at purchase, and returns take units in order. A rejected return (too many units, fewer than 1, or a SKU not in the order) leaves the order unchanged.
+
+For each story, I wrote the tests first and ran them to confirm they failed before writing the code.
+
+**Story reviews** (one fresh reviewer per story, as CLAUDE.md asks):
+- **Story 1:** the reviewer showed that a non-whole quantity such as `1.5` was accepted, which breaks the spec's "a whole number from 1 to 99". It is now rejected with `InvalidQuantity`, and tests cover it.
+- **Story 2:** no behavior problems. Two intermediate figures from the scenarios (the step-by-step amounts in US2-3 and the before-cap breakdown in US2-6) weren't tested, so I added assertions for them.
+- **Story 3:** no behavior problems. I added assertions for the per-unit amounts in US3-6 and the order amounts in US3-5. The US3-4 line amounts were already checked by the US2-6 tests.
+
+**Other notes:**
+- I added a few standard Python ignore patterns to `.gitignore` (`*.pyc`, `dist/`, `*.egg-info/`, `.DS_Store`, `*.swp`).
+- There were no checklists to check and no `.specify/extensions.yml`, so no hooks ran before or after.
+- Nothing is committed yet; the changes are in the working tree on `master`. If you want, I can commit them with a `fixture:` message as CLAUDE.md requires.

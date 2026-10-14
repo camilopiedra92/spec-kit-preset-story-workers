@@ -278,8 +278,8 @@ passed=$(head -n 1 "$here/heldout.plan"); sed -i.bak 1d "$here/heldout.plan"
 mkdir -p "$out"
 echo ok > "$out/status"
 : > "$out/stream.jsonl"
-printf 'commit: abc\nfixture: fx\narm: %s\ndate: d\n' "$(echo "$*" | awk '{print $(NF-1)}')" \
-  > "$out/versions.txt"
+printf 'commit: %s\nfixture: fx\narm: %s\ndate: d\n' "$(cat "$here/commit.sha")" \
+  "$(echo "$*" | awk '{print $(NF-1)}')" > "$out/versions.txt"
 echo "passed $passed/2" > "$out/heldout.txt"
 echo "exit: 0" > "$out/suite.txt"
 echo '{"models": {}, "parts": []}' > "$out/usage.json"
@@ -300,6 +300,13 @@ def test_the_gate_is_the_real_compare_py(ev: Path, attempt: Path) -> None:
     (ev / "fixtures/fx/heldout").mkdir()
     (ev / "fixtures/fx/heldout/N").write_text("2\n")
     (ev / "heldout.plan").write_text("2\n2\n2\n2\n")
+    # compare.py reads the fixture as committed at the runs' commit.
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(ev)]
+    subprocess.run([*git, "init", "-q"], check=True)
+    subprocess.run([*git, "add", "fixtures"], check=True)
+    subprocess.run([*git, "commit", "-qm", "fixture"], check=True)
+    sha = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True)
+    (ev / "commit.sha").write_text(sha.stdout)
     assert runs(ev, attempt, "without").returncode == 0
     # Every without run perfect: the real gate is closed, so `with` is refused.
     result = runs(ev, attempt, "with")

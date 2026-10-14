@@ -75,6 +75,10 @@ gives `x`; `y` is not used, since a module that fails to collect shrinks it.
 
 ## Comparison (`compare.py` output)
 
+The fixture's own files (`heldout/N`, the feature spec's story count, `tasks.md`'s task ids) are read
+as committed at the runs' `commit:` (`git show`), not from the working tree: a run is judged by the
+fixture it ran on, and a later hardening changes the tree. A commit the repository lacks is refused.
+
 Per arm: each run's directory, total cost, cost per model, held-out score, suite exit; then `median`
 and `min`/`max` of total cost and of held-out score. Then:
 

@@ -1,0 +1,17 @@
+All 24 tasks in `specs/001-checkout/tasks.md` are done and marked `[X]`. `uv run pytest` passes (68 tests) and `uv run ruff check` is clean.
+
+**What was built**, in `src/checkout/`:
+- **Pricing with tax:** the catalog, the tax table, the cart (quantities 1–99, one line per SKU, kept in the order first added), and per-line tax rounded half-even. Order amounts are the sums of the line amounts.
+- **Promotions:** buy X get Y free, percentage off and fixed amount off, applied in the spec's stacking order. The discount cap and the fixed amount are split across lines by largest remainder. Exclusive promotions follow the spec's tie-break rules.
+- **Returns:** each line's net and tax are split per unit at purchase. Returns take units in order and are rejected for too many units, fewer than 1, or a SKU not in the order; a rejected return leaves the order unchanged.
+
+**How it was done:** for each story the tests were written first and seen failing (missing modules) before the code was written. After each story a fresh review agent checked the changes against `spec.md`, as `CLAUDE.md` asks:
+- **Story 1:** one gap. `Cart.add` accepted a fractional quantity, but the spec says a whole number, so it now rejects one. Returns reject it too.
+- **Story 2:** no wrong behaviour, but two rules were untested: promotions of the same kind apply in the order given, and the cap also limits an exclusive promotion. I added a test for each.
+- **Story 3:** no wrong behaviour. One test now checks a refund's net and tax, not just its total.
+
+**Other notes:**
+- I added `*.pyc`, `dist/`, `*.egg-info/` and `.DS_Store` to `.gitignore`.
+- There is no `.specify/extensions.yml`, so no hooks ran before or after, and there are no checklists to gate on.
+- The project constitution is still the blank template, so there were no project rules to check against.
+- Nothing is committed: the changes are uncommitted on `master`. When you want commits, the messages need to start with `fixture:`.

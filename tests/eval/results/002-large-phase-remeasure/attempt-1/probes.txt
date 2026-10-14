@@ -1,0 +1,17 @@
+claude 2.1.299 (Claude Code)
+ok   R1 1: model on the call, subagent events by parent id
+ok   R1 3: project CLAUDE.md reaches the subagent
+ok   R1 4: model "sonnet" on the call beats CLAUDE_CODE_SUBAGENT_MODEL=haiku
+ok   R1 4: model "opus" on the call beats CLAUDE_CODE_SUBAGENT_MODEL=haiku
+ok   R1 5: effort on the call applies
+ok   R1 7: project agent's prompt, call's model
+ok   R1 8: effort on the call applies with a project agent
+ok   R1 9: a hook blocks the subagent's write, counted as a denial
+ok   R1 9: the blocked file was not written
+ok   R1 10: SubagentStop per subagent, Stop once at the end
+ok   R1 11: no Agent tool under --disallowedTools Agent
+ok   R1 15: core implement completes headless
+ok   R1 17: foreground calls in order, each result after its own events
+ok   R1 17: the worker wrote and committed with no denial
+probes: 14 ok, 0 FAIL
+streams and repositories: /tmp/remeasure/attempt-1/probes

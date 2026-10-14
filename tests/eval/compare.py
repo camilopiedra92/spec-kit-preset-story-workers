@@ -25,6 +25,7 @@ data-model.md ("Comparison", "Spend", "Held-out score").
 import json
 import re
 import statistics
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -62,14 +63,29 @@ class Fixture:
     task_ids: list[str]
 
 
-def read_fixture(fixtures: Path, name: str) -> Fixture:
-    root = fixtures / name
-    project = root / "project"
-    feature = json.loads((project / ".specify/feature.json").read_text())["feature_directory"]
-    spec = (project / feature / "spec.md").read_text()
-    tasks = (project / feature / "tasks.md").read_text()
+def at_commit(fixtures: Path, commit: str, path: str) -> str:
+    """A fixture file as committed at `commit`: a run is judged by the fixture it
+    ran on, which a later hardening changes in the working tree."""
+    result = subprocess.run(
+        ["git", "-C", str(fixtures), "show", f"{commit}:./{path}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise Refused(f"{path} at commit {commit!r}: {result.stderr.strip()}")
+    return result.stdout
+
+
+def read_fixture(fixtures: Path, name: str, commit: str) -> Fixture:
+    project = f"{name}/project"
+    feature = json.loads(at_commit(fixtures, commit, f"{project}/.specify/feature.json"))[
+        "feature_directory"
+    ]
+    spec = at_commit(fixtures, commit, f"{project}/{feature}/spec.md")
+    tasks = at_commit(fixtures, commit, f"{project}/{feature}/tasks.md")
     return Fixture(
-        int((root / "heldout/N").read_text().strip()),
+        int(at_commit(fixtures, commit, f"{name}/heldout/N").strip()),
         len(re.findall(r"^### User Story ", spec, re.MULTILINE)),
         TASK_LINE.findall(tasks),
     )
@@ -126,15 +142,16 @@ def read_run(path: Path) -> Run:
         raise Refused(f"{path.name}: {error}") from error
 
 
-def comparable(runs: list[Run]) -> str:
-    """The runs' fixture; Refused unless they agree in every key but date and arm."""
+def comparable(runs: list[Run]) -> tuple[str, str]:
+    """The runs' fixture and commit; Refused unless they agree in every key but date
+    and arm."""
     first = runs[0].versions
     for run in runs[1:]:
         keys = set(first) | set(run.versions)
         differ = sorted(k for k in keys - {"date", "arm"} if first.get(k) != run.versions.get(k))
         if differ:
             raise Refused(f"{run.path.name}: versions differ from {runs[0].path.name}: {differ}")
-    return first.get("fixture", "")
+    return first.get("fixture", ""), first.get("commit", "")
 
 
 def spread(values: list[float], fmt: str) -> str:
@@ -293,7 +310,7 @@ def run_verdict(argv: list[str], fixtures: Path) -> int:
         count = sum(r.arm == arm for r in runs)
         if count != RUNS_PER_ARM:
             raise Refused(f"{arm}: {count} runs, not {RUNS_PER_ARM}")
-    fx = read_fixture(fixtures, comparable(runs))
+    fx = read_fixture(fixtures, *comparable(runs))
     lines, holds = verdict(runs, probes, fx)
     print("\n".join(lines))
     return 0 if holds else 1
@@ -303,7 +320,7 @@ def run_gate(argv: list[str], fixtures: Path) -> int:
     runs = [read_run(Path(a)) for a in argv]
     if len(runs) != RUNS_PER_ARM or any(r.arm != "without" for r in runs):
         raise Refused(f"--gate takes {RUNS_PER_ARM} counted `without` runs")
-    fx = read_fixture(fixtures, comparable(runs))
+    fx = read_fixture(fixtures, *comparable(runs))
     open_, scores = gate(runs, fx.n)
     print(f"gate {'open' if open_ else 'closed'}: {scores}")
     return 0 if open_ else 1

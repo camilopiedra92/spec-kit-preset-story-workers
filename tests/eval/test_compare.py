@@ -6,6 +6,7 @@ pushed across its boundary by editing one file.
 """
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +29,7 @@ VERSIONS = {
 
 
 @pytest.fixture
-def env(tmp_path: Path) -> dict[str, Path]:
+def env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> dict[str, Path]:
     fixtures = tmp_path / "fixtures"
     project = fixtures / "fx/project"
     (project / "specs/001-fx").mkdir(parents=True)
@@ -49,6 +50,9 @@ def env(tmp_path: Path) -> dict[str, Path]:
     (baseline / "usage.txt").write_text(
         "claude-opus-5-5 0.6 cache_read 1 cache_creation 1\nsum 0.6\n"
     )
+    # The fixtures in a repository of their own: a run is judged by the fixture as
+    # committed at the commit its versions.txt names.
+    monkeypatch.setitem(VERSIONS, "commit", commit_all(tmp_path, "fixture"))
     probes = tmp_path / "probes.txt"
     probes.write_text(
         "claude 2.1.299 (Claude Code)\nok   R1 1: x\nok   R1 3: y\nprobes: 2 ok, 0 FAIL\n"
@@ -59,6 +63,17 @@ def env(tmp_path: Path) -> dict[str, Path]:
         "results": tmp_path / "results",
         "probes": probes,
     }
+
+
+def commit_all(root: Path, message: str) -> str:
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
+    if not (root / ".git").exists():
+        subprocess.run([*git, "init", "-q"], check=True)
+    subprocess.run([*git, "add", "-A", "fixtures"], check=True)
+    subprocess.run([*git, "commit", "-qm", message], check=True)
+    return subprocess.run(
+        [*git, "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+    ).stdout.strip()
 
 
 def usage_json(costs: dict[str, float]) -> dict[str, Any]:
@@ -575,3 +590,31 @@ def test_the_same_run_given_twice_is_refused(
     runs = [r for r in runs if r.name != "with-3"] + [root / "with-link"]
     code, _ = verdict(env, runs, capsys)
     assert code == 2
+
+
+def test_runs_are_judged_by_the_fixture_at_their_own_commit(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A hardening after the runs: N grows from 4 to 6 in a later commit.
+    runs = [write_run(env["root"], f"without-{n}", "without", 10.0) for n in (1, 2, 3)]
+    (env["fixtures"] / "fx/heldout/N").write_text("6\n")
+    commit_all(env["fixtures"].parent, "harden")
+    code = compare.main(
+        ["--gate", *map(str, runs)], fixtures=env["fixtures"], results=env["results"]
+    )
+    out = capsys.readouterr().out
+    assert code == 1, out
+    assert "gate closed" in out and "4/4" in out
+
+
+def test_a_commit_the_repository_lacks_is_refused(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    runs = [
+        write_run(env["root"], f"without-{n}", "without", 10.0, versions={"commit": "f" * 40})
+        for n in (1, 2, 3)
+    ]
+    assert (
+        compare.main(["--gate", *map(str, runs)], fixtures=env["fixtures"], results=env["results"])
+        == 2
+    )
