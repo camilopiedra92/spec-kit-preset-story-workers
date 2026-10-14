@@ -1,0 +1,76 @@
+# Quickstart: running the remeasure
+
+Requires what 001's quickstart lists (`claude` signed in, `specify`, `uv`, `git`, `python3`, `jq`,
+this checkout committed). Every set of runs spends real usage and starts only after the owner
+confirms it (spec FR-008). Each numbered step is one command or a short sequence; **STOP** marks a
+confirmation, and nothing runs past one on its own. State lives in the attempt directory, so each
+step can run in a fresh shell.
+
+Attempt *k* (the first, or after a hardening, a harness change or a Claude Code version change) uses
+its own directory; nothing from a discarded attempt is reused. Every step below starts with
+
+```bash
+A=/tmp/remeasure/attempt-<k>; mkdir -p "$A"
+```
+
+## 0. Before every attempt
+
+```bash
+tests/check.sh                                              # green
+tests/eval/probes.sh "$A/probes" > "$A/probes.txt"          # every probe ok, else STOP
+```
+
+Plus the oracle proof (every held-out test passes against `fixtures/checkout/reference/`, and its
+collected count matches `fixtures/checkout/heldout/N`; its exact command is written here by task
+T013) and the fresh-context review of the held-out tests, recorded in
+`specs/002-large-phase-remeasure/heldout-review.md` with every finding closed (spec FR-002); after a
+hardening, the review covers what it added.
+
+## 1. `without`: the gate
+
+```bash
+uv run python tests/eval/compare.py --spent /tmp/remeasure --next without
+```
+
+**STOP**: the owner confirms the `without` set: spend so far, estimate, worst case.
+
+```bash
+tests/eval/runs.sh "$A" checkout without
+uv run python tests/eval/compare.py --gate "$A"/without-? | tee "$A/gate.txt"
+```
+
+`gate closed`: harden the fixture (research R5), commit, and start attempt *k*+1 at step 0, at most
+twice; a third closed gate ends the eval as not measured (spec US3 scenarios 5 and 6). `runs.sh`
+exit 1: the eval stops, not measured. Exit 2: read the try's `status`; a harness fault is fixed and
+committed, a version change needs nothing fixed; either way, a new attempt at step 0.
+
+## 2. `with` and `fallback`, alternating
+
+```bash
+uv run python tests/eval/compare.py --spent /tmp/remeasure --next with fallback
+```
+
+**STOP**: the owner confirms the `with` and `fallback` sets together.
+
+```bash
+tests/eval/runs.sh "$A" checkout with fallback
+for n in 1 2 3; do
+  uv run python tests/eval/attribution.py "$A/with-$n" > "$A/with-$n/attribution.txt"
+done
+uv run python tests/eval/compare.py --probes "$A/probes.txt" "$A"/without-? "$A"/with-? \
+  "$A"/fallback-? | tee "$A/compare.txt"
+```
+
+SC-004, outside `compare.py`: on the measured commit, with the eval's Spec Kit version, remove each
+anchored core rule and step from a copy of the **core** `speckit-implement` skill and see
+`tests/core-anchors.sh` go red for each (the task that implements this fixes its command); save the
+output as `$A/sc004.txt`.
+
+**The eval passes** when `compare.py` exits 0 and SC-004 holds; otherwise it fails.
+
+## 3. Record
+
+Copy every attempt into `tests/eval/results/002-large-phase-remeasure/attempt-<k>/` as spec FR-012
+lists, never streams or transcripts. The README entry, `Eval 002, <date>`, takes every field spec
+FR-009 lists. Pass: spec US3 scenario 1, then FR-010. Fail: US3 scenario 2, tag
+`measured-not-adopted-002-<date>`. Stopped without a verdict: US3 scenario 6.
