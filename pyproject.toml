@@ -25,7 +25,7 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests/eval"]
-# The fixture, the held-out tests and the reference implementation are run by
-# the eval and by T024's oracle proof, against their own interpreter setup.
-norecursedirs = ["fixture", "heldout", "reference"]
+# Each fixture's project, held-out tests and reference implementation are run
+# by the eval and by its oracle proof, against their own interpreter setup.
+norecursedirs = ["fixtures"]
 timeout = 60

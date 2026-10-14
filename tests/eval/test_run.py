@@ -157,7 +157,7 @@ def checkout(tmp_path: Path) -> Path:
     eval_dir.mkdir(parents=True)
     for name in ("run.sh", "bounded.py"):
         shutil.copy2(HERE / name, eval_dir / name)
-    fixture = eval_dir / "fixture"
+    fixture = eval_dir / "fixtures/greet/project"
     feature = fixture / "specs/001-greet"
     feature.mkdir(parents=True)
     (fixture / ".specify").mkdir()
@@ -165,8 +165,9 @@ def checkout(tmp_path: Path) -> Path:
     stories = "".join(f"### User Story {n + 1} - S{n + 1}\n\n" for n in range(STORIES))
     (feature / "spec.md").write_text("# Spec\n\n" + stories)
     (feature / "tasks.md").write_text("# Tasks\n\n## Phase 1: Setup\n")
-    (eval_dir / "heldout").mkdir()
-    (eval_dir / "heldout/test_greet.py").write_text("def test_x() -> None:\n    pass\n")
+    heldout = eval_dir / "fixtures/greet/heldout"
+    heldout.mkdir()
+    (heldout / "test_greet.py").write_text("def test_x() -> None:\n    pass\n")
     (root / ".gitignore").write_text("ignored.txt\n")
     git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
     subprocess.run([*git, "init", "-q"], check=True)
@@ -194,11 +195,16 @@ def script(stubs: Path, events: list[Any], exit_: int = 0) -> None:
 
 
 def run(
-    checkout: Path, stubs: Path, arm: str, out: Path, path: str | None = None
+    checkout: Path,
+    stubs: Path,
+    arm: str,
+    out: Path,
+    path: str | None = None,
+    fixture: str = "greet",
 ) -> subprocess.CompletedProcess[str]:
     env = {"HOME": os.environ["HOME"], "PATH": path or f"{stubs}:{os.environ['PATH']}"}
     return subprocess.run(
-        [BASH, str(checkout / "tests/eval/run.sh"), arm, str(out)],
+        [BASH, str(checkout / "tests/eval/run.sh"), fixture, arm, str(out)],
         check=False,
         capture_output=True,
         text=True,
@@ -213,6 +219,29 @@ def run(
 def test_an_unknown_arm_is_refused(checkout: Path, stubs: Path, tmp_path: Path) -> None:
     result = run(checkout, stubs, "sideways", tmp_path / "out")
     assert result.returncode == 2
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("fixture", ["nowhere", "../fixtures/greet", ""])
+def test_an_unknown_fixture_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, fixture: str
+) -> None:
+    result = run(checkout, stubs, "with", tmp_path / "out", fixture=fixture)
+    assert result.returncode == 2
+    assert "fixture" in result.stderr
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("part", ["project", "heldout"])
+def test_a_fixture_lacking_a_part_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, part: str
+) -> None:
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "rm", "-rq", f"tests/eval/fixtures/greet/{part}"], check=True)
+    subprocess.run([*git, "commit", "-qm", f"drop {part}"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out")
+    assert result.returncode == 2
+    assert part in result.stderr
     assert not (tmp_path / "out").exists()
 
 
@@ -322,7 +351,7 @@ def test_a_preset_that_did_not_compose_does_not_count(
 def test_files_git_ignores_stay_out_of_the_fixture_copy(
     checkout: Path, stubs: Path, tmp_path: Path
 ) -> None:
-    (checkout / "tests/eval/fixture/ignored.txt").write_text("stray")
+    (checkout / "tests/eval/fixtures/greet/project/ignored.txt").write_text("stray")
     out = tmp_path / "out"
     assert run(checkout, stubs, "with", out).returncode == 0
     assert not (out / "repo/ignored.txt").exists()
@@ -422,6 +451,8 @@ def test_a_counted_run_writes_every_output(
     assert "main_model: claude-opus-5-5" in versions
     assert "main_effort: medium" in versions
     assert "output_style: default" in versions
+    assert "fixture: greet" in versions
+    assert f"arm: {arm}" in versions
 
     models = (out / "models.txt").read_text()
     assert "model claude-sonnet-5-5" in models

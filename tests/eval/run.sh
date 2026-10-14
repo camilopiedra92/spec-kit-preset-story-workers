@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-# One arm of the eval (research.md R6): the fixture implemented headless by
+# One arm of the eval (research.md R6): a fixture implemented headless by
 # /speckit-implement without the preset, with it, or with it but no Agent tool,
 # hermetic so the result is the preset's and anyone can rerun it.
 #
-# Usage:  tests/eval/run.sh <without|with|fallback> <out-dir>
+# Usage:  tests/eval/run.sh <fixture> <without|with|fallback> <out-dir>
+#         <fixture> is a directory under tests/eval/fixtures/ holding project/
+#         (what the agent gets) and heldout/ (copied in after a counted run)
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
 #         most twice); 2 refused (nothing written; fix it, do not retry)
 #
-# The contract is specs/001-story-workers/contracts/fragment.md, run.sh.
+# The contract is specs/001-story-workers/contracts/fragment.md, run.sh, as
+# specs/002-large-phase-remeasure/contracts/harness.md amends it.
 set -euo pipefail
 
 refuse() {
@@ -18,14 +21,22 @@ refuse() {
 src=${BASH_SOURCE[0]}
 case $src in */*) here=$(cd "${src%/*}" && pwd) ;; *) here=$(pwd) ;; esac
 
-[ "$#" -eq 2 ] || refuse "usage: tests/eval/run.sh <without|with|fallback> <out-dir>"
-arm=$1
+[ "$#" -eq 3 ] || refuse "usage: tests/eval/run.sh <fixture> <without|with|fallback> <out-dir>"
+fixture=$1
+arm=$2
+# A plain name: no path can lead outside fixtures/.
+case $fixture in "" | */* | . | ..) refuse "unknown fixture '$fixture'" ;; esac
 case $arm in without | with | fallback) ;; *) refuse "unknown arm '$arm'" ;; esac
+out_arg=$3
 for tool in claude specify uv git python3 jq; do
   command -v "$tool" > /dev/null || refuse "missing $tool"
 done
-[ ! -e "$2" ] || refuse "$2 exists: every try gets a directory of its own"
+[ ! -e "$out_arg" ] || refuse "$out_arg exists: every try gets a directory of its own"
 root=$(git -C "$here" rev-parse --show-toplevel)
+fixture_dir=fixtures/$fixture
+for part in project heldout; do
+  [ -d "$here/$fixture_dir/$part" ] || refuse "fixture '$fixture' has no $part/"
+done
 physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. included
   local dir=$1 rest=
   case $dir in /*) ;; *) dir=$PWD/$dir ;; esac
@@ -36,20 +47,21 @@ physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. i
   done
   echo "$(cd "$dir" && pwd -P)$rest"
 }
-target=$(physical "$2")
+target=$(physical "$out_arg")
 # A CLAUDE.md in any ancestor of the scratch repository loads into the run.
-case $target/ in "$root"/*) refuse "$2 is inside $root: its CLAUDE.md would load into the run" ;; esac
+case $target/ in "$root"/*) refuse "$out_arg is inside $root: its CLAUDE.md would load into the run" ;; esac
 # The `with` arms install HEAD's archive and versions.txt names HEAD: a change
 # not in HEAD would be measured under a commit that does not contain it.
 [ -z "$(git -C "$root" status --porcelain)" ] ||
   refuse "uncommitted changes in $root: commit them first"
 
-mkdir -p "$2"
-out=$(cd "$2" && pwd)
+mkdir -p "$out_arg"
+out=$(cd "$out_arg" && pwd)
 repo=$out/repo
 # The fixture as committed: files git ignores (a stray .venv, tool caches) stay out.
 mkdir "$repo"
-(cd "$here" && git ls-files -z fixture | tar --null -T - -cf -) | tar -xf - -C "$repo" --strip-components 1
+(cd "$here/$fixture_dir" && git ls-files -z project | tar --null -T - -cf -) |
+  tar -xf - -C "$repo" --strip-components 1
 feature=$(jq -r .feature_directory "$repo/.specify/feature.json")
 
 # Every step below runs in this environment: nothing of the caller's but what
@@ -89,7 +101,7 @@ trap '[ -z "$server" ] || kill "$server" 2> /dev/null; rm -rf "$www"' EXIT
 cd "$repo"
 step "git init" git init -q
 step "specify init" specify init --here --force --integration claude
-cmp -s "$here/fixture/.specify/feature.json" .specify/feature.json ||
+cmp -s "$here/$fixture_dir/project/.specify/feature.json" .specify/feature.json ||
   not_counted "setup: specify init changed .specify/feature.json"
 if [ "$arm" != without ]; then
   # As a project installs it: the tag archive's shape, from HEAD, served from
@@ -168,7 +180,7 @@ mcp=$(q "$init | .mcp_servers | length")
 suite=0
 clean 600 uv run pytest -q > "$out/suite.txt" 2>&1 || suite=$?
 echo "exit: $suite" >> "$out/suite.txt"
-cp -R "$here/heldout" "$repo/tests_heldout"
+cp -R "$here/$fixture_dir/heldout" "$repo/tests_heldout"
 clean 600 uv run pytest tests_heldout -q --junitxml="$out/heldout.xml" > "$out/heldout.log" 2>&1 || true
 {
   python3 -c 'import sys, xml.etree.ElementTree as ET
@@ -204,6 +216,8 @@ semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
   echo "ruff: $(clean 600 uv run ruff --version 2>&1 | semver)"
   echo "main_model: claude-opus-5-5"
   echo "main_effort: medium"
+  echo "fixture: $fixture"
+  echo "arm: $arm"
   echo "environment: ${allow[*]} SPECKIT_PYTHON_EXECUTABLE"
   echo "git_isolation: ${isolation[*]}"
   echo "output_style: $style"
