@@ -3,10 +3,11 @@
 # /speckit-implement without the preset, with it, or with it but no Agent tool,
 # hermetic so the result is the preset's and anyone can rerun it.
 #
-# Usage:  tests/eval/run.sh [--baseline <run-dir>] <fixture> <without|with|fallback> <out-dir>
+# Usage:  tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <without|with|fallback> <out-dir>
 #         <fixture> is a directory under tests/eval/fixtures/ holding project/
 #         (what the agent gets) and heldout/ (copied in after a counted run);
-#         --baseline names a counted run whose versions this one must match
+#         --baseline names a counted run whose versions this one must match;
+#         --state lays fixtures/<fixture>/states/<name>/ over the project
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
 #         most twice); 2 refused (fix it, do not retry): before the out-dir
 #         exists nothing is written; after, status says why
@@ -23,14 +24,22 @@ refuse() {
 src=${BASH_SOURCE[0]}
 case $src in */*) here=$(cd "${src%/*}" && pwd) ;; *) here=$(pwd) ;; esac
 
-usage="usage: tests/eval/run.sh [--baseline <run-dir>] <fixture> <without|with|fallback> <out-dir>"
+usage="usage: tests/eval/run.sh [--baseline <run-dir>] [--state <name>] <fixture> <without|with|fallback> <out-dir>"
 baseline=
-if [ "${1:-}" = --baseline ]; then
-  [ "$#" -ge 2 ] || refuse "$usage"
-  baseline=$2
+state=
+while [ "$#" -gt 3 ]; do
+  case $1 in
+    --baseline)
+      baseline=$2
+      [ -f "$baseline/versions.txt" ] || refuse "baseline $baseline has no versions.txt"
+      ;;
+    # A committed state of the fixture laid over its project, as a feature
+    # partly done (specs/003-resume-from-head, research R2).
+    --state) state=$2 ;;
+    *) refuse "$usage" ;;
+  esac
   shift 2
-  [ -f "$baseline/versions.txt" ] || refuse "baseline $baseline has no versions.txt"
-fi
+done
 [ "$#" -eq 3 ] || refuse "$usage"
 fixture=$1
 arm=$2
@@ -47,6 +56,12 @@ fixture_dir=fixtures/$fixture
 for part in project heldout; do
   [ -d "$here/$fixture_dir/$part" ] || refuse "fixture '$fixture' has no $part/"
 done
+fixture_rel=$(git -C "$here" rev-parse --show-prefix)$fixture_dir
+if [ -n "$state" ]; then
+  case $state in */* | . | ..) refuse "unknown state '$state'" ;; esac
+  git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$state" 2> /dev/null ||
+    refuse "fixture '$fixture' has no committed state '$state'"
+fi
 physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. included
   local dir=$1 rest=
   case $dir in /*) ;; *) dir=$PWD/$dir ;; esac
@@ -72,6 +87,10 @@ repo=$out/repo
 mkdir "$repo"
 (cd "$here/$fixture_dir" && git ls-files -z project | tar --null -T - -cf -) |
   tar -xf - -C "$repo" --strip-components 1
+if [ -n "$state" ]; then
+  # The state as committed, laid over the project before the setup commit.
+  git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$state" | tar -xf - -C "$repo"
+fi
 feature=$(jq -r .feature_directory "$repo/.specify/feature.json")
 
 # Every step below runs in this environment: nothing of the caller's but what
@@ -163,6 +182,7 @@ semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
   echo "fixture: $fixture"
   echo "arm: $arm"
   echo "autoupdater: disabled"
+  echo "state: ${state:--}"
 } > "$out/versions.txt"
 differing() { # <key>...: those whose line differs between this run and the baseline
   local key
@@ -171,7 +191,7 @@ differing() { # <key>...: those whose line differs between this run and the base
       printf '%s ' "$key"
   done
 }
-pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater)
+pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater state)
 if [ -n "$baseline" ]; then
   keys=$(differing "${pre_run[@]}")
   [ -z "$keys" ] || refused "versions differ from the baseline: ${keys% }"

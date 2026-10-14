@@ -46,14 +46,14 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 ### Tests (write first)
 
-- [ ] T005 [P] [US3] Extend `tests/eval/test_run.py`: `--state <name>` overlays the committed `fixtures/<f>/states/<name>/` before the setup commit; an uncommitted or missing state is refused (exit 2); `versions.txt` has `state:` among the pre-run keys
-- [ ] T006 [P] [US3] Write `tests/eval/test_resume_check.py` against synthetic run directories: each check passes and fails on its own (a commit touching a finished-only file; the first worker brief opening another phase; a held-out score below N; no `Resumed at phase` line, or one naming another phase); exit 2 on unreadable input or a non-`ok` status
-- [ ] T007 [US3] Red run of T005–T006 against a stub `resume_check.py` and the unchanged `run.sh`
+- [X] T005 [P] [US3] Extend `tests/eval/test_run.py`: `--state <name>` overlays the committed `fixtures/<f>/states/<name>/` before the setup commit; an uncommitted or missing state is refused (exit 2); `versions.txt` has `state:` among the pre-run keys
+- [X] T006 [P] [US3] Write `tests/eval/test_resume_check.py` against synthetic run directories: each check passes and fails on its own (a commit touching a finished-only file; the first worker brief opening another phase; a held-out score below N; no `Resumed at phase` line, or one naming another phase); exit 2 on unreadable input or a non-`ok` status
+- [X] T007 [US3] Red run of T005–T006 against a stub `resume_check.py` and the unchanged `run.sh`
 
 ### Implementation
 
-- [ ] T008 [US3] `tests/eval/run.sh --state <name>` (contract); usage line and header
-- [ ] T009 [US3] `tests/eval/resume_check.py` (contract; research R3), stdlib, typed
+- [X] T008 [US3] `tests/eval/run.sh --state <name>` (contract); usage line and header
+- [X] T009 [US3] `tests/eval/resume_check.py` (contract; research R3), stdlib, typed
 - [ ] T010 [US3] Write `tests/eval/fixtures/checkout/states/phase-2-done/`: `tasks.md` with T001–T011 marked `[X]`, and Phases 1–2's files (the reference's US1 code without US2 and US3, and the US1 test files); prove it: the held-out tests of US1 pass against it, and those of US2 and US3 fail for want of their code
 - [ ] T011 [US3] Green run: T005–T006 unchanged; `tests/check.sh` green
 

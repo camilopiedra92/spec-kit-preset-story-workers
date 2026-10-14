@@ -237,12 +237,14 @@ def run(
     fixture: str = "greet",
     baseline: Path | None = None,
     home: Path | None = None,
+    state: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = {
         "HOME": str(home or stubs / "home"),
         "PATH": path or f"{stubs}:{os.environ['PATH']}",
     }
     args = ["--baseline", str(baseline)] if baseline else []
+    args += ["--state", state] if state else []
     return subprocess.run(
         [BASH, str(checkout / "tests/eval/run.sh"), *args, fixture, arm, str(out)],
         check=False,
@@ -514,6 +516,7 @@ def test_the_auto_updater_is_disabled_for_the_agent(
 
 
 PRE_RUN = [
+    "state",
     "commit",
     "claude",
     "specify",
@@ -719,3 +722,61 @@ def test_no_junit_report_is_scored_zero_not_unreadable(
     out = tmp_path / "out"
     assert run(checkout, stubs, "without", out).returncode == 0
     assert (out / "heldout.txt").read_text().startswith("passed 0/0: no junit report\n")
+
+
+# 003: --state overlays a committed state of the fixture before the setup commit.
+
+
+def add_state(checkout: Path, commit: bool = True) -> None:
+    state = checkout / "tests/eval/fixtures/greet/states/done-1"
+    (state / "src").mkdir(parents=True)
+    (state / "src/greet.py").write_text("def greet() -> str:\n    return 'hi'\n")
+    (state / "specs/001-greet").mkdir(parents=True)
+    (state / "specs/001-greet/tasks.md").write_text(
+        "# Tasks\n\n## Phase 1: Setup\n\n- [X] T001 a\n"
+    )
+    if commit:
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+        subprocess.run([*git, "add", "tests/eval/fixtures/greet/states"], check=True)
+        subprocess.run([*git, "commit", "-qm", "state"], check=True)
+
+
+def test_a_state_is_laid_over_the_project_in_the_setup_commit(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    add_state(checkout)
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "with", out, state="done-1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    repo = out / "repo"
+    assert (repo / "src/greet.py").read_text() == "def greet() -> str:\n    return 'hi'\n"
+    assert "- [X] T001" in (repo / "specs/001-greet/tasks.md").read_text()
+    log = subprocess.run(
+        ["git", "-C", str(repo), "log", "--format=%s", "--", "src/greet.py"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    assert log[-2:] == ["fixture:", "setup"]
+    assert "state: done-1" in (stubs / "versions.seen").read_text()
+
+
+def test_without_a_state_versions_say_none(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    assert "state: -" in (out / "versions.txt").read_text()
+
+
+@pytest.mark.parametrize("committed", [False, None])
+def test_a_state_not_committed_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, committed: bool | None
+) -> None:
+    if committed is not None:
+        add_state(checkout, commit=False)
+        (checkout / ".gitignore").write_text("ignored.txt\nusage.exit\nusage.args\nstates/\n")
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+        subprocess.run([*git, "commit", "-qam", "ignore states"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out", state="done-1")
+    assert result.returncode == 2
+    assert "state" in result.stderr
+    assert not (tmp_path / "out").exists()
