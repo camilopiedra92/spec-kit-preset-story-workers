@@ -98,7 +98,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 - [X] T018 [P] [US2] Write `tests/eval/bounded.py`: runs a command in its own process group under a deadline, kills the group (SIGTERM, then SIGKILL after a grace period), exits 124 on the deadline
 - [X] T019 [P] [US2] Write `tests/eval/attribution.py` (contract `attribution.py`)
 - [X] T020 [US2] Write `tests/eval/run.sh` (contract `run.sh`): refusals, the clean environment for every step, git isolation, `bounded.py` deadlines (3600 s for the agent, 600 s otherwise), the arm's preset, the counting rules, the outputs, the kept `repo/`; add its and `attribution.py`'s invocations to `CLAUDE.md`'s Commands, pointing at `quickstart.md` for the full sequence
-- [ ] T021 [US2] Green run: T014–T016 pass unchanged; `tests/check.sh` passes
+- [X] T021 [US2] Green run: T014–T016 pass unchanged; `tests/check.sh` passes
 
 ### The fixture and its oracle
 
