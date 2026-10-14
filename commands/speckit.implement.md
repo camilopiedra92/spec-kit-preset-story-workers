@@ -16,7 +16,7 @@ git repository (the commits, diffs and baseline below need git), go to **Fallbac
 own behaviour.
 
 **The brief.** It opens with the phase's heading as `tasks.md` writes it, then carries: the phase's
-tasks (for a fix, the finding; on resume, the uncommitted diff); the feature directory; the suite
+tasks (for a fix, the finding; on resume, as Resume says); the feature directory; the suite
 and static-check commands, from the project's instructions, else `plan.md`'s Technical Context; and
 what earlier workers finished. It tells the worker to follow core's "Load and analyze the
 implementation context", "Project Setup Verification" (first phase only), "Execute

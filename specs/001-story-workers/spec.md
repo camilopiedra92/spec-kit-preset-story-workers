@@ -178,12 +178,14 @@ its own.
   follows it or leaves the task unfinished with the message in its report; the main session never
   makes the blocked call itself, also under FR-007: such a task stays unfinished and goes into the
   completion report.
-- **A run resumes** after an interruption: the phase starts after the last commit whose message
-  contains `tasks: mark phase <n>` (FR-004), or at the first phase when there is none; its commits are verified
-  as FR-004 says; uncommitted changes to files other than `tasks.md` go to a worker briefed with the diff, to finish
-  or discard; uncommitted changes to `tasks.md` are the main session's to keep or drop. The
-  static-check baseline is taken at that commit (with none, at the commit before the first phase's
-  first commit), in a temporary `git worktree` of it.
+- **A run resumes** after an interruption (rule of 0.1.1): it resumes at the first phase with a
+  task not marked in `tasks.md` as committed at HEAD; the baseline is the last commit whose message
+  contains `tasks: mark phase`, or HEAD; the worker gets the phase's commits since then and only its
+  unmarked tasks; a resumed phase gets its own two fix hand-offs; a phase with uncommitted marks is
+  verified, reviewed and marked, never skipped; uncommitted changes to other files wait for the
+  user's choice (commit as finished, or hand to the worker), and a headless run stops. (The rule
+  of 0.1.0 resumed after the last `tasks: mark phase <n>` commit, which restarted a feature adopted
+  partway through at Phase 1.)
 - **The project names no suite, or no static check**: verification runs what is named, says in the
   completion report what was not, and the diff is read as always.
 - **`[P]` tasks** run inside their phase's worker, one after another: two workers would write the

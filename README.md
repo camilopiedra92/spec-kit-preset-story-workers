@@ -4,7 +4,8 @@ A [Spec Kit](https://github.com/github/spec-kit) preset that has `/speckit-imple
 phase of a feature's tasks to a worker subagent on a smaller model (Sonnet), while the main session
 (Opus) verifies, reviews and decides.
 
-**Status: released on the owner's decision (`v0.1.0`; `v0.1.1` fixes how a run resumes), without an eval showing its claimed
+**Status: released on the owner's decision (`v0.1.0`; `v0.1.1` fixes how a run
+resumes), without an eval showing its claimed
 effect.** Two evals, below, are recorded as they came out: [Eval 001](#eval-2026-10-14) measured the
 preset at **65% more usage** than core on a small fixture, and [Eval 002](#eval-002-2026-10-14)
 could not measure a quality difference, core passing every held-out test in six runs on two
@@ -45,12 +46,16 @@ subagents (it falls back to core, so it only adds text).
 ## The owner's decision, 2026-10-14
 
 After Eval 002's second closed gate, the owner chose to stop measuring and release the preset as it
-was measured, unchanged since Eval 001 (fragment at commit `894aecf`); `v0.1.1` changed only
-its Resume rule, to core's progress record, cited rather than measured (CHANGELOG). The constitution was amended
+was measured, unchanged since Eval 001 (fragment at commit `894aecf`). The constitution was amended
 for it (v2.0.0, principle III: a rule whose eval does not show its claimed effect may be released
 when the owner accepts it, with the result recorded as it is). Recorded as it stands: no eval has
 shown the preset to save usage, and one measured it costing 65% more; no eval could show a quality
 difference either way. Accepted as released, not as measured to work.
+
+`v0.1.1`, 2026-10-14, changed only the fragment's Resume rule, which a fresh review of a real
+install found would restart a feature adopted partway through at Phase 1. Neither the new rule nor
+the old one was measured: no eval runs a resumed feature. The owner accepted it unmeasured, for the
+reason that a project adopting the preset mid-feature must not redo finished phases.
 
 Eval 001's "Alternative measured and not adopted" below is kept as it was recorded on its date;
 this decision supersedes it.
@@ -60,8 +65,9 @@ the ceiling), so the preset is released to be judged in real use on real feature
 will watch its usage and quality.
 
 Both evals ran hermetically, without the user's own instructions, settings or plugins, so their
-results are not shaped by a user's setup and can be rerun. How a setup whose instructions add work to every story
-(a mutation check, a fresh review per story, red test runs) shifts the comparison was not measured;
+results are not shaped by a user's setup and can be rerun. How a setup whose instructions add
+work to every story (a mutation check, a fresh review per story, red test runs) shifts the
+comparison was not measured;
 Eval 001 showed, in one directional run, that `fallback`, with no Agent tool, runs no fresh-context
 review at all.
 
