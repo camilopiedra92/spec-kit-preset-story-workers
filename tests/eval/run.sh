@@ -3,9 +3,10 @@
 # /speckit-implement without the preset, with it, or with it but no Agent tool,
 # hermetic so the result is the preset's and anyone can rerun it.
 #
-# Usage:  tests/eval/run.sh <fixture> <without|with|fallback> <out-dir>
+# Usage:  tests/eval/run.sh [--baseline <run-dir>] <fixture> <without|with|fallback> <out-dir>
 #         <fixture> is a directory under tests/eval/fixtures/ holding project/
-#         (what the agent gets) and heldout/ (copied in after a counted run)
+#         (what the agent gets) and heldout/ (copied in after a counted run);
+#         --baseline names a counted run whose versions this one must match
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
 #         most twice); 2 refused (nothing written; fix it, do not retry)
 #
@@ -21,7 +22,15 @@ refuse() {
 src=${BASH_SOURCE[0]}
 case $src in */*) here=$(cd "${src%/*}" && pwd) ;; *) here=$(pwd) ;; esac
 
-[ "$#" -eq 3 ] || refuse "usage: tests/eval/run.sh <fixture> <without|with|fallback> <out-dir>"
+usage="usage: tests/eval/run.sh [--baseline <run-dir>] <fixture> <without|with|fallback> <out-dir>"
+baseline=
+if [ "${1:-}" = --baseline ]; then
+  [ "$#" -ge 2 ] || refuse "$usage"
+  baseline=$2
+  shift 2
+  [ -f "$baseline/versions.txt" ] || refuse "baseline $baseline has no versions.txt"
+fi
+[ "$#" -eq 3 ] || refuse "$usage"
 fixture=$1
 arm=$2
 # A plain name: no path can lead outside fixtures/.
@@ -79,10 +88,17 @@ clean() { # <seconds> <command> [args...]
   for v in "${allow[@]}"; do
     [ -z "${!v+set}" ] || pass+=("$v=${!v}")
   done
+  # The auto-updater off: a Claude Code update mid-eval would split the runs
+  # across versions (research R9).
   env -i "${pass[@]}" SPECKIT_PYTHON_EXECUTABLE="$speckit_python" "${isolation[@]}" \
-    python3 "$here/bounded.py" "$seconds" "$@"
+    DISABLE_AUTOUPDATER=1 python3 "$here/bounded.py" "$seconds" "$@"
 }
 
+refused() { # once <out-dir> exists: the reason in status, exit 2
+  echo "refused: $*" > "$out/status"
+  echo "run.sh: refused: $*" >&2
+  exit 2
+}
 not_counted() {
   echo "not counted: $*" > "$out/status"
   echo "run.sh: not counted: $*" >&2
@@ -129,6 +145,36 @@ step "git add" git add -A
 step "setup commit" git commit -qm "fixture: setup"
 setup=$(git rev-parse HEAD)
 
+# The versions known before the agent starts, none read from the scratch
+# repository; with a baseline, a difference is refused before anything is spent.
+semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
+{
+  echo "commit: $(git -C "$root" rev-parse HEAD)"
+  echo "claude: $(clean 600 claude --version | semver)"
+  echo "specify: $(clean 600 specify version 2>&1 | semver)"
+  echo "git: $(git --version | semver)"
+  echo "uv: $(uv --version | semver)"
+  echo "main_model: claude-opus-5-5"
+  echo "main_effort: medium"
+  echo "environment: ${allow[*]} SPECKIT_PYTHON_EXECUTABLE"
+  echo "git_isolation: ${isolation[*]}"
+  echo "fixture: $fixture"
+  echo "arm: $arm"
+  echo "autoupdater: disabled"
+} > "$out/versions.txt"
+differing() { # <key>...: those whose line differs between this run and the baseline
+  local key
+  for key in "$@"; do
+    [ "$(grep -m1 "^$key: " "$out/versions.txt")" = "$(grep -m1 "^$key: " "$baseline/versions.txt")" ] ||
+      printf '%s ' "$key"
+  done
+}
+pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater)
+if [ -n "$baseline" ]; then
+  keys=$(differing "${pre_run[@]}")
+  [ -z "$keys" ] || refused "versions differ from the baseline: ${keys% }"
+fi
+
 flags=(-p "/speckit-implement" --model claude-opus-5-5 --effort medium
   --setting-sources "project,local" --strict-mcp-config
   --allowedTools "Agent Bash Edit Write Read Glob Grep TodoWrite"
@@ -136,6 +182,21 @@ flags=(-p "/speckit-implement" --model claude-opus-5-5 --effort medium
 [ "$arm" != fallback ] || flags+=(--disallowedTools Agent)
 rc=0
 clean 3600 claude "${flags[@]}" < /dev/null > "$out/stream.jsonl" 2> "$out/claude.stderr" || rc=$?
+
+# The run's transcripts, whatever its exit, while Claude Code still keeps them:
+# usage.py attributes a counted run from them, and a killed run is priced from
+# them for the eval's spend (research R3).
+session=$(jq -r 'select(.type == "system" and .subtype == "init") | .session_id // empty' \
+  "$out/stream.jsonl" 2> /dev/null | head -n 1 || true)
+if [ -n "$session" ]; then
+  for found in "$HOME"/.claude/projects/*/"$session".jsonl; do
+    [ -f "$found" ] || continue
+    mkdir -p "$out/transcripts"
+    cp "$found" "$out/transcripts/"
+    [ ! -d "${found%.jsonl}/subagents" ] || cp -R "${found%.jsonl}/subagents" "$out/transcripts/"
+    break
+  done
+fi
 
 # Counting (R6): only whether this run is a measurement. What the feature does
 # is judged on a counted run by SC-003, SC-005 and SC-007, so a rerun cannot
@@ -175,6 +236,25 @@ plugins=$(q "[$init | .plugins[]? | select(.path != \"builtin\") | .name] | join
 [ -z "$plugins" ] || not_counted "plugin outside Claude Code's built-in ones: $plugins"
 mcp=$(q "$init | .mcp_servers | length")
 [ "$mcp" -eq 0 ] || not_counted "mcp server: $mcp"
+{
+  echo "output_style: $style"
+  echo "plugins: $(q "[$init | .plugins[]?.name] | join(\" \")")"
+  echo "mcp_servers: $mcp"
+  echo "skills: $(q "[$init | .skills[]?] | join(\" \")")"
+} >> "$out/versions.txt"
+if [ -n "$baseline" ]; then
+  keys=$(differing output_style plugins mcp_servers skills)
+  [ -z "$keys" ] || not_counted "versions differ from the baseline: ${keys% }"
+fi
+# The usage, reconciled with what Claude Code reported and attributed: a run
+# without it is no measurement (spec Clarifications).
+attributed=0
+message=$(python3 "$here/usage.py" "$out" 2>&1) || attributed=$?
+case $attributed in
+  0) ;;
+  1) not_counted "${message##*$'\n'}" ;;
+  *) refused "harness fault: usage.py: ${message##*$'\n'}" ;;
+esac
 
 # A counted run: the project's own suite, then the held-out tests alone.
 suite=0
@@ -195,36 +275,11 @@ print("passed %d/%d" % (total - n("failures") - n("errors") - n("skipped"), tota
 
 result='.[] | select(.type == "result")'
 {
-  # Cache tokens beside the cost: arms run back to back, so a later one may
-  # read a prefix an earlier one wrote.
-  q "$result | .modelUsage | to_entries[] | \"\(.key) \(.value.costUSD) cache_read \(.value.cacheReadInputTokens // 0) cache_creation \(.value.cacheCreationInputTokens // 0)\""
-  q "[$result | .modelUsage[] | .costUSD] | \"sum \(add)\""
-  q '[.[] | select(.type == "rate_limit_event") | .rate_limit_info.unifiedWindows.five_hour.utilization]
-    | "five_hour \(first) \(last)"'
-} > "$out/usage.txt"
-
-semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
-{
-  echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  echo "commit: $(git -C "$root" rev-parse HEAD)"
-  echo "claude: $(clean 600 claude --version | semver)"
-  echo "specify: $(clean 600 specify version 2>&1 | semver)"
-  echo "git: $(git --version | semver)"
-  echo "uv: $(uv --version | semver)"
   echo "python: $(clean 600 uv run python --version 2>&1 | semver)"
   echo "pytest: $(clean 600 uv run pytest --version 2>&1 | semver)"
   echo "ruff: $(clean 600 uv run ruff --version 2>&1 | semver)"
-  echo "main_model: claude-opus-5-5"
-  echo "main_effort: medium"
-  echo "fixture: $fixture"
-  echo "arm: $arm"
-  echo "environment: ${allow[*]} SPECKIT_PYTHON_EXECUTABLE"
-  echo "git_isolation: ${isolation[*]}"
-  echo "output_style: $style"
-  echo "plugins: $(q "[$init | .plugins[]?.name] | join(\" \")")"
-  echo "mcp_servers: $mcp"
-  echo "skills: $(q "[$init | .skills[]?] | join(\" \")")"
-} > "$out/versions.txt"
+  echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} >> "$out/versions.txt"
 
 {
   q "$result | .modelUsage | keys[] | \"model \(.)\""

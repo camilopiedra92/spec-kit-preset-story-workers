@@ -48,8 +48,10 @@ claude_in() {
   for v in "${allow[@]}"; do
     [ -z "${!v+set}" ] || pass+=("$v=${!v}")
   done
-  (cd "$repo" && env -i "${pass[@]}" "${isolation[@]}" ${extra[@]+"${extra[@]}"} \
-    python3 "$here/bounded.py" 1200 claude -p "$prompt" --model claude-opus-5-5 --effort medium \
+  # The auto-updater off, as in run.sh: the probes and the runs must be one
+  # Claude Code version (research R9).
+  (cd "$repo" && env -i "${pass[@]}" "${isolation[@]}" DISABLE_AUTOUPDATER=1 \
+    ${extra[@]+"${extra[@]}"} python3 "$here/bounded.py" 1200 claude -p "$prompt" --model claude-opus-5-5 --effort medium \
     --setting-sources "project,local" --strict-mcp-config --output-format stream-json --verbose \
     "$@" > "$stream" 2> "$stream.stderr") || true
 }
@@ -84,7 +86,7 @@ agent_replies() { # every tool_result the main session received, as text
     | select(.type == "tool_result") | .content | tostring] | join("\n")' "$1"
 }
 
-echo "claude $(claude --version)"
+echo "claude $(DISABLE_AUTOUPDATER=1 claude --version)"
 
 # R1 1: a call's model decides the subagent's; its events carry the call's id.
 repo=$(scratch r1-1)
