@@ -11,7 +11,8 @@ from a tag's archive. This repository is itself developed with Spec Kit.
 ```bash
 tests/check.sh        # the checks CI runs
 tests/eval/probes.sh [out-dir]                         # reruns research R1; ~$1.40 of usage
-tests/eval/run.sh <without|with|fallback> <out-dir>    # one eval arm; spends real usage
+tests/eval/oracle.sh [--write-n] <fixture>             # held-out tests against the reference
+tests/eval/run.sh <fixture> <without|with|fallback> <out-dir>  # one eval arm; spends usage
 uv run python tests/eval/attribution.py <out-dir>      # SC-003 on a `with` arm
 ```
 

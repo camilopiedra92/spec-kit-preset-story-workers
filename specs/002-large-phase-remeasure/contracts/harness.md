@@ -71,6 +71,15 @@ counting (the eval stops: spec US3 scenario 3); 2 on any refusal, `run.sh`'s inc
 - `compare.py --spent <root> [--next <arm>...]`: the data model's "Spend". Exit 0; 2 on unreadable
   input. An empty root prints `spent 0`.
 
+## `tests/eval/oracle.sh [--write-n] <fixture>`
+
+The fixture's oracle proof: copies the committed `project/`, lays the committed `reference/` over it,
+copies the committed `heldout/` in as `tests_heldout/` (as `run.sh` does), runs it with `uv run
+--locked pytest`, and prints `passed <x>/<y> (N <n>)`. Exit 0 when every test passed and `y` equals
+`heldout/N`; 1 otherwise, with the test output; 2 on an unknown fixture, a missing committed part, or
+no committed `heldout/N` without `--write-n`. `--write-n` writes `y` to `heldout/N` instead of
+checking it. Committed files only: an edit in progress is not what an arm gets.
+
 ## `tests/eval/probes.sh [out-dir]`
 
 As 001, plus `DISABLE_AUTOUPDATER=1` in its clean environment. Its `claude <version> (Claude Code)`

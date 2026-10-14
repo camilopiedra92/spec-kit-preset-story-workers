@@ -90,6 +90,7 @@ tests/eval/
 │                                #   transcripts; usage.py reconciles before the suite
 ├── runs.sh                      # NEW: one confirmed step: 3 counted runs per arm, probes and
 │                                #   gate checked before every try (research R11)
+├── oracle.sh                    # NEW: a fixture's held-out tests against its reference, vs heldout/N
 ├── usage.py                     # NEW: reconcile transcripts, attribute by part and phase
 ├── compare.py                   # NEW: medians, spread, gate, SC-001/002/003/005/006/007/008;
 │                                #   --gate, --spent <root> --next
@@ -97,6 +98,7 @@ tests/eval/
 ├── test_usage.py                # NEW
 ├── test_compare.py              # NEW
 ├── test_runs.py                 # NEW: runs.sh against a stub run.sh and stub claude
+├── test_oracle.py               # NEW: oracle.sh against a one-function fixture
 ├── test_run.py                  # extended: fixture argument, versions.txt keys, transcript copy
 ├── attribution.py, bounded.py, test_attribution.py, test_bounded.py   # unchanged
 ├── fixtures/

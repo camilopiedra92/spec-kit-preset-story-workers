@@ -20,9 +20,11 @@ tests/check.sh                                              # green
 tests/eval/probes.sh "$A/probes" > "$A/probes.txt"          # every probe ok, else STOP
 ```
 
-Plus the oracle proof (every held-out test passes against `fixtures/checkout/reference/`, and its
-collected count matches `fixtures/checkout/heldout/N`; its exact command is written here by task
-T013) and the fresh-context review of the held-out tests, recorded in
+```bash
+tests/eval/oracle.sh checkout                               # every held-out test passes, count = N
+```
+
+Plus and the fresh-context review of the held-out tests, recorded in
 `specs/002-large-phase-remeasure/heldout-review.md` with every finding closed (spec FR-002); after a
 hardening, the review covers what it added.
 
