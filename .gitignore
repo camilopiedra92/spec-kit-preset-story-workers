@@ -5,3 +5,5 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .DS_Store
+# Agent worktrees Claude Code creates for isolated subagents: never part of the repository.
+.claude/worktrees/
