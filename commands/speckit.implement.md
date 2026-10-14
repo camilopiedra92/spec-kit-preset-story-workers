@@ -16,28 +16,32 @@ git repository (the commits, diffs and baseline below need git), go to **Fallbac
 own behaviour.
 
 **The brief.** It opens with the phase's heading as `tasks.md` writes it, then carries: the phase's
-tasks (for a fix, the finding; on resume, as Resume says); the feature directory; the suite
-and static-check commands, from the project's instructions, else `plan.md`'s Technical Context; and
-what earlier workers finished. It tells the worker to follow core's "Load and analyze the
+unmarked tasks, which may already be done, in whole or in part (check each against the code and
+`git log`, and complete only what is missing), or, for a fix, the finding; the feature directory;
+the suite and static-check commands, from the project's instructions, else `plan.md`'s Technical
+Context; and the phases already marked. It tells the worker to follow core's "Load and analyze the
 implementation context", "Project Setup Verification" (first phase only), "Execute
 implementation", "Implementation execution rules" and "Progress tracking and error handling" steps
 of `.claude/skills/speckit-implement/SKILL.md`, whose Story workers section is the main session's,
 not the worker's; that the worker commits each task in a commit of its
-own; that it follows a call a project hook blocks, or leaves that task unfinished with the hook's
+own, staging only the files it changed, never `git add -A` or `-a`; that it follows a call a project hook blocks, or leaves that task unfinished with the hook's
 message in its report; and that it does not edit `tasks.md` (core's "mark the task off as [X]" in
 those steps is yours), start a review or start another worker.
 
-**The report** the brief asks for: the first and last commit; the tasks done; for each task not
-done, what stopped it; anything found that no task covers; the output of its last whole-suite run.
+**The report** the brief asks for: the first and last commit; the tasks done; the tasks found
+already done, with the commit or file that holds each; for each task not done, what stopped it;
+anything found that no task covers; the output of its last whole-suite run.
 
 **Verification.** Before a phase's first worker, record HEAD and run the static checks: that is the
 baseline. This narrows core's "For completed tasks, make sure to mark the task off as [X]": the main
 session marks a task [X] only after its own runs show the whole suite passing and no static-check
-finding the baseline lacked, and its reading of the diff from the recorded HEAD finds nothing the
-phase's tasks do not call for. Run what the project names; say in the completion report what it
+finding the baseline lacked, and its reading of the commits made since the recorded HEAD finds
+nothing the phase's tasks do not call for; a task the worker found already done is marked on the
+suite and the static checks. Run what the project names; say in the completion report what it
 does not name. A worker's report never marks a task. A review the phase calls for, and its fixes,
 resolve first; then commit `tasks.md` with a message containing `tasks: mark phase <n>` (after any
-prefix the project's instructions require), and only then start the next phase's worker.
+prefix the project's instructions require; none when the phase marked nothing new), and only then
+start the next phase's worker.
 
 **Hand-offs.** This narrows core's "Halt execution if any non-parallel task fails": every
 unfinished task, failed verification or review finding goes to a worker briefed with it, then
@@ -70,13 +74,13 @@ phase goes to a worker as usual. The completion report always carries
 the line `Carried out in this session: none`, or `Carried out in this session:` followed by the
 task ids and, for fix items, the phase and a short name of each.
 
-**Resume.** `tasks.md`'s marks, `[X]` or `[x]`, are core's record of what is done, whoever made
-them; nothing about past work is read from commit messages. A run resumes at the first phase that
-has a task not marked (marks as committed at HEAD, or as in the working tree when `tasks.md` is
-not committed), and the baseline is HEAD at the run's start, as for any phase. The brief carries
-only the phase's unmarked tasks and says that some may already be done, in whole or in part: check
-each against the code and `git log`, and complete only what is missing. Uncommitted changes stay as
-core leaves them: do not ask about them or stop for them. Work committed before the run is covered
-by the whole-suite run but not read as a diff, so the completion report adds the line `Resumed at
-phase <n>: work committed before this run was covered by the whole suite, not read as a diff.`
-With no task marked, the run is a fresh run, from Phase 1.
+**Where a run starts.** `tasks.md`'s marks, `[X]` or `[x]`, read from the file as core reads it,
+are the record of what is done, whoever made them; where a run starts is never read from commit
+messages. A run takes the phases in order and skips every phase whose tasks are all marked, wherever
+it falls; it starts at the first phase with an unmarked task, at Phase 1 when none is marked. When
+every task is marked, start no worker and say so in the completion report. Each phase's baseline is
+taken as Verification says. Changes uncommitted when the run starts are not the run's: they are not
+a finding, nobody commits or reverts them, and the run neither asks about them nor stops for them.
+Work committed before the run is covered by the whole-suite run but not read as a diff, so in a git
+repository the completion report carries the line `Started at phase <n>: work committed before
+this run was covered by the whole suite, not read as a diff.`
