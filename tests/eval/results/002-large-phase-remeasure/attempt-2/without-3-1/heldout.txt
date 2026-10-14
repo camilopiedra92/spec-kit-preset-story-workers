@@ -1,0 +1,5 @@
+passed 59/59
+No entry for terminal type "xterm-ghostty";
+using dumb terminal settings.
+...........................................................              [100%]
+59 passed in 0.05s

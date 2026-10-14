@@ -33,15 +33,24 @@ targets, comparing the preset with and without the rule on what the rule claims 
 what it must not make worse. The result is recorded in the README with its date, what was compared,
 the number of runs per arm (called directional when it is one), and the version of every tool it
 ran on — Spec Kit, Claude Code, the model IDs, git and the test runner. A rule whose eval does not
-show its claimed effect is not released, and is recorded as an alternative measured and not
-adopted, with the reason. A rule that only restates core or the agent's documented behaviour needs
-its source cited instead of an eval.
+show its claimed effect, or could not measure it, is released only when the owner accepts it: the
+README records the measured result as it is, never restated as a pass, beside the owner's decision,
+its reason and its date, and the CHANGELOG entry that releases the rule links that record. Without
+that recorded acceptance, the rule is not released, and is recorded as an alternative measured and
+not adopted, with the reason. A rule that only restates core or the agent's documented behaviour
+needs its source cited instead of an eval.
 
 Rationale: an instruction can read well and change nothing, or cost more than it saves; Anthropic's
 prompt-engineering guidance puts success criteria and empirical evaluations before iterating on a
 prompt, and the sibling test-first preset was archived on 2026-10-08 after its rules proved costly
-in real use without such a measurement up front. Check: a reviewer finds, for each changed rule,
-the eval under `tests/`, its README entry with versions and runs per arm, and the CHANGELOG entry.
+in real use without such a measurement up front. The eval stays mandatory and its result stays
+visible; whether to ship despite it is the owner's call, made in the open. Amended on 2026-10-14
+after two evals of the story-workers fragment: 001 measured it at 65% more usage than core on a
+small fixture, and 002 could not measure a quality difference, core passing every held-out test in
+six runs on two versions of a large fixture; the owner chose to release it. Check: a reviewer
+finds, for each changed rule, the eval under `tests/`, its README entry with versions and runs per
+arm, the CHANGELOG entry, and, for a rule released without its eval showing the claimed effect, the
+owner's recorded decision linked from that CHANGELOG entry.
 
 ### IV. Degrades to Core
 
@@ -63,9 +72,9 @@ Whatever is not part of the preset is `export-ignore`.
 
 Rationale: the archive is the artifact; a file in the repository that is not export-ignored lands
 in every project that installs it. Check: `tests/compose.sh` builds the archive with `git archive`
-as GitHub does and fails if the installed preset carries this repository's `.specify/`, `.claude/`,
-`specs/`, `tests/`, `docs/` or `CLAUDE.md`; a reviewer checks that `preset.yml`, the CHANGELOG and the
-tag agree.
+as GitHub does and fails if it carries anything but `preset.yml`, the fragments directly under
+`commands/`, `README.md`, `CHANGELOG.md` and `LICENSE`; a reviewer checks that `preset.yml`, the
+CHANGELOG and the tag agree.
 
 ## Governance
 
@@ -82,4 +91,4 @@ This constitution overrides any other practice in this repository where they con
 - Versioning of this file: MAJOR for a principle removed or redefined incompatibly, MINOR for a
   principle or section added or materially expanded, PATCH for wording.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-13
+**Version**: 2.0.1 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-14

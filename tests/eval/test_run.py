@@ -24,6 +24,7 @@ OUTPUTS = [
     "status",
     "stream.jsonl",
     "usage.txt",
+    "usage.json",
     "heldout.txt",
     "suite.txt",
     "versions.txt",
@@ -36,6 +37,9 @@ CLAUDE = r"""#!/bin/sh
 here=$(dirname "$0")
 [ "$1" = --version ] && { echo "2.1.299 (Claude Code)"; exit 0; }
 printf '%s\n' "$@" > "$here/claude.args"
+echo "${DISABLE_AUTOUPDATER-unset}" > "$here/claude.autoupdater"
+# What versions.txt holds when the agent starts (the cwd is <out>/repo).
+cp ../versions.txt "$here/versions.seen" 2> /dev/null || : > "$here/versions.seen"
 # A worker's commit, so commits.txt has something after the setup commit.
 git commit -q --allow-empty -m "fixture: work"
 cat "$here/stream.jsonl"
@@ -54,6 +58,27 @@ case "$1" in
 esac
 """
 
+# usage.py's stand-in: run.sh's clean environment drops variables, so it reads
+# its exit code from a file beside it and writes what the real one would.
+USAGE = """import sys
+from pathlib import Path
+
+here = Path(__file__).parent
+out = Path(sys.argv[-1])
+code = int((here / "usage.exit").read_text()) if (here / "usage.exit").exists() else 0
+if code == 0:
+    (out / "usage.txt").write_text("reconciled yes\\n")
+    (out / "usage.json").write_text("{}\\n")
+elif code == 3:
+    # Python's own exit 1: an exception before main() could run.
+    print("Traceback (most recent call last):\\nTypeError: unsupported operand")
+    code = 1
+else:
+    print("unreconciled: no transcript" if code == 1 else "Traceback: bug")
+(here / "usage.args").write_text(" ".join(sys.argv[1:]))
+sys.exit(code)
+"""
+
 UV = r"""#!/bin/sh
 here=$(dirname "$0")
 [ "$1" = --version ] && { echo "uv 0.13.0"; exit 0; }
@@ -62,6 +87,7 @@ shift  # run
 case "$*" in
   *--version*) echo "$1 9.9.9"; exit 0 ;;
   *--junitxml=*)
+    [ -e "$here/nojunit" ] && { echo "pytest crashed"; exit 3; }
     for a in "$@"; do case "$a" in --junitxml=*) xml=${a#--junitxml=} ;; esac; done
     echo '<testsuites><testsuite tests="4" failures="1" errors="0" skipped="0"/></testsuites>' > "$xml"
     echo "3 passed, 1 failed"; exit 1 ;;
@@ -74,6 +100,7 @@ def init_event(**fields: Any) -> dict[str, Any]:
     event = {
         "type": "system",
         "subtype": "init",
+        "session_id": "sess-1",
         "model": "claude-opus-5-5",
         "output_style": "default",
         "mcp_servers": [],
@@ -157,7 +184,8 @@ def checkout(tmp_path: Path) -> Path:
     eval_dir.mkdir(parents=True)
     for name in ("run.sh", "bounded.py"):
         shutil.copy2(HERE / name, eval_dir / name)
-    fixture = eval_dir / "fixture"
+    (eval_dir / "usage.py").write_text(USAGE)
+    fixture = eval_dir / "fixtures/greet/project"
     feature = fixture / "specs/001-greet"
     feature.mkdir(parents=True)
     (fixture / ".specify").mkdir()
@@ -165,9 +193,10 @@ def checkout(tmp_path: Path) -> Path:
     stories = "".join(f"### User Story {n + 1} - S{n + 1}\n\n" for n in range(STORIES))
     (feature / "spec.md").write_text("# Spec\n\n" + stories)
     (feature / "tasks.md").write_text("# Tasks\n\n## Phase 1: Setup\n")
-    (eval_dir / "heldout").mkdir()
-    (eval_dir / "heldout/test_greet.py").write_text("def test_x() -> None:\n    pass\n")
-    (root / ".gitignore").write_text("ignored.txt\n")
+    heldout = eval_dir / "fixtures/greet/heldout"
+    heldout.mkdir()
+    (heldout / "test_greet.py").write_text("def test_x() -> None:\n    pass\n")
+    (root / ".gitignore").write_text("ignored.txt\nusage.exit\nusage.args\n")
     git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
     subprocess.run([*git, "init", "-q"], check=True)
     subprocess.run([*git, "add", "-A"], check=True)
@@ -185,6 +214,12 @@ def stubs(tmp_path: Path) -> Path:
     (bin_ / "tools/specify-cli/bin").mkdir(parents=True)
     os.symlink(shutil.which("python3") or "python3", bin_ / "tools/specify-cli/bin/python")
     script(bin_, stream())
+    # Claude Code's transcripts for session sess-1, where run.sh looks for them.
+    project = bin_ / "home/.claude/projects/-tmp-some-repo"
+    (project / "sess-1/subagents").mkdir(parents=True)
+    (project / "sess-1.jsonl").write_text('{"type": "assistant"}\n')
+    (project / "sess-1/subagents/agent-a1.jsonl").write_text('{"type": "assistant"}\n')
+    (project / "sess-1/subagents/agent-a1.meta.json").write_text('{"agentType": "Explore"}\n')
     return bin_
 
 
@@ -194,11 +229,22 @@ def script(stubs: Path, events: list[Any], exit_: int = 0) -> None:
 
 
 def run(
-    checkout: Path, stubs: Path, arm: str, out: Path, path: str | None = None
+    checkout: Path,
+    stubs: Path,
+    arm: str,
+    out: Path,
+    path: str | None = None,
+    fixture: str = "greet",
+    baseline: Path | None = None,
+    home: Path | None = None,
 ) -> subprocess.CompletedProcess[str]:
-    env = {"HOME": os.environ["HOME"], "PATH": path or f"{stubs}:{os.environ['PATH']}"}
+    env = {
+        "HOME": str(home or stubs / "home"),
+        "PATH": path or f"{stubs}:{os.environ['PATH']}",
+    }
+    args = ["--baseline", str(baseline)] if baseline else []
     return subprocess.run(
-        [BASH, str(checkout / "tests/eval/run.sh"), arm, str(out)],
+        [BASH, str(checkout / "tests/eval/run.sh"), *args, fixture, arm, str(out)],
         check=False,
         capture_output=True,
         text=True,
@@ -213,6 +259,29 @@ def run(
 def test_an_unknown_arm_is_refused(checkout: Path, stubs: Path, tmp_path: Path) -> None:
     result = run(checkout, stubs, "sideways", tmp_path / "out")
     assert result.returncode == 2
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("fixture", ["nowhere", "../fixtures/greet", ""])
+def test_an_unknown_fixture_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, fixture: str
+) -> None:
+    result = run(checkout, stubs, "with", tmp_path / "out", fixture=fixture)
+    assert result.returncode == 2
+    assert "fixture" in result.stderr
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("part", ["project", "heldout"])
+def test_a_fixture_lacking_a_part_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, part: str
+) -> None:
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "rm", "-rq", f"tests/eval/fixtures/greet/{part}"], check=True)
+    subprocess.run([*git, "commit", "-qm", f"drop {part}"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out")
+    assert result.returncode == 2
+    assert part in result.stderr
     assert not (tmp_path / "out").exists()
 
 
@@ -322,7 +391,7 @@ def test_a_preset_that_did_not_compose_does_not_count(
 def test_files_git_ignores_stay_out_of_the_fixture_copy(
     checkout: Path, stubs: Path, tmp_path: Path
 ) -> None:
-    (checkout / "tests/eval/fixture/ignored.txt").write_text("stray")
+    (checkout / "tests/eval/fixtures/greet/project/ignored.txt").write_text("stray")
     out = tmp_path / "out"
     assert run(checkout, stubs, "with", out).returncode == 0
     assert not (out / "repo/ignored.txt").exists()
@@ -405,11 +474,9 @@ def test_a_counted_run_writes_every_output(
     assert (out / "repo/tests_heldout/test_greet.py").is_file()
 
     assert (out / "heldout.txt").read_text().startswith("passed 3/4\n")
-    usage = (out / "usage.txt").read_text()
-    assert "claude-opus-5-5 1.25" in usage
-    assert "sum 1.75" in usage
-    assert "five_hour 0.5 0.52" in usage
-    assert "claude-opus-5-5 1.25 cache_read 100 cache_creation 20" in usage
+    # usage.txt is usage.py's, not a jq summary of modelUsage.
+    assert (out / "usage.txt").read_text() == "reconciled yes\n"
+    assert (checkout / "tests/eval/usage.args").read_text() == str(out.resolve())
     assert (out / "report.txt").read_text() == "Carried out in this session: none\n"
 
     commits = (out / "commits.txt").read_text()
@@ -422,6 +489,8 @@ def test_a_counted_run_writes_every_output(
     assert "main_model: claude-opus-5-5" in versions
     assert "main_effort: medium" in versions
     assert "output_style: default" in versions
+    assert "fixture: greet" in versions
+    assert f"arm: {arm}" in versions
 
     models = (out / "models.txt").read_text()
     assert "model claude-sonnet-5-5" in models
@@ -432,3 +501,221 @@ def test_a_counted_run_writes_every_output(
     assert "--setting-sources" in args and "--strict-mcp-config" in args
     installed = (stubs / "specify.preset").exists()
     assert installed == (arm != "without")
+
+
+# 002: the auto-updater, versions before the agent, the baseline, transcripts, usage.py.
+
+
+def test_the_auto_updater_is_disabled_for_the_agent(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    assert run(checkout, stubs, "with", tmp_path / "out").returncode == 0
+    assert (stubs / "claude.autoupdater").read_text() == "1\n"
+
+
+PRE_RUN = [
+    "commit",
+    "claude",
+    "specify",
+    "git",
+    "uv",
+    "main_model",
+    "main_effort",
+    "environment",
+    "git_isolation",
+    "fixture",
+    "arm",
+    "autoupdater",
+]
+POST_RUN = ["python", "pytest", "ruff", "output_style", "plugins", "mcp_servers", "skills", "date"]
+
+
+def keys(text: str) -> set[str]:
+    return {line.split(":", 1)[0] for line in text.splitlines() if ":" in line}
+
+
+def test_pre_run_keys_exist_before_the_agent_and_post_run_keys_after(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    seen = keys((stubs / "versions.seen").read_text())
+    assert set(PRE_RUN) <= seen
+    assert not seen & set(POST_RUN)
+    assert set(PRE_RUN + POST_RUN) <= keys((out / "versions.txt").read_text())
+    assert "autoupdater: disabled" in (out / "versions.txt").read_text()
+
+
+def baseline_run(checkout: Path, stubs: Path, tmp_path: Path) -> Path:
+    base = tmp_path / "without-1-1"
+    assert run(checkout, stubs, "without", base).returncode == 0
+    return base
+
+
+def test_a_baseline_differing_only_in_arm_proceeds(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    base = baseline_run(checkout, stubs, tmp_path)
+    out = tmp_path / "with-1-1"
+    result = run(checkout, stubs, "with", out, baseline=base)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_a_baseline_differing_in_a_pre_run_key_refuses_before_the_agent(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    base = baseline_run(checkout, stubs, tmp_path)
+    versions = base / "versions.txt"
+    versions.write_text(versions.read_text().replace("claude: 2.1.299", "claude: 2.1.300"))
+    (stubs / "claude.args").unlink()
+    out = tmp_path / "with-1-1"
+    result = run(checkout, stubs, "with", out, baseline=base)
+    assert result.returncode == 2
+    assert not (stubs / "claude.args").exists()
+    status = (out / "status").read_text()
+    assert status.startswith("refused") and "claude" in status
+
+
+def test_a_baseline_differing_in_an_init_key_does_not_count(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    base = baseline_run(checkout, stubs, tmp_path)
+    versions = base / "versions.txt"
+    versions.write_text(versions.read_text().replace("skills: speckit-implement", "skills: other"))
+    out = tmp_path / "with-1-1"
+    result = run(checkout, stubs, "with", out, baseline=base)
+    assert result.returncode == 1
+    status = (out / "status").read_text()
+    assert status.startswith("not counted") and "skills" in status
+    assert not (out / "heldout.txt").exists()
+
+
+def test_a_missing_baseline_is_refused(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    result = run(checkout, stubs, "with", tmp_path / "out", baseline=tmp_path / "nowhere")
+    assert result.returncode == 2
+    assert "baseline" in result.stderr
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("exit_", [0, 124])
+def test_transcripts_are_copied_whenever_the_stream_names_a_session(
+    checkout: Path, stubs: Path, tmp_path: Path, exit_: int
+) -> None:
+    events = stream() if exit_ == 0 else stream(results=0)
+    script(stubs, events, exit_)
+    out = tmp_path / "out"
+    run(checkout, stubs, "with", out)
+    assert (out / "transcripts/sess-1.jsonl").is_file()
+    assert (out / "transcripts/subagents/agent-a1.jsonl").is_file()
+    assert (out / "transcripts/subagents/agent-a1.meta.json").is_file()
+
+
+def test_unreconciled_usage_does_not_count(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    (checkout / "tests/eval/usage.exit").write_text("1\n")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 1
+    status = (out / "status").read_text()
+    assert status.startswith("not counted: unreconciled: no transcript"), status
+    for name in ("usage.txt", "usage.json", "suite.txt", "heldout.txt"):
+        assert not (out / name).exists(), name
+
+
+def test_a_usage_fault_is_a_harness_fault(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    (checkout / "tests/eval/usage.exit").write_text("2\n")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 2
+    assert (out / "status").read_text().startswith("refused: harness fault")
+    assert not (out / "heldout.txt").exists()
+
+
+PROBES_CLAUDE = r"""#!/bin/sh
+echo "${DISABLE_AUTOUPDATER-unset}" >> "$(dirname "$0")/probes.autoupdater"
+[ "$1" = --version ] && { echo "2.1.299 (Claude Code)"; exit 0; }
+exit 1
+"""
+
+
+def test_the_probes_disable_the_auto_updater(tmp_path: Path) -> None:
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    executable(bin_ / "claude", PROBES_CLAUDE)
+    env = {"HOME": str(tmp_path), "PATH": f"{bin_}:{os.environ['PATH']}"}
+    result = subprocess.run(
+        [BASH, str(HERE / "probes.sh"), str(tmp_path / "probes")],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=300,
+    )
+    seen = (bin_ / "probes.autoupdater").read_text().split()
+    assert seen and set(seen) == {"1"}, seen
+    # The closing summary runs.sh and compare.py require, counting the lines above it.
+    out = result.stdout.splitlines()
+    summary = [line for line in out if line.startswith("probes: ")]
+    oks = sum(line.startswith("ok ") for line in out)
+    fails = sum(line.startswith("FAIL ") for line in out)
+    assert summary == [f"probes: {oks} ok, {fails} FAIL"] and fails > 0, result.stdout
+
+
+def test_an_exit_1_that_is_not_unreconciled_is_a_harness_fault(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (checkout / "tests/eval/usage.exit").write_text("3\n")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 2
+    assert (out / "status").read_text().startswith("refused: harness fault: TypeError")
+    assert "Traceback (most recent call last)" in (out / "usage.log").read_text()
+
+
+def test_a_run_through_the_real_usage_py(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    shutil.copy2(HERE / "usage.py", checkout / "tests/eval/usage.py")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "commit", "-qam", "real usage.py"], check=True)
+    u = {
+        "input_tokens": 1000,
+        "output_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+    }
+    entry = {"type": "assistant", "message": {"id": "m1", "model": "claude-opus-5-5", "usage": u}}
+    project = stubs / "home/.claude/projects/-tmp-some-repo"
+    (project / "sess-1.jsonl").write_text(json.dumps(entry) + "\n")
+    shutil.rmtree(project / "sess-1")
+    model_usage = {"claude-opus-5-5": {"inputTokens": 1000, "costUSD": 0.004}}
+    script(stubs, stream(modelUsage=model_usage))
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "without", out)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "reconciled yes" in (out / "usage.txt").read_text()
+    assert "part main phase - claude-opus-5-5 cost 0.0040000" in (out / "usage.txt").read_text()
+
+
+def test_the_held_out_tests_are_the_measured_commits(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    # A change to the fixture while the agent runs (an hour) is not what this run measures.
+    heldout = checkout / "tests/eval/fixtures/greet/heldout"
+    (heldout / "N").write_text("1\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "tests/eval/fixtures/greet/heldout/N"], check=True)
+    subprocess.run([*git, "commit", "-qm", "N"], check=True)
+    committed = (heldout / "test_greet.py").read_text()
+    edit = f"printf 'def test_new() -> None:\\n    assert False\\n' >> {heldout}/test_greet.py\n"
+    claude = stubs / "claude"
+    claude.write_text(
+        claude.read_text().replace('cat "$here/stream.jsonl"', edit + 'cat "$here/stream.jsonl"')
+    )
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "without", out).returncode == 0
+    assert (out / "repo/tests_heldout/test_greet.py").read_text() == committed
+    assert not (out / "repo/tests_heldout/N").exists()
+
+
+def test_no_junit_report_is_scored_zero_not_unreadable(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (stubs / "nojunit").write_text("")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "without", out).returncode == 0
+    assert (out / "heldout.txt").read_text().startswith("passed 0/0: no junit report\n")

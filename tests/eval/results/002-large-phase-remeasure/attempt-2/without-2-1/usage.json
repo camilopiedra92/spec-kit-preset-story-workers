@@ -1,0 +1,47 @@
+{
+  "models": {
+    "claude-opus-5-5": {
+      "reported": {
+        "input": 64,
+        "output": 34184,
+        "cache_read": 1143767,
+        "cache_write": 135436,
+        "cost": 1.7786173999999997
+      },
+      "transcripts": {
+        "input": 64,
+        "output": 34184,
+        "cache_read": 1143767,
+        "cache_write_5m": 72520,
+        "cache_write_1h": 62916,
+        "cost": 1.7786174
+      }
+    }
+  },
+  "parts": [
+    {
+      "part": "main",
+      "phase": null,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 34,
+      "output": 25135,
+      "cache_read": 825551,
+      "cache_write_5m": 0,
+      "cache_write_1h": 62916,
+      "cost": 1.1712742
+    },
+    {
+      "part": "review",
+      "phase": null,
+      "model": "claude-opus-5-5",
+      "subagents": 3,
+      "input": 30,
+      "output": 9049,
+      "cache_read": 318216,
+      "cache_write_5m": 72520,
+      "cache_write_1h": 0,
+      "cost": 0.6073432
+    }
+  ]
+}

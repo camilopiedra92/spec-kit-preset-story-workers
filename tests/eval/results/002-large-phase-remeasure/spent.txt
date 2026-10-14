@@ -1,0 +1,37 @@
+# compare.py --spent /tmp/remeasure, 2026-10-14, over the run directories before their copy into this
+# repository (streams and transcripts, which price the probes and runs, are not committed).
+attempt-1/probes/r1-1.jsonl 0.0917653
+attempt-1/probes/r1-10.jsonl 0.0910356
+attempt-1/probes/r1-11.jsonl 0.0453632
+attempt-1/probes/r1-15.jsonl 0.1873662
+attempt-1/probes/r1-17.jsonl 0.1151616
+attempt-1/probes/r1-3.jsonl 0.0730502
+attempt-1/probes/r1-4-opus.jsonl 0.1213152
+attempt-1/probes/r1-4-sonnet.jsonl 0.0683264
+attempt-1/probes/r1-5-low.jsonl 0.0869194
+attempt-1/probes/r1-5-max.jsonl 0.0994718
+attempt-1/probes/r1-7.jsonl 0.0709938
+attempt-1/probes/r1-8-low.jsonl 0.0910277
+attempt-1/probes/r1-8-max.jsonl 0.1008513
+attempt-1/probes/r1-9.jsonl 0.0796478
+attempt-1/without-1-1 1.7887960
+attempt-1/without-2-1 1.9599658
+attempt-1/without-3-1 1.8268376
+attempt-2/probes/r1-1.jsonl 0.0917493
+attempt-2/probes/r1-10.jsonl 0.0903402
+attempt-2/probes/r1-11.jsonl 0.0453432
+attempt-2/probes/r1-15.jsonl 0.1798066
+attempt-2/probes/r1-17.jsonl 0.1059070
+attempt-2/probes/r1-3.jsonl 0.0730822
+attempt-2/probes/r1-4-opus.jsonl 0.1213712
+attempt-2/probes/r1-4-sonnet.jsonl 0.0683104
+attempt-2/probes/r1-5-low.jsonl 0.0867854
+attempt-2/probes/r1-5-max.jsonl 0.0977918
+attempt-2/probes/r1-7.jsonl 0.0710018
+attempt-2/probes/r1-8-low.jsonl 0.0870917
+attempt-2/probes/r1-8-max.jsonl 0.0992793
+attempt-2/probes/r1-9.jsonl 0.0793818
+attempt-2/without-1-1 1.8604258
+attempt-2/without-2-1 1.7786174
+attempt-2/without-3-1 1.9513630
+spent 13.7855430

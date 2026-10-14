@@ -48,8 +48,10 @@ claude_in() {
   for v in "${allow[@]}"; do
     [ -z "${!v+set}" ] || pass+=("$v=${!v}")
   done
-  (cd "$repo" && env -i "${pass[@]}" "${isolation[@]}" ${extra[@]+"${extra[@]}"} \
-    python3 "$here/bounded.py" 1200 claude -p "$prompt" --model claude-opus-5-5 --effort medium \
+  # The auto-updater off, as in run.sh: the probes and the runs must be one
+  # Claude Code version (research R9).
+  (cd "$repo" && env -i "${pass[@]}" "${isolation[@]}" DISABLE_AUTOUPDATER=1 \
+    ${extra[@]+"${extra[@]}"} python3 "$here/bounded.py" 1200 claude -p "$prompt" --model claude-opus-5-5 --effort medium \
     --setting-sources "project,local" --strict-mcp-config --output-format stream-json --verbose \
     "$@" > "$stream" 2> "$stream.stderr") || true
 }
@@ -62,13 +64,17 @@ scratch() { # <name>: a fresh git repository for one probe
 }
 
 failed=0
+oks=0
+fails=0
 expect() { # <probe> <what was seen> <command...>: ok when the command succeeds
   local probe=$1 seen=$2
   shift 2
   if "$@"; then
     echo "ok   $probe"
+    oks=$((oks + 1))
   else
     echo "FAIL $probe: $seen"
+    fails=$((fails + 1))
     failed=1
   fi
 }
@@ -84,7 +90,7 @@ agent_replies() { # every tool_result the main session received, as text
     | select(.type == "tool_result") | .content | tostring] | join("\n")' "$1"
 }
 
-echo "claude $(claude --version)"
+echo "claude $(DISABLE_AUTOUPDATER=1 claude --version)"
 
 # R1 1: a call's model decides the subagent's; its events carry the call's id.
 repo=$(scratch r1-1)
@@ -250,5 +256,7 @@ expect "R1 17: the worker wrote and committed with no denial" \
   "a.txt $([ -e "$repo/a.txt" ] && echo exists || echo absent); log $(git -C "$repo" log --format=%s 2> /dev/null | tr '\n' ' ')" \
   sh -c "[ -e '$repo/a.txt' ] && git -C '$repo' log --format=%s | grep -qx probe-a && jq -es '[.[] | select(.type == \"result\") | .permission_denials | length] | add == 0' '$s' > /dev/null"
 
+# The closing summary: runs.sh and compare.py require it, so a file cut short fails.
+echo "probes: $oks ok, $fails FAIL"
 echo "streams and repositories: $out"
 exit "$failed"

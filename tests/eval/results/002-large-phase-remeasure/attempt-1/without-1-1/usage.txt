@@ -1,0 +1,6 @@
+claude-opus-5-5 cost 1.7887960 input 66 output 35905 cache_read 1261440 cache_write_5m 67816 cache_write_1h 59883
+sum 1.7887960
+five_hour 0.26 0.3
+reconciled yes
+part main phase - claude-opus-5-5 cost 1.2173502 input 42 output 26624 cache_read 1028191 cache_write_5m 0 cache_write_1h 59883
+part review phase - claude-opus-5-5 cost 0.5714458 input 24 output 9281 cache_read 233249 cache_write_5m 67816 cache_write_1h 0

@@ -2,21 +2,27 @@
 
 A Spec Kit preset that has `/speckit-implement` hand each phase of a feature's
 tasks to a worker subagent on a smaller model, while the main session
-verifies, reviews and decides. Measured on 2026-10-14 and not adopted: no
-release exists until an eval passes (`README.md`). Projects would install it
-from a tag's archive. This repository is itself developed with Spec Kit.
+verifies, reviews and decides. Released as v0.1.0 on the owner's acceptance
+after two evals that did not show its claimed effect (`README.md`); projects
+install it from a tag's archive. This repository is itself developed with
+Spec Kit.
 
 ## Commands
 
 ```bash
 tests/check.sh        # the checks CI runs
 tests/eval/probes.sh [out-dir]                         # reruns research R1; ~$1.40 of usage
-tests/eval/run.sh <without|with|fallback> <out-dir>    # one eval arm; spends real usage
+tests/eval/oracle.sh [--write-n] <fixture>             # held-out tests against the reference
+tests/eval/run.sh <fixture> <without|with|fallback> <out-dir>  # one eval arm; spends usage
+tests/eval/runs.sh <attempt-dir> <fixture> <arm>...    # three counted runs per arm; spends usage
 uv run python tests/eval/attribution.py <out-dir>      # SC-003 on a `with` arm
+uv run python tests/eval/usage.py <out-dir>            # a run's usage, reconciled and attributed
+uv run python tests/eval/compare.py --help             # verdict, gate and spend across runs
 ```
 
-The eval's whole sequence, reruns included, is in
-`specs/001-story-workers/quickstart.md`.
+An eval's whole sequence, reruns included: `specs/002-large-phase-remeasure/quickstart.md`
+(three runs per arm, the gate, the spend; 001's single-run sequence is in
+`specs/001-story-workers/quickstart.md`).
 
 ## Where things live
 

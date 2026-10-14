@@ -1,0 +1,18 @@
+I've built the whole checkout library and all 30 tasks in `specs/001-checkout/tasks.md` are marked `[X]`. `uv run pytest` passes 69 tests and `uv run ruff check` is clean.
+
+For each story I wrote the tests first and saw them fail before writing the code. After each story, as `CLAUDE.md` asks, a fresh subagent checked the changes against `spec.md`:
+
+| Story | Modules | Review result |
+|---|---|---|
+| US1 – price a cart with tax | `money`, `catalog`, `tax`, `cart` | One gap: the spec says a quantity is a whole number, but `Cart.add` accepted `1.5`. I fixed it and added a test for it. |
+| US2 – promotions | `allocation`, `promotions`, `price` with promotions and a cap | Nothing failed the spec. |
+| US3 – returns | `per_unit`, per-unit amounts on each priced line, `returns` | Nothing failed the spec. |
+
+Every acceptance scenario from US1-1 to US3-9 has a test.
+
+Things I added beyond the plan:
+- **Shared test data:** `tests/scenario.py` holds the spec's catalog and tax table so each test file doesn't repeat them. The plan says `conftest.py` stays empty apart from its docstring, so I kept the shared data out of it.
+- **Ignore patterns:** I added `*.pyc`, `dist/`, `*.egg-info/` and `.DS_Store` to `.gitignore`.
+- **Running code outside pytest:** `checkout` only imports when `src` is on the path, so ad-hoc Python needs `PYTHONPATH=src:tests uv run python ...`. pytest sets the path itself.
+
+There's no `.specify/extensions.yml`, so there were no hooks to run, and there were no checklists to check. Nothing is committed yet, and you're on `master`; if you want a commit, the message has to start with `fixture:`.
