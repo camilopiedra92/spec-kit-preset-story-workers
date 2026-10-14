@@ -247,6 +247,23 @@ def test_an_out_dir_inside_the_checkout_is_refused(
     assert not out.exists()
 
 
+def test_an_out_dir_reached_through_a_symlink_into_the_checkout_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (tmp_path / "link").symlink_to(checkout)
+    out = tmp_path / "link/runs/out"
+    assert run(checkout, stubs, "with", out).returncode == 2
+    assert not out.exists()
+
+
+def test_a_dotdot_out_dir_leading_outside_the_checkout_is_accepted(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    out = checkout / "../out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    assert (tmp_path / "out/status").read_text() == "ok\n"
+
+
 def test_an_ignored_file_is_not_a_change(checkout: Path, stubs: Path, tmp_path: Path) -> None:
     (checkout / "ignored.txt").write_text("x")
     assert run(checkout, stubs, "with", tmp_path / "out").returncode == 0

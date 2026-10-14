@@ -15,7 +15,7 @@ for arm in without with fallback; do
   done
 done
 cat /tmp/eval-*-*/status                               # every try, with each rerun's reason
-cat /tmp/eval-{without,with,fallback}/usage.txt        # costUSD per model, the sum, the window
+cat /tmp/eval-{without,with,fallback}/usage.txt        # costUSD and cache tokens per model, the sum, the window
 cat /tmp/eval-{without,with,fallback}/heldout.txt      # held-out passed / total
 uv run python tests/eval/attribution.py /tmp/eval-with # SC-003: every clause ok
 for arm in with fallback; do                           # same tools and main model, else rerun that

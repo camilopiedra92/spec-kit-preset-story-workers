@@ -26,7 +26,17 @@ for tool in claude specify uv git python3 jq; do
 done
 [ ! -e "$2" ] || refuse "$2 exists: every try gets a directory of its own"
 root=$(git -C "$here" rev-parse --show-toplevel)
-case $2 in /*) target=$2 ;; *) target=$(pwd -P)/$2 ;; esac
+physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. included
+  local dir=$1 rest=
+  case $dir in /*) ;; *) dir=$PWD/$dir ;; esac
+  until [ -d "$dir" ]; do
+    rest=/${dir##*/}$rest
+    dir=${dir%/*}
+    [ -n "$dir" ] || dir=/
+  done
+  echo "$(cd "$dir" && pwd -P)$rest"
+}
+target=$(physical "$2")
 # A CLAUDE.md in any ancestor of the scratch repository loads into the run.
 case $target/ in "$root"/*) refuse "$2 is inside $root: its CLAUDE.md would load into the run" ;; esac
 # The `with` arms install HEAD's archive and versions.txt names HEAD: a change
