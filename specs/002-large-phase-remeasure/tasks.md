@@ -149,7 +149,7 @@ CHANGELOG and the tags.
 
 - [X] T037 Move research.md R3 (usage attribution from transcripts, reconciled on every run) to `docs/decisions/0002-usage-attribution.md` (MADR: context, options, outcome, consequences, linking R3): later evals build on it; `CLAUDE.md`'s pointer to `docs/decisions/` already covers it
 - [X] T038 Final sweep of `CLAUDE.md`: every statement true after this feature (its description line and Commands; earlier tasks edited parts of it), per the constitution's "correct it in the same commit that made it false"
-- [ ] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
+- [X] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
 - [ ] T040 Pass only: a fresh-context review of the whole diff, its findings fixed; then **the owner reviews the PR against constitution principles I–V** (constitution, Governance) and, on their approval, mark it ready (`gh pr ready`) and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; tag `v0.1.0` on the merge commit and push the tag
 - [ ] T041 Fail or stopped only: a fresh-context review of the whole diff, its findings fixed; tag the measured state `measured-not-adopted-002-<date>` (fail only); then **the owner reviews the PR against constitution principles I–V** and, on their approval, mark it ready and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; no version tag
 
@@ -201,7 +201,7 @@ CHANGELOG and the tags.
 
 ## Phase 8: Convergence
 
-- [ ] T047 CRITICAL: record the owner's reason for accepting the release in README "The owner's decision, 2026-10-14" and in spec Clarifications per Constitution III (partial)
+- [X] T047 CRITICAL: record the owner's reason for accepting the release in README "The owner's decision, 2026-10-14" and in spec Clarifications per Constitution III (partial)
 - [X] T048 Replace README's "add the newer tag's archive the same way" with `specify preset update story-workers --from <newer tag's archive URL>` per US3/sc.1, T036 (contradicts)
 - [X] T049 Correct README's Eval 002 reading: 001's `with` main session cost more than core's main session ($0.505 against $0.382), not more than its whole session, per FR-009 and research R2 (contradicts)
 - [X] T050 Close H1 by a fresh-context review of commit 2a6edd3's change and record it under "Hardening 1" in heldout-review.md per FR-002 (partial)

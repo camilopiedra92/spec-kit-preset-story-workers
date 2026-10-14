@@ -51,6 +51,10 @@ when the owner accepts it, with the result recorded as it is). Recorded as it st
 shown the preset to save usage, and one measured it costing 65% more; no eval could show a quality
 difference either way. Accepted as released, not as measured to work.
 
+**The owner's reason**, as given: synthetic fixtures cannot show a quality difference (core is at
+the ceiling), so the preset is released to be judged in real use on real features, where the owner
+will watch its usage and quality.
+
 Both evals ran hermetically, without the user's own instructions, settings or plugins, so their
 results are the preset's and reproducible. How a setup whose instructions add work to every story
 (a mutation check, a fresh review per story, red test runs) shifts the comparison was not measured;

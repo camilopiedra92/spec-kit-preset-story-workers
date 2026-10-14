@@ -67,7 +67,10 @@ harness reporting where every token goes.
   was amended (v2.0.0, principle III) so a rule whose eval does not show its claimed effect can be
   released on the owner's recorded acceptance; the README records both evals as they came out and
   the decision beside them (US3 scenario 7). Decided by the owner, 2026-10-14, choosing between a
-  third hardening, a cost-only run of `with` and `fallback`, and stopping.
+  third hardening, a cost-only run of `with` and `fallback`, and stopping. The owner's reason:
+  synthetic fixtures cannot show a quality difference (core is at the ceiling), so the preset is
+  released to be judged in real use on real features, where the owner will watch its usage and
+  quality.
 - Q: Is a run whose usage cannot be reconciled a measurement? → A: no: the attribution is what this
   feature adds, so a run whose transcripts are missing or do not reconcile is not counted and is
   rerun within the usual bound; a part the harness cannot place in a phase is not a reconciliation
