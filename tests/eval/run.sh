@@ -145,12 +145,13 @@ fi
 step "git add" git add -A
 step "setup commit" git commit -qm "fixture: setup"
 setup=$(git rev-parse HEAD)
+measured=$(git -C "$root" rev-parse HEAD)
 
 # The versions known before the agent starts, none read from the scratch
 # repository; with a baseline, a difference is refused before anything is spent.
 semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
 {
-  echo "commit: $(git -C "$root" rev-parse HEAD)"
+  echo "commit: $measured"
   echo "claude: $(clean 600 claude --version | semver)"
   echo "specify: $(clean 600 specify version 2>&1 | semver)"
   echo "git: $(git --version | semver)"
@@ -264,7 +265,12 @@ esac
 suite=0
 clean 600 uv run pytest -q > "$out/suite.txt" 2>&1 || suite=$?
 echo "exit: $suite" >> "$out/suite.txt"
-cp -R "$here/$fixture_dir/heldout" "$repo/tests_heldout"
+# The held-out tests as committed at the measured commit: the tree was checked
+# clean before the run, but a run lasts up to an hour and the fixture may move.
+mkdir "$repo/tests_heldout"
+git -C "$root" archive --format=tar "$measured:$(git -C "$here" rev-parse --show-prefix)$fixture_dir/heldout" |
+  tar -xf - -C "$repo/tests_heldout"
+rm -f "$repo/tests_heldout/N"
 clean 600 uv run pytest tests_heldout -q --junitxml="$out/heldout.xml" > "$out/heldout.log" 2>&1 || true
 {
   python3 -c 'import sys, xml.etree.ElementTree as ET

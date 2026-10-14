@@ -688,3 +688,24 @@ def test_a_run_through_the_real_usage_py(checkout: Path, stubs: Path, tmp_path: 
     assert result.returncode == 0, result.stdout + result.stderr
     assert "reconciled yes" in (out / "usage.txt").read_text()
     assert "part main phase - claude-opus-5-5 cost 0.0040000" in (out / "usage.txt").read_text()
+
+
+def test_the_held_out_tests_are_the_measured_commits(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    # A change to the fixture while the agent runs (an hour) is not what this run measures.
+    heldout = checkout / "tests/eval/fixtures/greet/heldout"
+    (heldout / "N").write_text("1\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "tests/eval/fixtures/greet/heldout/N"], check=True)
+    subprocess.run([*git, "commit", "-qm", "N"], check=True)
+    committed = (heldout / "test_greet.py").read_text()
+    edit = f"printf 'def test_new() -> None:\\n    assert False\\n' >> {heldout}/test_greet.py\n"
+    claude = stubs / "claude"
+    claude.write_text(
+        claude.read_text().replace('cat "$here/stream.jsonl"', edit + 'cat "$here/stream.jsonl"')
+    )
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "without", out).returncode == 0
+    assert (out / "repo/tests_heldout/test_greet.py").read_text() == committed
+    assert not (out / "repo/tests_heldout/N").exists()

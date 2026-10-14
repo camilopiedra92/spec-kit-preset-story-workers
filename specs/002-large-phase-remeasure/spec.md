@@ -146,8 +146,9 @@ The owner deciding whether to release reads, in the README, the remeasure beside
 either a release or a second "measured and not adopted" with its reason, and finds the run outputs
 it rests on committed in the repository.
 
-**Why this priority**: constitution III makes a passing eval the condition of release and a failed
-one a recorded alternative; this story is that record.
+**Why this priority**: constitution III makes the eval and its record the condition of release:
+a pass, or the owner's recorded acceptance (v2.0.0); otherwise a recorded alternative. This story is
+that record.
 
 **Independent Test**: the README holds an entry headed `Eval 002, <date>` with every field FR-009
 lists; the run outputs are committed under `tests/eval/results/002-large-phase-remeasure/`; and the
@@ -181,22 +182,21 @@ ended, or for an eval that stopped without a verdict, the day it stopped.
    <date>` (the day the eval stopped) saying not measured and why, with every field of FR-009 that
    exists; its top status line, `preset.yml`'s pre-release comment and the project `CLAUDE.md`'s
    description say 002 was not measured; every attempt's outputs are committed
-   (FR-012); no release is made and no tag is created.
-
----
-
+   (FR-012); no release is made and no tag is created, unless the owner accepts it (scenario 7).
 7. **Given** the eval stopped without showing the claimed effect, **When** the owner accepts the
    preset anyway (constitution III, v2.0.0), **Then** the README records the eval as it came out,
    never as a pass, beside the owner's decision, its reason and date; the release follows scenario
    1, its CHANGELOG entry linking the decision; and US4 follows.
+
+---
 
 ### User Story 4 - The owner's setup adopts a released preset (Priority: P3)
 
 Only after a release (scenario 1, or scenario 7), the owner's setup adopts the preset (FR-010). 001 specified these steps and
 never carried them out, because 001 was not adopted.
 
-**Why this priority**: it reaches projects only after User Story 3 passes; on a failure it does not
-happen.
+**Why this priority**: it reaches projects only after a release (US3 scenario 1 or 7); without one
+it does not happen.
 
 **Independent Test**: `sdd-init` in a scratch repository installs both presets; the dotfiles check
 for `sdd-init` goes red when the story-workers preset is removed from it; `docs/claude-settings.md`

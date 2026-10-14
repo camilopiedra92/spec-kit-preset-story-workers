@@ -25,7 +25,6 @@ data-model.md ("Comparison", "Spend", "Held-out score").
 import json
 import re
 import statistics
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -66,15 +65,10 @@ class Fixture:
 def at_commit(fixtures: Path, commit: str, path: str) -> str:
     """A fixture file as committed at `commit`: a run is judged by the fixture it
     ran on, which a later hardening changes in the working tree."""
-    result = subprocess.run(
-        ["git", "-C", str(fixtures), "show", f"{commit}:./{path}"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        raise Refused(f"{path} at commit {commit!r}: {result.stderr.strip()}")
-    return result.stdout
+    try:
+        return usage.fixture_file(fixtures, commit, path)
+    except ValueError as error:
+        raise Refused(str(error)) from error
 
 
 def read_fixture(fixtures: Path, name: str, commit: str) -> Fixture:
@@ -105,6 +99,7 @@ class Run:
     cost: float
     model_costs: dict[str, float]
     passed: int
+    collected: int
     suite: int
     usage: dict[str, Any]
     models_txt: str
@@ -120,7 +115,7 @@ def read_run(path: Path) -> Run:
         versions = read_versions(path)
         data = json.loads((path / "usage.json").read_text())
         model_costs = {m: float(v["reported"]["cost"]) for m, v in data["models"].items()}
-        passed = re.match(r"passed (\d+)/", (path / "heldout.txt").read_text())
+        passed = re.match(r"passed (\d+)/(\d+)", (path / "heldout.txt").read_text())
         suite = re.search(r"^exit: (\d+)", (path / "suite.txt").read_text(), re.MULTILINE)
         if not passed or not suite:
             raise Refused(f"{path.name}: heldout.txt or suite.txt unreadable")
@@ -132,6 +127,7 @@ def read_run(path: Path) -> Run:
             sum(model_costs.values()),
             model_costs,
             int(passed.group(1)),
+            int(passed.group(2)),
             int(suite.group(1)),
             data,
             (path / "models.txt").read_text(),
@@ -159,6 +155,15 @@ def spread(values: list[float], fmt: str) -> str:
         f"median {fmt.format(statistics.median(values))} min {fmt.format(min(values))} "
         f"max {fmt.format(max(values))}"
     )
+
+
+def collected_within(runs: list[Run], n: int) -> None:
+    """Refused when a run collected more held-out tests than the fixture's N: tests
+    the agent added (a conftest, a parametrize) could hide failures. Fewer collected
+    is already scored out of N."""
+    over = [f"{r.path.name} {r.collected}" for r in runs if r.collected > n]
+    if over:
+        raise Refused(f"held-out tests collected beyond N {n}: {', '.join(over)}")
 
 
 def gate(without: list[Run], n: int) -> tuple[bool, str]:
@@ -270,7 +275,7 @@ def verdict(runs: list[Run], probes: str, fx: Fixture) -> tuple[list[str], bool]
     probe_version = VERSION.search(probes.split("\n", 1)[0])
     failed = [line for line in probes.splitlines() if line.startswith("FAIL")]
     # probes.sh's closing summary: a file cut short has none.
-    summary = re.search(r"^probes: \d+ ok, 0 FAIL$", probes, re.MULTILINE)
+    summary = re.search(r"^probes: [1-9]\d* ok, 0 FAIL$", probes, re.MULTILINE)
     off = [
         r.path.name
         for r in runs
@@ -311,6 +316,7 @@ def run_verdict(argv: list[str], fixtures: Path) -> int:
         if count != RUNS_PER_ARM:
             raise Refused(f"{arm}: {count} runs, not {RUNS_PER_ARM}")
     fx = read_fixture(fixtures, *comparable(runs))
+    collected_within(runs, fx.n)
     lines, holds = verdict(runs, probes, fx)
     print("\n".join(lines))
     return 0 if holds else 1
@@ -321,6 +327,7 @@ def run_gate(argv: list[str], fixtures: Path) -> int:
     if len(runs) != RUNS_PER_ARM or any(r.arm != "without" for r in runs):
         raise Refused(f"--gate takes {RUNS_PER_ARM} counted `without` runs")
     fx = read_fixture(fixtures, *comparable(runs))
+    collected_within(runs, fx.n)
     open_, scores = gate(runs, fx.n)
     print(f"gate {'open' if open_ else 'closed'}: {scores}")
     return 0 if open_ else 1

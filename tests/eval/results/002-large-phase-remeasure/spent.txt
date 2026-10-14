@@ -1,3 +1,5 @@
+# compare.py --spent /tmp/remeasure, 2026-10-14, over the run directories before their copy into this
+# repository (streams and transcripts, which price the probes and runs, are not committed).
 attempt-1/probes/r1-1.jsonl 0.0917653
 attempt-1/probes/r1-10.jsonl 0.0910356
 attempt-1/probes/r1-11.jsonl 0.0453632

@@ -9,6 +9,7 @@ the list prices, so a run reconciles unless a test breaks it on purpose.
 """
 
 import json
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -199,7 +200,15 @@ class Run:
             },
         ]
         (out / "stream.jsonl").write_text(lines(events))
-        (out / "versions.txt").write_text(f"commit: abc\nfixture: fx\narm: {self.arm}\n")
+        # The fixture committed: a run's phases are read at the commit it measured.
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
+        subprocess.run([*git, "init", "-q"], check=True)
+        subprocess.run([*git, "add", "fixtures"], check=True)
+        subprocess.run([*git, "commit", "-qm", "fixture"], check=True)
+        sha = subprocess.run(
+            [*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        (out / "versions.txt").write_text(f"commit: {sha}\nfixture: fx\narm: {self.arm}\n")
         return out
 
 
@@ -780,3 +789,14 @@ def test_usage_txt_lists_parts_in_session_order(tmp_path: Path) -> None:
         if line.startswith("part ") and OPUS in line
     ]
     assert order == ["before", "phase1", "phase2", "phase3", "phase4", "after"]
+
+
+def test_phases_are_read_at_the_measured_commit(tmp_path: Path) -> None:
+    run = Run()
+    well_formed(run)
+    out = run.write(tmp_path)
+    # The fixture's headings change after the run's commit (a later hardening).
+    tasks = tmp_path / "fixtures/fx/project/specs/001-fx/tasks.md"
+    tasks.write_text(tasks.read_text().replace("Phase 2: User Story 1", "Phase 2: Story One"))
+    assert usage.main([str(out)], fixtures=tmp_path / "fixtures") == 0
+    assert ("unattributed", None) not in main_turn_weights(out)

@@ -148,6 +148,7 @@ def test_the_baseline_is_passed_once_without_1_exists(ev: Path, attempt: Path) -
         ("failed", "probe"),
         ("version", "version"),
         ("truncated", "probe"),
+        ("empty", "probe"),
     ],
 )
 def test_the_probes_must_hold_before_every_try(
@@ -160,6 +161,8 @@ def test_the_probes_must_hold_before_every_try(
         probes.write_text(
             "claude 2.1.299 (Claude Code)\nok   R1 1: x\nFAIL R1 5: x\nprobes: 1 ok, 1 FAIL\n"
         )
+    elif breaking == "empty":
+        probes.write_text("claude 2.1.299 (Claude Code)\nprobes: 0 ok, 0 FAIL\n")
     elif breaking == "truncated":
         probes.write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\n")
     else:

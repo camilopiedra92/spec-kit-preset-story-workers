@@ -149,9 +149,9 @@ CHANGELOG and the tags.
 
 - [X] T037 Move research.md R3 (usage attribution from transcripts, reconciled on every run) to `docs/decisions/0002-usage-attribution.md` (MADR: context, options, outcome, consequences, linking R3): later evals build on it; `CLAUDE.md`'s pointer to `docs/decisions/` already covers it
 - [X] T038 Final sweep of `CLAUDE.md`: every statement true after this feature (its description line and Commands; earlier tasks edited parts of it), per the constitution's "correct it in the same commit that made it false"
-- [X] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
-- [ ] T040 Pass only: a fresh-context review of the whole diff, its findings fixed; then **the owner reviews the PR against constitution principles I–V** (constitution, Governance) and, on their approval, mark it ready (`gh pr ready`) and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; tag `v0.1.0` on the merge commit and push the tag
-- [ ] T041 Fail or stopped only: a fresh-context review of the whole diff, its findings fixed; tag the measured state `measured-not-adopted-002-<date>` (fail only); then **the owner reviews the PR against constitution principles I–V** and, on their approval, mark it ready and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; no version tag
+- [ ] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
+- [ ] T040 Pass, or the owner's acceptance (spec US3 scenario 7): a fresh-context review of the whole diff, its findings fixed; then **the owner reviews the PR against constitution principles I–V** (constitution, Governance) and, on their approval, mark it ready (`gh pr ready`) and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; tag `v0.1.0` on the merge commit and push the tag
+- [ ] T041 Fail or stopped without the owner's acceptance (not this feature's outcome): a fresh-context review of the whole diff, its findings fixed; tag the measured state `measured-not-adopted-002-<date>` (fail only); then **the owner reviews the PR against constitution principles I–V** and, on their approval, mark it ready and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; no version tag
 
 ---
 
@@ -210,3 +210,14 @@ CHANGELOG and the tags.
 - [X] T053 Eval 002 entry: say no attempt was discarded for a harness fault or a version change, and that reviews ran on `claude-opus-5-5`, per FR-009 and Constitution III (partial)
 - [X] T054 Commit the eval's spend (`compare.py --spent` output) as tests/eval/results/002-large-phase-remeasure/spent.txt so the README's $13.79 can be rebuilt, per FR-009 (partial)
 - [X] T055 Bring plan.md (Constitution Check III, the release files' comment), quickstart.md step 3 (the acceptance route; typo "Plus and the") and spec.md's status in line with constitution v2.0.0 and US3 scenario 7 (partial)
+
+---
+
+## Phase 9: Convergence
+
+- [X] T056 Take the held-out tests from the measured commit in run.sh, and read the phase headings at the run's commit in usage.py, per FR-012 and spec US2 (contradicts)
+- [X] T057 Check the release archive against an allowlist in tests/compose.sh, seen red with a stray file, per Constitution V (partial)
+- [X] T058 Refuse a run whose held-out total exceeds N, and a probe summary with no `ok`, in compare.py and runs.sh, per FR-002 and SC-006 (partial)
+- [X] T059 Disclose in heldout-review.md that H1's closing review came after attempt 2's runs, and why the runs stand, per FR-002 (partial)
+- [X] T060 README: Eval 001's "not adopted" superseded by the decision; the Halt gloss scoped to "that phase"; the hermetic caveat's two overstatements; the FR-006 check's wording; spent.txt's provenance, per FR-009 and the claims rule (contradicts)
+- [X] T061 Decision 0001's pending dotfiles link; spec and plan wording before v2.0.0; T040/T041 labels for the actual outcome, per Constitution III (partial)

@@ -618,3 +618,23 @@ def test_a_commit_the_repository_lacks_is_refused(
         compare.main(["--gate", *map(str, runs)], fixtures=env["fixtures"], results=env["results"])
         == 2
     )
+
+
+def test_a_run_whose_held_out_total_is_not_n_is_refused(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Extra tests collected (a conftest in the agent's work) would let failures pass
+    # unseen; fewer collected is scored out of N already.
+    root = env["root"]
+    runs = nine(root)
+    (root / "without-2/heldout.txt").write_text(f"passed {N}/{N + 2}\n")
+    code, _ = verdict(env, runs, capsys)
+    assert code == 2
+
+
+def test_a_probe_summary_with_no_ok_fails(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    env["probes"].write_text("claude 2.1.299 (Claude Code)\nprobes: 0 ok, 0 FAIL\n")
+    _, out = verdict(env, nine(env["root"]), capsys)
+    assert line(out, "SC-006").startswith("SC-006 FAIL")

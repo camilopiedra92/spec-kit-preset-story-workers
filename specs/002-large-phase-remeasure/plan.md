@@ -14,7 +14,7 @@ transcripts, reconciled to `modelUsage` and `costUSD` on every run, split by pha
 the verdict across three runs per arm (`compare.py`, medians and spread). A driver, `runs.sh`, runs
 each confirmed step of the eval and checks the probes' version and the gate before every try. The `without` runs go
 first and gate the rest on core missing at least one held-out test. Then the README records a release
-or a second "measured and not adopted".
+(on a pass, or on the owner's acceptance) or a second "measured and not adopted".
 
 ## Technical Context
 
@@ -47,7 +47,7 @@ counted (SC-008); Claude Code's auto-updater disabled in the runs (FR-004).
 
 **Scale/Scope**: one new fixture (~25–30 tasks, ~15–20 acceptance scenarios, held-out tests and a
 reference implementation of 7 modules), two new Python modules with tests, `run.sh` changes, 001's
-fixture moved; 9 counted runs plus up to 2 reruns each; README entry; on a pass, a release and
+fixture moved; 9 counted runs plus up to 2 reruns each; README entry; on a pass or the owner's acceptance, a release and
 001's rollout steps.
 
 ## Constitution Check
@@ -60,7 +60,7 @@ fixture moved; 9 counted runs plus up to 2 reruns each; README entry; on a pass,
 | II. Verified against the real CLI | Unchanged: CI runs `tests/check.sh` pinned and latest; the eval installs the preset from a tag-shaped archive. |
 | III. Behaviour is measured, not asserted | This feature is the measurement: a committed fixture under `tests/`, run headless in three arms, three runs per arm (no longer directional), with every tool's version recorded; a fail is recorded as not adopted with its reason, unless the owner accepts the release with the result recorded as it is (v2.0.0). The usage attribution is itself reconciled on every run, not trusted. |
 | IV. Degrades to core | Unchanged fragment; the `fallback` arm runs again on the new fixture (SC-005). |
-| V. Released by tag | On a pass: `preset.yml` version, CHANGELOG entry, tag together; `fixtures/` lives under `tests/`, already `export-ignore`, and `tests/compose.sh` still fails if `tests/` reaches the archive. |
+| V. Released by tag | On a pass or the owner's acceptance: `preset.yml` version, CHANGELOG entry, tag together; `fixtures/` lives under `tests/`, already `export-ignore`, and `tests/compose.sh` still fails if `tests/` reaches the archive. |
 
 Re-checked after Phase 1: no violation; Complexity Tracking is empty.
 

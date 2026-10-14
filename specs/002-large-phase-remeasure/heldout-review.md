@@ -51,3 +51,10 @@ settled: the new text agrees with the fee rule and with US3-3, US3-8 and US3-9; 
 quotes the spec verbatim; no expected value is affected; no new second reading; the oracle passes 59
 of 59. Its cosmetic note (the two rewritten lines past the 100-column wrap) was fixed by rewrapping
 them, which leaves the whitespace-normalised quote unchanged.
+
+Order of events, stated as it happened: H1 was first marked closed on the author's own check (the
+quote script and the oracle) before attempt 2's `without` set ran (14:05Z), and its fresh-context
+closing review came after those runs, during convergence. FR-002 asks for every finding to be closed
+before the set starts. The runs stand: H1 changed prose only, no asserted value rested on it (the
+closing review confirmed this), and the held-out tests the runs used are those the review found
+settled.

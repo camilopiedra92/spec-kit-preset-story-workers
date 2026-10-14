@@ -21,6 +21,7 @@ relying on it safe. Spans of the `with` main session are spec FR-013.
 
 import json
 import re
+import subprocess
 import sys
 import traceback
 from dataclasses import astuple, dataclass, field
@@ -142,11 +143,28 @@ def heading(line: str) -> str:
     return line.strip().lstrip("#*").rstrip("*").strip()
 
 
-def phase_headings(fixtures: Path, fixture: str) -> dict[int, str]:
-    project = fixtures / fixture / "project"
-    feature = json.loads((project / ".specify/feature.json").read_text())["feature_directory"]
+def fixture_file(fixtures: Path, commit: str, path: str) -> str:
+    """A fixture file as committed at `commit` (`git show`): a run is read against
+    the fixture it measured, which a later hardening changes in the tree.
+    ValueError when the repository lacks the commit or the file."""
+    result = subprocess.run(
+        ["git", "-C", str(fixtures), "show", f"{commit}:./{path}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise ValueError(f"{path} at commit {commit!r}: {result.stderr.strip()}")
+    return result.stdout
+
+
+def phase_headings(fixtures: Path, fixture: str, commit: str) -> dict[int, str]:
+    project = f"{fixture}/project"
+    feature = json.loads(fixture_file(fixtures, commit, f"{project}/.specify/feature.json"))[
+        "feature_directory"
+    ]
     found: dict[int, str] = {}
-    for line in (project / feature / "tasks.md").read_text().splitlines():
+    for line in fixture_file(fixtures, commit, f"{project}/{feature}/tasks.md").splitlines():
         match = re.match(r"## Phase (\d+)\b", line)
         if match:
             found[int(match.group(1))] = heading(line)
@@ -208,6 +226,7 @@ class Run:
     five_hour: tuple[Any, Any]
     arm: str
     fixture: str
+    commit: str
     session: str
 
 
@@ -237,6 +256,7 @@ def read_run(out: Path) -> Run:
         (windows[0], windows[-1]) if windows else ("-", "-"),
         versions.get("arm", ""),
         versions.get("fixture", ""),
+        versions.get("commit", ""),
         str(init.get("session_id", "")),
     )
 
@@ -323,7 +343,7 @@ def attribute(run: Run, main: Transcript, subs: list[Sub], fixtures: Path) -> li
         counts.setdefault(key, 0)
 
     if run.arm == "with":
-        headings = phase_headings(fixtures, run.fixture)
+        headings = phase_headings(fixtures, run.fixture, run.commit)
         labels = spans(main, headings)
     else:
         headings, labels = {}, [("main", None)] * len(main.turns)

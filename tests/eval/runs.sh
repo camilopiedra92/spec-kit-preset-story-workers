@@ -47,7 +47,7 @@ checks() { # <try-dir> <arm>: the probes, then the gate
   [ -f "$probes" ] || refused "$try" "no probes.txt in $attempt: run the probes first"
   ! grep -q '^FAIL' "$probes" || refused "$try" "a probe failed in $probes"
   # probes.sh's closing summary: a file cut short has none.
-  grep -qE '^probes: [0-9]+ ok, 0 FAIL$' "$probes" ||
+  grep -qE '^probes: [1-9][0-9]* ok, 0 FAIL$' "$probes" ||
     refused "$try" "no probe summary in $probes: rerun the probes"
   installed=$(DISABLE_AUTOUPDATER=1 claude --version | version)
   [ "$(head -n 1 "$probes" | version)" = "$installed" ] ||

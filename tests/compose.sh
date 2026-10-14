@@ -63,12 +63,14 @@ quiet git -C "$PRESET" archive --format=zip --prefix="$prefix" \
 "$PY" -c 'import sys, zipfile
 for n in zipfile.ZipFile(sys.argv[1]).namelist():
     print(n[len(sys.argv[2]):])' "$work/www/preset.zip" "$prefix" > "$work/archive.txt"
-for dev in .specify/ .claude/ specs/ tests/ docs/ .github/ CLAUDE.md .gitignore \
-  pyproject.toml uv.lock; do
-  # A path itself, or anything under it when it names a directory.
-  awk -v p="$dev" '$0 == p || (p ~ /\/$/ && index($0, p) == 1) { found = 1 } END { exit !found }' \
-    "$work/archive.txt" && problem "the archive carries $dev; mark it export-ignore"
-done
+# An allowlist: a new development file that is not export-ignored fails here
+# rather than reaching every project.
+while IFS= read -r path; do
+  case $path in
+    "" | preset.yml | README.md | CHANGELOG.md | LICENSE | commands/ | commands/*.md) ;;
+    *) problem "the archive carries $path; mark it export-ignore or allow it here" ;;
+  esac
+done < "$work/archive.txt"
 
 port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
 python3 -m http.server "$port" --bind 127.0.0.1 --directory "$work/www" > /dev/null 2>&1 &

@@ -35,7 +35,7 @@ specify preset update story-workers --from <the newer tag's archive URL>
 (the main session marks, after verifying), "parallel tasks [P] can run together" (one worker per
 phase, `[P]` tasks run in turn inside it) and "Halt execution if any non-parallel task fails" (a
 failed task or verification goes back to a worker, at most two fix hand-offs per phase, then the
-main session carries out the rest as core does; a task a project hook blocked stays unmarked and
+main session carries out the rest of that phase as core does; a task a project hook blocked stays unmarked and
 the run goes on, halting only when the suite is red because of it).
 
 **When not to use it.** When usage is what you are optimising: the only measurement says it costs
@@ -51,19 +51,24 @@ when the owner accepts it, with the result recorded as it is). Recorded as it st
 shown the preset to save usage, and one measured it costing 65% more; no eval could show a quality
 difference either way. Accepted as released, not as measured to work.
 
+Eval 001's "Alternative measured and not adopted" below is kept as it was recorded on its date;
+this decision supersedes it.
+
 **The owner's reason**, as given: synthetic fixtures cannot show a quality difference (core is at
 the ceiling), so the preset is released to be judged in real use on real features, where the owner
 will watch its usage and quality.
 
 Both evals ran hermetically, without the user's own instructions, settings or plugins, so their
-results are the preset's and reproducible. How a setup whose instructions add work to every story
+results are not shaped by a user's setup and can be rerun. How a setup whose instructions add work to every story
 (a mutation check, a fresh review per story, red test runs) shifts the comparison was not measured;
-the evals did show that `fallback`, with no Agent tool, runs no fresh-context review at all.
+Eval 001 showed, in one directional run, that `fallback`, with no Agent tool, runs no fresh-context
+review at all.
 
 ## Eval 002, 2026-10-14
 
-**What was planned.** The same fragment, unchanged (FR-006; checked at each attempt with
-`git diff 894aecf -- commands/ preset.yml`), on a fixture whose phases are large, in three arms of
+**What was planned.** The same fragment, unchanged (FR-006; checked at each attempt's commit with
+`git diff 894aecf -- commands/ preset.yml`, empty then; `preset.yml`'s comment changed afterwards,
+for the release), on a fixture whose phases are large, in three arms of
 three counted runs each, judged on medians, with every run's usage reconciled with `costUSD` from
 the session transcripts and split by phase. The `without` runs came first and gated the rest: `with`
 and `fallback` run only once a `without` run misses a held-out test, so the eval could show a
@@ -107,7 +112,9 @@ deadline change; no attempt discarded for a harness fault or a Claude Code versi
 Medians: attempt 1 $1.827 (min $1.789, max $1.960); attempt 2 $1.860 (min $1.779, max $1.951).
 Three runs bound what can be said about variance to these extremes. Every run's usage reconciled
 with what Claude Code reported, to the token and within $0.000001 (SC-008, `usage.txt` per run).
-Total spent on the eval, probes included: $13.79 (`spent.txt`, from `compare.py --spent`).
+Total spent on the eval, probes included: $13.79 (`spent.txt`: `compare.py --spent` over the run
+directories before their copy into the repository; it cannot be rebuilt from the committed files,
+since streams and transcripts are not committed).
 
 **Checks that did run.** Probes: 14 of 14 ok on Claude Code 2.1.299 in both attempts (SC-006).
 SC-004 (the composition test red on each removed core anchor): `tests/compose.sh` on every push,
