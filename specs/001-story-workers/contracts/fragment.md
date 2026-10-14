@@ -48,9 +48,7 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    (the bound of 6 is narrower: that phase's remaining items only, then the next phase goes to a worker), and say which and why in
    the completion report. The completion report always carries the line `Carried out in this session:
    none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.
-10. **Resume**: the phase starts after the last commit whose message contains `tasks: mark phase
-    <n>`, or at the first phase when there is none; the baseline is taken there (with none, at the
-    commit before the first phase's first commit), in a temporary `git worktree`; uncommitted changes to files other than `tasks.md` go to
+10. **Resume** (0.1.1): `tasks.md`'s `[X]` marks are the record of what is done, as in core; a run resumes at the first phase that has a task not marked [X], handing its worker only that phase's unmarked tasks; the baseline is taken at the last commit that changed `tasks.md` (with none, at HEAD), in a temporary `git worktree`; uncommitted changes to files other than `tasks.md` go to
     a worker with the diff, to finish or discard; uncommitted `tasks.md` changes are the main session's.
 11. **Narrowed, by name**: core's `For completed tasks, make sure to mark the task off as [X]`,
     `parallel tasks [P] can run together` and `Halt execution if any non-parallel task fails`.

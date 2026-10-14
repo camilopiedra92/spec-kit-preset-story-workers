@@ -4,7 +4,7 @@ A [Spec Kit](https://github.com/github/spec-kit) preset that has `/speckit-imple
 phase of a feature's tasks to a worker subagent on a smaller model (Sonnet), while the main session
 (Opus) verifies, reviews and decides.
 
-**Status: released as `v0.1.0` on the owner's decision, without an eval showing its claimed
+**Status: released on the owner's decision (`v0.1.0`; `v0.1.1` fixes how a run resumes), without an eval showing its claimed
 effect.** Two evals, below, are recorded as they came out: [Eval 001](#eval-2026-10-14) measured the
 preset at **65% more usage** than core on a small fixture, and [Eval 002](#eval-002-2026-10-14)
 could not measure a quality difference, core passing every held-out test in six runs on two
@@ -16,7 +16,7 @@ The measured state of 001 is tagged
 ## Install
 
 ```bash
-specify preset add --from https://github.com/camilopiedra92/spec-kit-preset-story-workers/archive/refs/tags/v0.1.0.zip
+specify preset add --from https://github.com/camilopiedra92/spec-kit-preset-story-workers/archive/refs/tags/v0.1.1.zip
 ```
 
 It appends a `## Story workers` section to core `speckit-implement` and replaces nothing
@@ -45,7 +45,8 @@ subagents (it falls back to core, so it only adds text).
 ## The owner's decision, 2026-10-14
 
 After Eval 002's second closed gate, the owner chose to stop measuring and release the preset as it
-was measured, unchanged since Eval 001 (fragment at commit `894aecf`). The constitution was amended
+was measured, unchanged since Eval 001 (fragment at commit `894aecf`); `v0.1.1` changed only
+its Resume rule, to core's progress record, cited rather than measured (CHANGELOG). The constitution was amended
 for it (v2.0.0, principle III: a rule whose eval does not show its claimed effect may be released
 when the owner accepts it, with the result recorded as it is). Recorded as it stands: no eval has
 shown the preset to save usage, and one measured it costing 65% more; no eval could show a quality

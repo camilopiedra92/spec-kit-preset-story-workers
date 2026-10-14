@@ -4,6 +4,18 @@ All notable changes to this preset are recorded here, in the form of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as constitution V defines it.
 
+## [0.1.1] - 2026-10-14
+
+### Fixed
+
+- Resume follows `tasks.md`'s `[X]` marks, core's own record of what is done: a run resumes at the
+  first phase that has a task not marked [X] and hands its worker only that phase's unmarked
+  tasks; the baseline is taken at the last commit that changed `tasks.md`. It resumed from this
+  preset's own `tasks: mark phase <n>` commits, so a project that installed the preset partway
+  through a feature restarted at Phase 1. No eval: the rule restates core's progress record (core
+  `speckit-implement`: "For completed tasks, make sure to mark the task off as [X]"; constitution
+  III's cited source), and no eval runs a resumed feature.
+
 ## [0.1.0] - 2026-10-14
 
 Released on the owner's acceptance, without an eval showing the claimed effect (constitution III,
@@ -18,4 +30,5 @@ v2.0.0): see [the owner's decision](README.md#the-owners-decision-2026-10-14). E
   phase; reviews run on the main session's model family; without the Agent tool, a worker, or git,
   the session carries on as core does and says so in its report.
 
+[0.1.1]: https://github.com/camilopiedra92/spec-kit-preset-story-workers/releases/tag/v0.1.1
 [0.1.0]: https://github.com/camilopiedra92/spec-kit-preset-story-workers/releases/tag/v0.1.0

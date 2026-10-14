@@ -33,7 +33,7 @@ inherits: it should think as hard as the session the owner chose.
 ### Consequences
 
 - On a release, the one exception to the owner's policy: dotfiles' `docs/claude-settings.md` is to
-  name it and link here (pending: feature 002, T044, after the v0.1.0 tag).
+  name it and link here (done in dotfiles PR #149, 2026-10-14).
 - The revisit the policy asks for is built in: the eval reruns whenever a rule changes
   (constitution III) and records each model's effort in `versions.txt`, and the probes check that
   the call's effort still applies (R1 5 and 8; both held on Claude Code 2.1.299).

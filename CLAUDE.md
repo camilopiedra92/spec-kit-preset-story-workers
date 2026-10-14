@@ -2,7 +2,7 @@
 
 A Spec Kit preset that has `/speckit-implement` hand each phase of a feature's
 tasks to a worker subagent on a smaller model, while the main session
-verifies, reviews and decides. Released as v0.1.0 on the owner's acceptance
+verifies, reviews and decides. Released (v0.1.x) on the owner's acceptance
 after two evals that did not show its claimed effect (`README.md`); projects
 install it from a tag's archive. This repository is itself developed with
 Spec Kit.
