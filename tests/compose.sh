@@ -199,7 +199,7 @@ phrases=(
   'A task that changes a file in the feature directory is carried out in this session as core does'
   '`tasks: carried out in this session`'
   'uncommitted changes stay as they are'
-  'and left uncommitted, as core leaves it'
+  'its files in the feature directory are left uncommitted, as core leaves them'
   'What this session changes outside the feature directory while carrying out'
   'leaves a task that needs one unfinished, saying so'
   'and `git status --porcelain --untracked-files=all`, run before its own suite'

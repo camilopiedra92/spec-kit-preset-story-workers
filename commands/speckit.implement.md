@@ -25,11 +25,12 @@ implementation", "Implementation execution rules" and "Progress tracking and err
 of `.claude/skills/speckit-implement/SKILL.md`, whose Story workers section is the main session's,
 not the worker's; that the worker commits each task in a commit of its own, staging only the files
 it changed, never `git add -A` or `-a`; that it commits what Project Setup Verification changes in a
-commit of its own; that it never edits, stages, commits or reverts a file in the feature directory,
-and leaves a task that needs one unfinished, saying so; that it follows a call a project hook
-blocks, or leaves that task unfinished with the hook's message in its report; and that it does not
-edit `tasks.md` (core's "mark the task off as [X]" in those steps is yours), start a review or start
-another worker.
+commit of its own, and adds to the project's ignore file, in a commit of its own, any file the suite
+or the static checks generate that git does not ignore; that it never edits, stages, commits or
+reverts a file in the feature directory, and leaves a task that needs one unfinished, saying so;
+that it follows a call a project hook blocks, or leaves that task unfinished with the hook's message
+in its report; and that it does not edit `tasks.md` (core's "mark the task off as [X]" in those
+steps is yours), start a review or start another worker.
 
 **The report** the brief asks for: the first and last commit; the tasks done; the tasks found
 already done, with the commit or file that holds each; for each task not done, what stopped it;
@@ -49,15 +50,16 @@ message containing `tasks: mark phase <n>` (after any prefix the project's instr
 none when the phase marked nothing new), and only then start the next phase's worker.
 
 **Hand-offs.** This narrows core's "Halt execution if any non-parallel task fails": every unfinished
-task, failed verification or review finding goes to a worker briefed with it, then verification
-again; a review finding passes when a fresh review of it no longer reports it. A phase gets at most
-two fix hand-offs, every hand-off after its first counting, whatever items it carries; when
-verification still fails after them (a fresh review still reporting its finding included), carry out
-the phase's remaining items in this session as core does. Tasks a worker reports finding join the
-current phase in `tasks.md`, committed with a message containing `tasks: add found tasks`, and go to
-its next hand-off. Outside the items this session carries out, your only edits to tracked files are
-`tasks.md` (checkboxes, found tasks) and its commits; running the suite, the static checks or core's
-extension hooks is not writing code.
+task (except one that changes the feature directory, which this session carries out, as A clean tree
+outside the feature says), failed verification or review finding goes to a worker briefed with it,
+then verification again; a review finding passes when a fresh review of it no longer reports it. A
+phase gets at most two fix hand-offs, every hand-off after its first counting, whatever items it
+carries; when verification still fails after them (a fresh review still reporting its finding
+included), carry out the phase's remaining items in this session as core does. Tasks a worker
+reports finding join the current phase in `tasks.md`, committed with a message containing `tasks:
+add found tasks`, and go to its next hand-off. Outside the items this session carries out, your only
+edits to tracked files are `tasks.md` (checkboxes, found tasks) and its commits; running the suite,
+the static checks or core's extension hooks is not writing code.
 
 **Reviews.** Start any review the user's or the project's instructions, or a command, call for in a
 fresh context: `subagent_type: "general-purpose"`, with `model` set to this session's model family
@@ -85,18 +87,20 @@ messages. A run takes the phases in order and skips every phase whose tasks are 
 it falls; it starts at the first phase with an unmarked task, at Phase 1 when none is marked. When
 every task is marked, start no worker, commit nothing, and say so in the completion report in place
 of the line below. Each phase's baseline is taken as Verification says. Work committed before the
-run is covered by the whole-suite run only. In a git repository the completion report carries the
-line `Started at phase <n>: work committed before this run was covered by the whole suite, not read
-as a diff, its static-check findings in the baseline.`
+run is covered by the whole-suite run only. When a phase went to a worker, the completion report
+carries the line `Started at phase <n>: work committed before this run was covered by the whole
+suite, not read as a diff, its static-check findings in the baseline.`
 
-**A clean tree outside the feature.** Before the first worker, run `git status --porcelain
---untracked-files=all`. When it lists a path outside the feature directory, a worker's changes could
-not be kept apart from that work: carry out the run in this session as core does (**Fallback**), and
-name those paths in the completion report. Inside the feature directory, uncommitted changes stay as
-they are: the run neither asks about them nor stops for them, they are not a finding, and no worker
-edits, stages, commits or reverts a file there. The run's `tasks: mark phase` and `tasks: add found
-tasks` commits carry `tasks.md` as it stands, its earlier edits included. A task that changes a file
-in the feature directory is carried out in this session as core does, and left uncommitted, as core
-leaves it. What this session changes outside the feature directory while carrying out a phase's
-items, it commits before the next phase's worker starts, in a commit whose message contains `tasks:
-carried out in this session`.
+**A clean tree outside the feature.** Before the first worker and before any of the run's own suite
+or static-check runs, run `git status --porcelain --untracked-files=all`. When it lists a path
+outside the feature directory, a worker's changes could not be kept apart from that work: carry out
+the run in this session as core does (**Fallback**), and name those paths in the completion report.
+Inside the feature directory, uncommitted changes stay as they are: the run neither asks about them
+nor stops for them, they are not a finding, and no worker edits, stages, commits or reverts a file
+there. Commits that core's extension hooks make are core's, not the run's. The run's `tasks: mark
+phase` and `tasks: add found tasks` commits carry `tasks.md` as it stands, its earlier edits
+included. A task that changes a file in the feature directory is carried out in this session as core
+does, all of it, and its files in the feature directory are left uncommitted, as core leaves them.
+What this session changes outside the feature directory while carrying out items, it commits as soon
+as it has carried them out, before any later Verification or worker, in a commit whose message
+contains `tasks: carried out in this session`.
