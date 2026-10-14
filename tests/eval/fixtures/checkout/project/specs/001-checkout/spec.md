@@ -222,7 +222,7 @@ promotions below, give the amounts below.
 ### User Story 3 - Returns (Priority: P3)
 
 A shopper returns units of a priced order and gets back exactly what those units cost, promotions
-and tax included.
+and tax included, less any restocking fee.
 
 A return names a SKU of the order and a number of units. Each line's net and tax are split into
 per-unit amounts by largest remainder over equal weights, one per unit, so the earlier units get
@@ -252,7 +252,7 @@ give the refunds below.
 3. **US3-3** **Given** the order of US3-2 after that return, **When** the remaining 2 units are
    returned, **Then** the refund's net is 1333, its tax 66 and its total 1399, so the two refunds
    sum to 2100, exactly what was paid; returned one unit at a time instead, the refunds are 701,
-   700 and 699: partial returns never refund more than was paid, and a full return refunds all of
+   700 and 699: partial returns never refund more than was paid, and without a restocking fee, a full return refunds all of
    it.
 4. **US3-4** **Given** the order of US2-6 (cap 800; nets 2338 and 862, taxes 117 and 86, total
    3403), **When** `JOURNAL` ×1, then `TOY` ×1, then `JOURNAL` ×2 are returned, **Then** the
