@@ -106,6 +106,8 @@ open(sys.argv[3], "w", encoding="utf-8").write(text.replace(sys.argv[2], ""))' \
     problem "core-anchors.sh did not name the removed '$anchor'"
   fi
 done < <("$PRESET/tests/core-anchors.sh" --list)
+[ "$fail" -ne 0 ] ||
+  echo "ok: SC-004, $("$PRESET/tests/core-anchors.sh" --list | wc -l | tr -d ' ') anchors each turned the check red"
 
 quiet specify preset add --from "http://127.0.0.1:$port/preset.zip"
 

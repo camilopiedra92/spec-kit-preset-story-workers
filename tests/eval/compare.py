@@ -174,9 +174,22 @@ def reviews_by_opus(models_txt: str) -> int:
     )
 
 
+RANGE = re.compile(r"T(\d+)\s*(?:[–—-]|to)\s*T?(\d+)")
+
+
 def carried_out(report: str) -> set[str]:
-    found = REPORT_LINE.search(report.replace("*", "").replace("`", ""))
-    return set(re.findall(r"T\d+", found.group(1))) if found else set()
+    """The task ids after the report's last `Carried out in this session:` line, a
+    range such as T002–T005 standing for every id in it (marks stripped as
+    attribution.py strips them)."""
+    found = REPORT_LINE.findall(re.sub(r"[*`_]", "", report))
+    if not found:
+        return set()
+    text = found[-1]
+    ids = set(re.findall(r"T\d+", text))
+    for first, last in RANGE.findall(text):
+        width = len(first)
+        ids |= {f"T{n:0{width}d}" for n in range(int(first), int(last) + 1)}
+    return ids
 
 
 def verdict(runs: list[Run], probes: str, fx: Fixture) -> tuple[list[str], bool]:
@@ -217,10 +230,14 @@ def verdict(runs: list[Run], probes: str, fx: Fixture) -> tuple[list[str], bool]
             + (f"; red suite in {', '.join(red)}" if red else ""),
         )
     )
+    # Only attribution.py's clauses: the Bash commands it lists after them may say
+    # anything, FAILED included.
+    clauses = {r.path.name: r.attribution.split("\nmain session's Bash commands:")[0] for r in runs}
     bad = [
         r.path.name
         for r in by_arm["with"]
-        if "FAIL" in r.attribution or not re.search(r"^ok ", r.attribution, re.MULTILINE)
+        if re.search(r"^FAIL ", clauses[r.path.name], re.MULTILINE)
+        or not re.search(r"^ok ", clauses[r.path.name], re.MULTILINE)
     ]
     checks.append(("SC-003", not bad, "every clause ok" if not bad else f"failing in {bad}"))
     problems = []
@@ -235,6 +252,8 @@ def verdict(runs: list[Run], probes: str, fx: Fixture) -> tuple[list[str], bool]
     checks.append(("SC-005", not problems, "; ".join(problems) or "held, no Agent call, all tasks"))
     probe_version = VERSION.search(probes.split("\n", 1)[0])
     failed = [line for line in probes.splitlines() if line.startswith("FAIL")]
+    # probes.sh's closing summary: a file cut short has none.
+    summary = re.search(r"^probes: \d+ ok, 0 FAIL$", probes, re.MULTILINE)
     off = [
         r.path.name
         for r in runs
@@ -243,8 +262,9 @@ def verdict(runs: list[Run], probes: str, fx: Fixture) -> tuple[list[str], bool]
     checks.append(
         (
             "SC-006",
-            bool(probe_version) and not failed and not off,
+            bool(probe_version) and bool(summary) and not failed and not off,
             f"probes on {probe_version.group(0) if probe_version else 'unknown'}"
+            + ("" if summary else "; no closing summary line")
             + (f"; failed: {len(failed)}" if failed else "")
             + (f"; other version in {off}" if off else ""),
         )
@@ -266,6 +286,9 @@ def verdict(runs: list[Run], probes: str, fx: Fixture) -> tuple[list[str], bool]
 def run_verdict(argv: list[str], fixtures: Path) -> int:
     probes = Path(argv[0]).read_text()
     runs = [read_run(Path(a)) for a in argv[1:]]
+    resolved = [r.path.resolve() for r in runs]
+    if len(set(resolved)) != len(resolved):
+        raise Refused("the same run is given twice")
     for arm in ARMS:
         count = sum(r.arm == arm for r in runs)
         if count != RUNS_PER_ARM:
@@ -307,27 +330,36 @@ def run_spent(argv: list[str], fixtures: Path, results: Path) -> int:
         if options[:1] != ["--fixture"] or len(options) < 4 or options[2] != "--next":
             raise Refused("usage: --spent <root> [--fixture <name> --next <arm>...]")
         fixture, arms = options[1], options[3:]
+    if not root.is_dir():
+        raise Refused(f"{root} is not a directory")
     total = 0.0
     counted: dict[str, list[float]] = {}
     for path in sorted(root.rglob("*")):
-        if "transcripts" in path.relative_to(root).parts:
+        rel = path.relative_to(root)
+        # A run's `<arm>-<n>` link points at a try already walked; transcripts
+        # are priced with their try.
+        if path.is_symlink() or "transcripts" in rel.parts:
             continue
-        name = str(path.relative_to(root))
-        if path.is_dir() and (path / "status").exists():
+        name = str(rel)
+        is_try = path.is_dir() and ((path / "status").exists() or (path / "stream.jsonl").exists())
+        if is_try:
             stream = path / "stream.jsonl"
             cost = stream_cost(stream) if stream.exists() else None
             if cost is None and (path / "transcripts").is_dir():
                 cost = usage.price_only(path)
             if cost is None:
-                print(f"{path.name} 0 (no cost recorded)")
+                print(f"{name} 0 (no cost recorded)")
                 continue
-            print(f"{path.name} {cost:.7f}")
+            print(f"{name} {cost:.7f}")
             total += cost
-            if (path / "status").read_text().strip() == "ok":
+            status = path / "status"
+            if status.exists() and status.read_text().strip() == "ok":
                 versions = read_versions(path)
                 if versions.get("fixture") == fixture:
                     counted.setdefault(versions.get("arm", ""), []).append(cost)
-        elif path.suffix == ".jsonl" and not (path.parent / "status").exists():
+        elif path.suffix == ".jsonl" and not (
+            (path.parent / "status").exists() or path.name == "stream.jsonl"
+        ):
             cost = stream_cost(path)
             print(f"{name} {cost:.7f}" if cost is not None else f"{name} 0 (no cost recorded)")
             total += cost or 0.0

@@ -26,9 +26,10 @@ out=${!#}
 code=$(head -n 1 "$here/run.plan" 2> /dev/null)
 code=${code:-0}
 [ -s "$here/run.plan" ] && sed -i.bak 1d "$here/run.plan"
+# A try that reached the agent leaves a stream: it spent usage.
 case $code in
-  0) mkdir -p "$out"; echo ok > "$out/status" ;;
-  1) mkdir -p "$out"; echo "not counted: exit 1" > "$out/status" ;;
+  0) mkdir -p "$out"; echo ok > "$out/status"; : > "$out/stream.jsonl" ;;
+  1) mkdir -p "$out"; echo "not counted: exit 1" > "$out/status"; : > "$out/stream.jsonl" ;;
   2) echo "run.sh: refused before anything" >&2 ;;
   3) mkdir -p "$out"; echo "refused: versions differ from the baseline: claude" > "$out/status"
      exit 2 ;;
@@ -42,7 +43,10 @@ from pathlib import Path
 here = Path(__file__).parent
 (here / "gate.calls").write_text(" ".join(sys.argv[1:]))
 gate = here / "gate.exit"
-sys.exit(int(gate.read_text()) if gate.exists() else 0)
+code = int(gate.read_text()) if gate.exists() else 0
+if code == 2:
+    print("compare.py: refused: without-2: status is 'x'", file=sys.stderr)
+sys.exit(code)
 """
 
 CLAUDE = r"""#!/bin/sh
@@ -74,7 +78,9 @@ def ev(tmp_path: Path) -> Path:
 def attempt(tmp_path: Path) -> Path:
     a = tmp_path / "attempt-1"
     a.mkdir()
-    (a / "probes.txt").write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\nok   R1 3: y\n")
+    (a / "probes.txt").write_text(
+        "claude 2.1.299 (Claude Code)\nok   R1 1: x\nok   R1 3: y\nprobes: 2 ok, 0 FAIL\n"
+    )
     return a
 
 
@@ -141,6 +147,7 @@ def test_the_baseline_is_passed_once_without_1_exists(ev: Path, attempt: Path) -
         ("missing", "probes.txt"),
         ("failed", "probe"),
         ("version", "version"),
+        ("truncated", "probe"),
     ],
 )
 def test_the_probes_must_hold_before_every_try(
@@ -150,7 +157,11 @@ def test_the_probes_must_hold_before_every_try(
     if breaking == "missing":
         probes.unlink()
     elif breaking == "failed":
-        probes.write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\nFAIL R1 5: thinking\n")
+        probes.write_text(
+            "claude 2.1.299 (Claude Code)\nok   R1 1: x\nFAIL R1 5: x\nprobes: 1 ok, 1 FAIL\n"
+        )
+    elif breaking == "truncated":
+        probes.write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\n")
     else:
         (ev.parent.parent / "bin/claude.version").write_text("2.1.300\n")
     result = runs(ev, attempt, "without")
@@ -207,16 +218,47 @@ def test_run_sh_refusing_with_its_own_status_keeps_it(ev: Path, attempt: Path) -
     assert "versions differ" in (attempt / "without-2-1/status").read_text()
 
 
-def test_an_arm_already_run_in_the_attempt_is_refused(ev: Path, attempt: Path) -> None:
-    # Any exit but 0 ends the attempt (spec US3), so nothing resumes: a second
-    # set of an arm in one attempt would hand some run more than two reruns.
+def test_a_refusal_that_spent_nothing_does_not_end_the_attempt(ev: Path, attempt: Path) -> None:
+    probes = attempt / "probes.txt"
+    text = probes.read_text()
+    probes.unlink()
+    assert runs(ev, attempt, "without").returncode == 2
+    assert (attempt / "without-1-1/status").read_text().startswith("refused")
+    probes.write_text(text)
+    result = runs(ev, attempt, "without")
+    assert result.returncode == 0, result.stdout + result.stderr
+    # The refused try spent nothing: run 1 still has its three tries.
+    assert os.readlink(attempt / "without-1") == "without-1-2"
+
+
+def test_the_rerun_bound_holds_across_invocations(ev: Path, attempt: Path) -> None:
     plan(ev, 0, 1, 1, 1)
     assert runs(ev, attempt, "without").returncode == 1
     before = len(calls(ev))
-    result = runs(ev, attempt, "without")
+    assert runs(ev, attempt, "without").returncode == 1
+    assert len(calls(ev)) == before  # run 2 spent its three tries; run 1 stays linked
+
+
+def test_a_counted_run_is_not_run_again(ev: Path, attempt: Path) -> None:
+    plan(ev, 0, 2)
+    assert runs(ev, attempt, "without").returncode == 2  # run 2 refused before its dir
+    assert runs(ev, attempt, "without").returncode == 0
+    names = [c.split()[-1].rsplit("/", 1)[-1] for c in calls(ev)]
+    assert names == ["without-1-1", "without-2-1", "without-2-2", "without-3-1"]
+
+
+def test_without_with_another_arm_is_refused(ev: Path, attempt: Path) -> None:
+    result = runs(ev, attempt, "without", "with")
     assert result.returncode == 2
-    assert len(calls(ev)) == before
-    assert "already" in result.stderr
+    assert calls(ev) == []
+
+
+def test_a_refused_gate_keeps_its_reason(ev: Path, attempt: Path) -> None:
+    assert runs(ev, attempt, "without").returncode == 0
+    (ev / "gate.exit").write_text("2\n")
+    assert runs(ev, attempt, "with").returncode == 2
+    assert "gate" in (attempt / "with-1-1/status").read_text()
+    assert "compare.py" in (attempt / "with-1-1/status").read_text()
 
 
 @pytest.mark.parametrize("args", [[], ["sideways"], ["with", "with"]])
@@ -224,3 +266,42 @@ def test_bad_arguments_are_refused(ev: Path, attempt: Path, args: list[str]) -> 
     result = runs(ev, attempt, *args)
     assert result.returncode == 2
     assert calls(ev) == []
+
+
+REAL_GATE_RUN = r"""#!/usr/bin/env bash
+# Stub run.sh writing a counted `without` run in the files compare.py reads; the
+# held-out score comes from heldout.plan, one line per call.
+here=$(cd "$(dirname "$0")" && pwd)
+echo "$*" >> "$here/run.calls"
+out=${!#}
+passed=$(head -n 1 "$here/heldout.plan"); sed -i.bak 1d "$here/heldout.plan"
+mkdir -p "$out"
+echo ok > "$out/status"
+: > "$out/stream.jsonl"
+printf 'commit: abc\nfixture: fx\narm: %s\ndate: d\n' "$(echo "$*" | awk '{print $(NF-1)}')" \
+  > "$out/versions.txt"
+echo "passed $passed/2" > "$out/heldout.txt"
+echo "exit: 0" > "$out/suite.txt"
+echo '{"models": {}, "parts": []}' > "$out/usage.json"
+: > "$out/models.txt"; : > "$out/report.txt"
+"""
+
+
+def test_the_gate_is_the_real_compare_py(ev: Path, attempt: Path) -> None:
+    for name in ("compare.py", "attribution.py", "usage.py"):
+        shutil.copy2(HERE / name, ev / name)
+    executable(ev / "run.sh", REAL_GATE_RUN)
+    project = ev / "fixtures/fx/project"
+    (project / "specs/001-fx").mkdir(parents=True)
+    (project / ".specify").mkdir()
+    (project / ".specify/feature.json").write_text('{"feature_directory": "specs/001-fx"}\n')
+    (project / "specs/001-fx/spec.md").write_text("### User Story 1 - A (Priority: P1)\n")
+    (project / "specs/001-fx/tasks.md").write_text("- [ ] T001 a\n")
+    (ev / "fixtures/fx/heldout").mkdir()
+    (ev / "fixtures/fx/heldout/N").write_text("2\n")
+    (ev / "heldout.plan").write_text("2\n2\n2\n2\n")
+    assert runs(ev, attempt, "without").returncode == 0
+    # Every without run perfect: the real gate is closed, so `with` is refused.
+    result = runs(ev, attempt, "with")
+    assert result.returncode == 2
+    assert "gate closed" in (attempt / "with-1-1/status").read_text()

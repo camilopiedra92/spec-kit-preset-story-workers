@@ -50,7 +50,9 @@ def env(tmp_path: Path) -> dict[str, Path]:
         "claude-opus-5-5 0.6 cache_read 1 cache_creation 1\nsum 0.6\n"
     )
     probes = tmp_path / "probes.txt"
-    probes.write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\nok   R1 3: y\n")
+    probes.write_text(
+        "claude 2.1.299 (Claude Code)\nok   R1 1: x\nok   R1 3: y\nprobes: 2 ok, 0 FAIL\n"
+    )
     return {
         "root": tmp_path / "attempt",
         "fixtures": fixtures,
@@ -253,7 +255,7 @@ def test_sc006_versions_are_compared_as_major_minor_patch(
 def test_sc006_a_different_version_fails(
     env: dict[str, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    env["probes"].write_text("claude 2.1.300 (Claude Code)\nok   R1 1: x\n")
+    env["probes"].write_text("claude 2.1.300 (Claude Code)\nok   R1 1: x\nprobes: 1 ok, 0 FAIL\n")
     code, out = verdict(env, nine(env["root"]), capsys)
     assert line(out, "SC-006").startswith("SC-006 FAIL")
     assert code == 1
@@ -262,7 +264,9 @@ def test_sc006_a_different_version_fails(
 def test_sc006_a_failed_probe_fails(
     env: dict[str, Path], capsys: pytest.CaptureFixture[str]
 ) -> None:
-    env["probes"].write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\nFAIL R1 5: thinking\n")
+    env["probes"].write_text(
+        "claude 2.1.299 (Claude Code)\nok   R1 1: x\nFAIL R1 5: thinking\nprobes: 1 ok, 1 FAIL\n"
+    )
     _, out = verdict(env, nine(env["root"]), capsys)
     assert line(out, "SC-006").startswith("SC-006 FAIL")
 
@@ -435,8 +439,8 @@ def test_spend_counts_runs_probes_killed_and_refused_tries(
     probe = {"type": "result", "modelUsage": {OPUS: {"costUSD": 0.1}, SONNET: {"costUSD": 0.05}}}
     (attempts / "probes/r1-1.jsonl").write_text(json.dumps(probe) + "\n")
     out = spent(env, capsys)
-    assert "without-2-1 4.0000000" in out  # 1M input tokens at $4
-    assert "without-2-2 0 (no cost recorded)" in out
+    assert "attempt-1/without-2-1 4.0000000" in out  # 1M input tokens at $4
+    assert "attempt-1/without-2-2 0 (no cost recorded)" in out
     assert out.splitlines()[-1] == "spent 6.1500000"
 
 
@@ -476,3 +480,98 @@ def test_sc008_a_cache_write_total_that_differs_from_the_split_fails(
     (root / "with-3/usage.json").write_text(json.dumps(data))
     _, out = verdict(env, runs, capsys)
     assert line(out, "SC-008").startswith("SC-008 FAIL")
+
+
+# Found by the review of US3 (2026-10-14).
+
+
+def test_spent_does_not_count_a_run_twice_through_its_link(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    attempts = env["root"].parent / "attempts"
+    for k in (1, 2):
+        a = attempts / f"attempt-{k}"
+        write_run(a, "without-1-1", "without", 1.0)
+        (a / "without-1").symlink_to("without-1-1")
+    out = spent(env, capsys)
+    assert "attempt-1/without-1-1 1.0000000" in out
+    assert "attempt-2/without-1-1 1.0000000" in out
+    assert out.splitlines()[-1] == "spent 2.0000000"
+
+
+def test_spent_prices_an_interrupted_try_without_a_status(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    try_ = env["root"].parent / "attempts/attempt-1/without-1-1"
+    (try_ / "transcripts").mkdir(parents=True)
+    (try_ / "stream.jsonl").write_text('{"type": "system", "subtype": "init"}\n')
+    entry = {
+        "type": "assistant",
+        "message": {
+            "id": "m",
+            "model": OPUS,
+            "usage": {"input_tokens": 500_000, "output_tokens": 0, "cache_read_input_tokens": 0},
+        },
+    }
+    (try_ / "transcripts/s.jsonl").write_text(json.dumps(entry) + "\n")
+    out = spent(env, capsys)
+    assert out.splitlines()[-1] == "spent 2.0000000"
+
+
+def test_spent_on_a_missing_root_is_refused(env: dict[str, Path]) -> None:
+    code = compare.main(
+        ["--spent", str(env["root"] / "nowhere")], fixtures=env["fixtures"], results=env["results"]
+    )
+    assert code == 2
+
+
+def test_sc003_ignores_fail_in_the_listed_bash_commands(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = env["root"]
+    runs = nine(root)
+    (root / "with-1/attribution.txt").write_text(
+        "ok   a\nok   b\n\nmain session's Bash commands:\n"
+        '  uv run pytest -q 2>&1 | grep -E "FAILED|passed"\n'
+    )
+    _, out = verdict(env, runs, capsys)
+    assert line(out, "SC-003").startswith("SC-003 ok"), out
+
+
+@pytest.mark.parametrize(
+    "report",
+    [
+        "Carried out in this session: T001–T003",
+        "Carried out in this session: T001 to T003.",
+        "__Carried out in this session:__ T001, T002, T003",
+        "Carried out in this session: none\n\nCarried out in this session: T001-T003",
+    ],
+)
+def test_sc005_reads_ranges_emphasis_and_the_last_report_line(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str], report: str
+) -> None:
+    root = env["root"]
+    runs = nine(root)
+    for n in (1, 2, 3):
+        (root / f"fallback-{n}/report.txt").write_text(report + "\n")
+    _, out = verdict(env, runs, capsys)
+    assert line(out, "SC-005").startswith("SC-005 ok"), out
+
+
+def test_sc006_a_truncated_probes_file_fails(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    env["probes"].write_text("claude 2.1.299 (Claude Code)\nok   R1 1: x\n")
+    _, out = verdict(env, nine(env["root"]), capsys)
+    assert line(out, "SC-006").startswith("SC-006 FAIL")
+
+
+def test_the_same_run_given_twice_is_refused(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = env["root"]
+    runs = nine(root)
+    (root / "with-link").symlink_to("with-1")
+    runs = [r for r in runs if r.name != "with-3"] + [root / "with-link"]
+    code, _ = verdict(env, runs, capsys)
+    assert code == 2

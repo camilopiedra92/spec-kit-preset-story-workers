@@ -52,10 +52,13 @@ no price is `<model> price unknown`, never guessed.
 
 ## `tests/eval/runs.sh <attempt-dir> <fixture> <arm>...`
 
-One confirmed step (research R11): three counted runs per named arm, arms alternating per round. Per
-try, in order, it refuses (exit 2, nothing started) unless: `<attempt-dir>/probes.txt` exists with
-every probe `ok` and the same Claude Code version as `claude --version` now; for `with` or
-`fallback`, `compare.py --gate` is open on `<attempt-dir>/without-?`. It calls `run.sh` with
+One confirmed step (research R11): three counted runs per named arm, arms alternating per round;
+`without` is run alone. Per try, in order, it refuses (exit 2, nothing started) unless:
+`<attempt-dir>/probes.txt` exists with no `FAIL`, its closing `probes: <n> ok, 0 FAIL` line, and the
+same Claude Code version as `claude --version` now; for `with` or `fallback`, `compare.py --gate` is
+open on `<attempt-dir>/without-?` (its own message kept in the status). A run already linked is not
+run again; a try counts against the three only once it left a `stream.jsonl` (it reached the
+agent), so a refusal that spent nothing is fixed and the same step run again in the same attempt. It calls `run.sh` with
 `--baseline <attempt-dir>/without-1` once that exists, into `<attempt-dir>/<arm>-<n>-<try>`, and links
 `<arm>-<n>` to the counted try with a relative link. Every refusal, its own or `run.sh`'s, leaves the
 try's directory with a `status` of `refused: <reason>`. Exit 0 when every run counted; 1 when a run had three tries without
@@ -87,10 +90,12 @@ checking it. Committed files only: an edit in progress is not what an arm gets.
 
 `core-anchors.sh --list` prints its anchors, one per line. `tests/compose.sh` removes each in turn
 from a copy of the core `speckit-implement` skill and fails unless `core-anchors.sh` exits 1 naming
-it: SC-004, observed by CI on every push and by the eval's `compose.sh` run on the measured commit.
+it, then prints `ok: SC-004, <n> anchors each turned the check red`: observed by CI on every push and
+by the eval's `compose.sh` run on the measured commit.
 
 ## `tests/eval/probes.sh [out-dir]`
 
-As 001, plus `DISABLE_AUTOUPDATER=1` in its clean environment. Its `claude <version> (Claude Code)`
+As 001, plus `DISABLE_AUTOUPDATER=1` in its clean environment and a closing line
+`probes: <n> ok, <m> FAIL` before the `streams and repositories:` line. Its `claude <version> (Claude Code)`
 line (already printed) carries the version `runs.sh` and `compare.py --probes` compare as
 `major.minor.patch`.

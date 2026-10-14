@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # One confirmed step of the eval (research R11): three counted runs of each
 # named arm, arms alternating per round, each run tried at most three times.
+# A try counts against that bound only once it reached the agent (it left a
+# stream): a refusal that spent nothing can be fixed and the step run again,
+# and a run already counted is not run again.
 # Before every try: the attempt's probes passed on the installed Claude Code
 # version, and for `with` or `fallback` the difficulty gate is open. State
 # lives in the attempt directory, so each step is one command.
@@ -27,12 +30,9 @@ for arm in "${arms[@]}"; do
   case $arm in without | with | fallback) ;; *) refuse "unknown arm '$arm'" ;; esac
   case $seen in *" $arm "*) refuse "arm '$arm' named twice" ;; esac
   seen="$seen$arm "
-  # Any exit but 0 ends the attempt, so a second set of an arm in one attempt
-  # would hand some run more than two reruns.
-  for done_try in "$attempt/$arm"-*; do
-    [ ! -e "$done_try" ] || refuse "arm '$arm' already ran in $attempt: start a new attempt"
-  done
 done
+# The without set decides the gate the others need (FR-003, FR-007).
+[ "${#arms[@]}" -eq 1 ] || case $seen in *" without "*) refuse "without runs alone" ;; esac
 [ -d "$attempt" ] || refuse "no attempt directory $attempt"
 
 refused() { # <try-dir> <reason>: the reason in the try's status, exit 2
@@ -46,22 +46,34 @@ checks() { # <try-dir> <arm>: the probes, then the gate
   local try=$1 arm=$2 probes=$attempt/probes.txt installed
   [ -f "$probes" ] || refused "$try" "no probes.txt in $attempt: run the probes first"
   ! grep -q '^FAIL' "$probes" || refused "$try" "a probe failed in $probes"
+  # probes.sh's closing summary: a file cut short has none.
+  grep -qE '^probes: [0-9]+ ok, 0 FAIL$' "$probes" ||
+    refused "$try" "no probe summary in $probes: rerun the probes"
   installed=$(DISABLE_AUTOUPDATER=1 claude --version | version)
   [ "$(head -n 1 "$probes" | version)" = "$installed" ] ||
     refused "$try" "Claude Code version $installed is not the probes' $(head -n 1 "$probes" | version)"
   if [ "$arm" != without ]; then
-    python3 "$here/compare.py" --gate "$attempt"/without-1 "$attempt"/without-2 \
-      "$attempt"/without-3 > /dev/null 2>&1 ||
-      refused "$try" "the gate is not open on $attempt's without runs"
+    local gate
+    gate=$(python3 "$here/compare.py" --gate "$attempt"/without-1 "$attempt"/without-2 \
+      "$attempt"/without-3 2>&1) ||
+      refused "$try" "the gate is not open on $attempt's without runs: ${gate##*$'\n'}"
   fi
 }
 
 errors=$(mktemp)
 trap 'rm -f "$errors"' EXIT
 one_run() { # <arm> <n>: tries until one counts
-  local arm=$1 n=$2 try dir rc base=()
+  local arm=$1 n=$2 try=0 spent=0 dir rc base=() old
+  [ ! -L "$attempt/$arm-$n" ] || return 0
+  # The tries an earlier invocation left: those with a stream spent usage.
+  for old in "$attempt/$arm-$n"-*; do
+    [ -d "$old" ] || continue
+    try=$((try + 1))
+    [ ! -e "$old/stream.jsonl" ] || spent=$((spent + 1))
+  done
   [ ! -e "$attempt/without-1" ] || base=(--baseline "$attempt/without-1")
-  for try in 1 2 3; do
+  while [ "$spent" -lt 3 ]; do
+    try=$((try + 1))
     dir=$attempt/$arm-$n-$try
     checks "$dir" "$arm"
     rc=0
@@ -69,6 +81,7 @@ one_run() { # <arm> <n>: tries until one counts
     # directory says why only there. (Not a tee: tail could read it unfinished.)
     "$here/run.sh" ${base[@]+"${base[@]}"} "$fixture" "$arm" "$dir" 2> "$errors" || rc=$?
     cat "$errors" >&2
+    [ ! -e "$dir/stream.jsonl" ] || spent=$((spent + 1))
     case $rc in
       0)
         (cd "$attempt" && ln -s "$arm-$n-$try" "$arm-$n")

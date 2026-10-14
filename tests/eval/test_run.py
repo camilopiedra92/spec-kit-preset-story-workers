@@ -639,7 +639,7 @@ def test_the_probes_disable_the_auto_updater(tmp_path: Path) -> None:
     bin_.mkdir()
     executable(bin_ / "claude", PROBES_CLAUDE)
     env = {"HOME": str(tmp_path), "PATH": f"{bin_}:{os.environ['PATH']}"}
-    subprocess.run(
+    result = subprocess.run(
         [BASH, str(HERE / "probes.sh"), str(tmp_path / "probes")],
         check=False,
         capture_output=True,
@@ -649,6 +649,12 @@ def test_the_probes_disable_the_auto_updater(tmp_path: Path) -> None:
     )
     seen = (bin_ / "probes.autoupdater").read_text().split()
     assert seen and set(seen) == {"1"}, seen
+    # The closing summary runs.sh and compare.py require, counting the lines above it.
+    out = result.stdout.splitlines()
+    summary = [line for line in out if line.startswith("probes: ")]
+    oks = sum(line.startswith("ok ") for line in out)
+    fails = sum(line.startswith("FAIL ") for line in out)
+    assert summary == [f"probes: {oks} ok, {fails} FAIL"] and fails > 0, result.stdout
 
 
 def test_an_exit_1_that_is_not_unreconciled_is_a_harness_fault(

@@ -227,7 +227,12 @@ That is the hypothesis 002 tests, now with a measured baseline instead of an inf
   exists with every probe `ok` and its Claude Code version equals the installed one; it passes the
   attempt's first counted `without` run as `--baseline`; and for `with` or `fallback` it refuses unless
   `compare.py --gate` is open on the attempt's `without` runs. It stops at the first refusal or at a
-  run with no counted try, and its exit code says which. State lives in the attempt directory, so each
+  run with no counted try, and its exit code says which. A try counts against a run's three only once
+  it reached the agent (it left a stream), and a run already counted is not run again: so a refusal
+  that spent nothing (a dirty tree, a missing probes file) is fixed and the same step run again in the
+  same attempt, while the rerun bound still holds across invocations. (First built so that any refusal
+  ended the attempt; the US3 review showed that would throw away paid runs for a refusal that cost
+  nothing.) State lives in the attempt directory, so each
   step is one command and nothing depends on a shell surviving between steps; directory walks are in
   Python (`compare.py --spent <root>`), so no shell glob can fail on an empty match.
 - **Rationale**: the third review of the checklist found the quickstart's shell would abort in zsh on

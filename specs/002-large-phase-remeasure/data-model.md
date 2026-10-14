@@ -81,11 +81,14 @@ and `min`/`max` of total cost and of held-out score. Then:
 - `gate`: `open` when at least one `without` run's score is below `N`, else `closed`.
 - `SC-001`: `1 - median(with) / median(without) >= 0.30` on total cost.
 - `SC-002`: `median(with score) >= median(without score)`, and every `with` suite exit is 0.
-- `SC-003`: every `with` run's `attribution.txt` has every clause `ok`.
+- `SC-003`: in every `with` run's `attribution.txt`, the clauses (the text before `main session's
+  Bash commands:`) hold no `FAIL ` line and at least one `ok ` line.
 - `SC-005`: `median(fallback score) >= median(without score)`; every `fallback` run's `models.txt`
-  shows no Agent call and its `report.txt` lists, after `Carried out in this session:`, every task id
-  of `fixtures/<fixture>/project/`'s feature `tasks.md`.
-- `SC-006`: the probes' output has every probe `ok`, and the version in its `claude` line equals every
+  shows no Agent call and its `report.txt`'s last `Carried out in this session:` line (marks `*`,
+  `` ` `` and `_` stripped, as `attribution.py` strips them) names every task id of
+  `fixtures/<fixture>/project/`'s feature `tasks.md`, a range such as `T002–T005` or `T002 to T005`
+  naming every id in it.
+- `SC-006`: the probes' output has no `FAIL` line and its closing `probes: <n> ok, 0 FAIL` line, and the version in its `claude` line equals every
   run's `versions.txt` `claude:` (compared as `major.minor.patch`).
 - `SC-007`: in every `with` run's `models.txt`, the count of `general-purpose`/`opus` calls is at
   least the number of `### User Story` headings in `fixtures/<fixture>/project/`'s feature spec (the
@@ -97,10 +100,11 @@ different fixtures, or `versions.txt` that differ in any key but `date` and `arm
 
 ## Spend (`compare.py --spent <root> [--fixture <name> --next <arm>...]`)
 
-Walks `<root>` for every `*.jsonl` outside `transcripts/` that holds a stream (a run's
-`stream.jsonl`, each probe's `r*.jsonl`): each one's `result` `costUSD`, else its copied transcripts
+Walks `<root>` (refused when it is not a directory), skipping symbolic links (a run's `<arm>-<n>`
+link points at a try already walked) and `transcripts/`. A try is a directory holding a `status` or a
+`stream.jsonl`; a probe stream is any other `*.jsonl` (each probe's `r*.jsonl`). Each is priced by each one's `result` `costUSD`, else its copied transcripts
 priced at the table (`usage.py --price-only`), else zero with `no cost recorded`.
-Prints per try and the total; with `--next`, the estimate summed over the named arms (spec FR-008)
+Prints each with its path relative to `<root>`, and the total; with `--next`, the estimate summed over the named arms (spec FR-008)
 and the worst case, three times it. Before any run has counted on the fixture, the per-run figure is
 001's `without` cost (`tests/eval/results/2026-10-14/without/usage.txt`, its `sum` line) times the
 ratio of task lines in `fixtures/<fixture>/project/`'s feature `tasks.md` to those in

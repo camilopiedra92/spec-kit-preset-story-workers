@@ -43,8 +43,10 @@ uv run python tests/eval/compare.py --gate "$A"/without-? | tee "$A/gate.txt"
 
 `gate closed`: harden the fixture (research R5), commit, and start attempt *k*+1 at step 0, at most
 twice; a third closed gate ends the eval as not measured (spec US3 scenarios 5 and 6). `runs.sh`
-exit 1: the eval stops, not measured. Exit 2: read the try's `status`; a harness fault is fixed and
-committed, a version change needs nothing fixed; either way, a new attempt at step 0.
+exit 1: the eval stops, not measured. Exit 2: read the try's `status`. A refusal that spent nothing
+(a dirty tree, a missing or failed probes file) is fixed and the same command run again in the same
+attempt; a harness fault (fixed and committed) or a Claude Code version change starts a new attempt
+at step 0.
 
 ## 2. `with` and `fallback`, alternating
 
