@@ -29,12 +29,12 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 ### Tests (write first)
 
-- [ ] T002 [US1] In `tests/compose.sh`, require one phrase per clause of the contract's Resume rule (the resume point from `[X]` or `[x]` marks; the baseline at HEAD at the run's start; the brief's "may already be done" check; uncommitted changes left as core leaves them; the `Resumed at phase <n>:` report line; no task marked is a fresh run) and refuse the 0.1.0 sentence; commit and run it against the 0.1.0 fragment, each check red for its own phrase
+- [X] T002 [US1] In `tests/compose.sh`, require one phrase per clause of the contract's Resume rule (the resume point from `[X]` or `[x]` marks; the baseline at HEAD at the run's start; the brief's "may already be done" check; uncommitted changes left as core leaves them; the `Resumed at phase <n>:` report line; no task marked is a fresh run) and refuse the 0.1.0 sentence; commit and run it against the 0.1.0 fragment, each check red for its own phrase
 
 ### Implementation
 
-- [ ] T003 [US1] Rewrite the Resume paragraph of `commands/speckit.implement.md` to the contract, the brief's resume clause, and the completion report's `Resumed at phase <n>:` line; lines within 100 columns; T002 green unchanged
-- [ ] T004 [US1] Bring `specs/001-story-workers/spec.md` (edge case "A run resumes", FR-003's brief) and `specs/001-story-workers/contracts/fragment.md` (§3, §10) to the new rule
+- [X] T003 [US1] Rewrite the Resume paragraph of `commands/speckit.implement.md` to the contract, the brief's resume clause, and the completion report's `Resumed at phase <n>:` line; lines within 100 columns; T002 green unchanged
+- [X] T004 [US1] Bring `specs/001-story-workers/spec.md` (edge case "A run resumes", FR-003's brief) and `specs/001-story-workers/contracts/fragment.md` (§3, §10) to the new rule
 
 **Checkpoint**: `tests/check.sh` green; a fresh review of the fragment change against spec 003 and the constitution.
 

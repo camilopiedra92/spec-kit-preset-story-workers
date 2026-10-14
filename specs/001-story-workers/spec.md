@@ -178,12 +178,12 @@ its own.
   follows it or leaves the task unfinished with the message in its report; the main session never
   makes the blocked call itself, also under FR-007: such a task stays unfinished and goes into the
   completion report.
-- **A run resumes** after an interruption: the phase starts after the last commit whose message
-  contains `tasks: mark phase <n>` (FR-004), or at the first phase when there is none; its commits are verified
-  as FR-004 says; uncommitted changes to files other than `tasks.md` go to a worker briefed with the diff, to finish
-  or discard; uncommitted changes to `tasks.md` are the main session's to keep or drop. The
-  static-check baseline is taken at that commit (with none, at the commit before the first phase's
-  first commit), in a temporary `git worktree` of it.
+- **A run resumes** (rule of 0.2.0, feature 003): at the first phase with a task not marked `[X]`
+  or `[x]`, with HEAD at the run's start as the baseline; the worker gets only the unmarked tasks
+  and checks what the repository already holds; uncommitted changes stay as core leaves them; the
+  completion report says that work committed before the run had the suite but no diff reading.
+  (0.1.0 resumed after the last `tasks: mark phase <n>` commit, which restarted a feature adopted
+  partway through at Phase 1.)
 - **The project names no suite, or no static check**: verification runs what is named, says in the
   completion report what was not, and the diff is read as always.
 - **`[P]` tasks** run inside their phase's worker, one after another: two workers would write the
@@ -211,7 +211,8 @@ its own.
   worker's report before it verifies (research.md R1 17).
 - **FR-003**: The worker's brief MUST open with the phase's heading as `tasks.md` writes it and carry
   the phase's tasks — and, for a fix, the finding; on
-  resume, the uncommitted diff — the feature directory, the suite and static-check commands (from the
+  resume, only the unmarked tasks, which may already be partly done (0.2.0, feature 003) — the
+  feature directory, the suite and static-check commands (from the
   project's instructions, else `plan.md`'s Technical Context), and what earlier workers finished; it
   MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
   Verification" (first phase only), "Execute implementation", "Implementation execution rules" and

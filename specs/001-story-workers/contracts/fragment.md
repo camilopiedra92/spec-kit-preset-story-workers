@@ -13,8 +13,8 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    the previous one's verification; never two at once; `[P]` tasks run inside their phase's worker.
 2. **The call**: `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`,
    `run_in_background: false`.
-3. **The brief** (spec FR-003): "opens with the phase's heading" as `tasks.md` writes it; the phase's tasks, and for a fix the finding, on resume the
-   uncommitted diff; the feature directory; the suite and static-check commands (the project's
+3. **The brief** (spec FR-003): "opens with the phase's heading" as `tasks.md` writes it; the phase's tasks, and for a fix the finding, on resume
+   only the unmarked tasks, which may already be partly done (0.2.0); the feature directory; the suite and static-check commands (the project's
    instructions, else `plan.md`'s Technical Context); what earlier workers finished; "follow core's"
    `Load and analyze the implementation context`, `Project Setup Verification` (first phase only),
    `Execute implementation`, `Implementation execution rules` and `Progress tracking and error
@@ -48,10 +48,9 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    (the bound of 6 is narrower: that phase's remaining items only, then the next phase goes to a worker), and say which and why in
    the completion report. The completion report always carries the line `Carried out in this session:
    none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.
-10. **Resume**: the phase starts after the last commit whose message contains `tasks: mark phase
-    <n>`, or at the first phase when there is none; the baseline is taken there (with none, at the
-    commit before the first phase's first commit), in a temporary `git worktree`; uncommitted changes to files other than `tasks.md` go to
-    a worker with the diff, to finish or discard; uncommitted `tasks.md` changes are the main session's.
+10. **Resume** (0.2.0): as `specs/003-resume-from-head/contracts/harness.md` states it: the first
+    phase with an unmarked task, HEAD as the baseline, the worker checking what is already done,
+    uncommitted changes left as core leaves them, a `Resumed at phase <n>:` report line.
 11. **Narrowed, by name**: core's `For completed tasks, make sure to mark the task off as [X]`,
     `parallel tasks [P] can run together` and `Halt execution if any non-parallel task fails`.
 
