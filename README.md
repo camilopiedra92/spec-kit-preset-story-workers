@@ -4,8 +4,9 @@ A [Spec Kit](https://github.com/github/spec-kit) preset that has `/speckit-imple
 phase of a feature's tasks to a worker subagent on a smaller model (Sonnet), while the main session
 (Opus) verifies, reviews and decides.
 
-**Status: released as `v0.1.0` on the owner's decision, without an eval showing its claimed
-effect.** Two evals, below, are recorded as they came out: [Eval 001](#eval-2026-10-14) measured the
+**Status: `v0.2.0`.** Its change to where a run starts was measured against `v0.1.0` in
+[Eval 003](#eval-003-2026-10-14) (directional, one run per arm). The preset itself was released as
+`v0.1.0` on the owner's decision, without an eval showing its claimed effect. Two evals, below, are recorded as they came out: [Eval 001](#eval-2026-10-14) measured the
 preset at **65% more usage** than core on a small fixture, and [Eval 002](#eval-002-2026-10-14)
 could not measure a quality difference, core passing every held-out test in six runs on two
 versions of a larger fixture, so the cost question on large phases was not run. The owner accepted
@@ -16,7 +17,7 @@ The measured state of 001 is tagged
 ## Install
 
 ```bash
-specify preset add --from https://github.com/camilopiedra92/spec-kit-preset-story-workers/archive/refs/tags/v0.1.0.zip
+specify preset add --from https://github.com/camilopiedra92/spec-kit-preset-story-workers/archive/refs/tags/v0.2.0.zip
 git add .specify .claude && git commit -m "Add the story-workers preset"
 ```
 
@@ -43,7 +44,8 @@ things to keep in mind:
 It appends a `## Story workers` section to core `speckit-implement` and replaces nothing
 (constitution I). Each phase of `tasks.md` goes to one foreground worker started with
 `model: "sonnet"` and `effort: "medium"`; the main session marks a task `[X]` only after its own
-run of the suite, the static checks and a reading of the phase's diff; fixes go back to a worker
+run of the suite, the static checks and a reading of the phase's commits; a run starts at the
+first phase with an unmarked task, so a feature adopted partway through goes on where it is; fixes go back to a worker
 (at most two per phase); any review runs in a fresh context on the main session's model family;
 and with no Agent tool, a worker error or no git, the session carries on as core does and says so
 in its report. To update to a newer tag:

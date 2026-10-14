@@ -3,7 +3,8 @@
 A Spec Kit preset that has `/speckit-implement` hand each phase of a feature's
 tasks to a worker subagent on a smaller model, while the main session
 verifies, reviews and decides. Released as v0.1.0 on the owner's acceptance
-after two evals that did not show its claimed effect (`README.md`); projects
+after two evals that did not show its claimed effect, and as v0.2.0 with its
+resume rule measured against v0.1.0 (`README.md`, Eval 003); projects
 install it from a tag's archive. This repository is itself developed with
 Spec Kit.
 
