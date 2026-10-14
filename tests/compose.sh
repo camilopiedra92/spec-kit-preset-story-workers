@@ -67,6 +67,7 @@ for n in zipfile.ZipFile(sys.argv[1]).namelist():
 # rather than reaching every project.
 while IFS= read -r path; do
   case $path in
+    commands/*/*) problem "the archive carries $path; commands/ holds one level of fragments" ;;
     "" | preset.yml | README.md | CHANGELOG.md | LICENSE | commands/ | commands/*.md) ;;
     *) problem "the archive carries $path; mark it export-ignore or allow it here" ;;
   esac

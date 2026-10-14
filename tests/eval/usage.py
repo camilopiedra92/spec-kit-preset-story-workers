@@ -4,8 +4,9 @@ Usage:  usage.py [--price-only] <out-dir>
 Reads   <out-dir>/stream.jsonl (the `result` event's `modelUsage`, the
         `rate_limit_event`s), <out-dir>/transcripts/ (the main session's
         <session_id>.jsonl and subagents/agent-*.{jsonl,meta.json}, copied
-        by run.sh) and versions.txt (`arm`, `fixture`); for `with`, the phase
-        headings of tests/eval/fixtures/<fixture>/project/'s feature tasks.md.
+        by run.sh) and versions.txt (`arm`, `fixture`, `commit`); for `with`,
+        the phase headings of tests/eval/fixtures/<fixture>/project/'s feature
+        tasks.md as committed at that commit.
 Writes  usage.json and usage.txt when the transcripts reconcile with
         `modelUsage`: per model and token type equal, priced cost within
         $0.000001 of `costUSD`. Otherwise writes nothing and prints

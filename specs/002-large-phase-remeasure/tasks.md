@@ -221,3 +221,16 @@ CHANGELOG and the tags.
 - [X] T059 Disclose in heldout-review.md that H1's closing review came after attempt 2's runs, and why the runs stand, per FR-002 (partial)
 - [X] T060 README: Eval 001's "not adopted" superseded by the decision; the Halt gloss scoped to "that phase"; the hermetic caveat's two overstatements; the FR-006 check's wording; spent.txt's provenance, per FR-009 and the claims rule (contradicts)
 - [X] T061 Decision 0001's pending dotfiles link; spec and plan wording before v2.0.0; T040/T041 labels for the actual outcome, per Constitution III (partial)
+
+---
+
+## Phase 10: Convergence
+
+- [X] T062 Data model: a held-out total above N is refused, below N scored out of N; the refusal list complete; the probe summary needs `n` at least 1 (also in the contract), per T058 (contradicts)
+- [X] T063 Contract and usage.py's docstring: held-out tests and phase headings read as committed at the run's commit, per T056 (partial)
+- [X] T064 A `--gate` test for a run that collected beyond N, seen red with the call removed, per T058 (partial)
+- [X] T065 compose.sh refuses a nested path under commands/, per Constitution V (partial)
+
+Notes: T054's "so the README's $13.79 can be rebuilt" overstated it; the README and spent.txt now say
+it cannot be rebuilt from committed files. Constitution V's Check still names the denylist paths,
+true but narrower than compose.sh's allowlist; a PATCH wording amendment is the owner's to make.

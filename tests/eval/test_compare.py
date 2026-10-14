@@ -638,3 +638,14 @@ def test_a_probe_summary_with_no_ok_fails(
     env["probes"].write_text("claude 2.1.299 (Claude Code)\nprobes: 0 ok, 0 FAIL\n")
     _, out = verdict(env, nine(env["root"]), capsys)
     assert line(out, "SC-006").startswith("SC-006 FAIL")
+
+
+def test_gate_refuses_a_run_that_collected_beyond_n(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    runs = [write_run(env["root"], f"without-{n}", "without", 10.0) for n in (1, 2, 3)]
+    (env["root"] / "without-3/heldout.txt").write_text(f"passed {N}/{N + 2}\n")
+    code = compare.main(
+        ["--gate", *map(str, runs)], fixtures=env["fixtures"], results=env["results"]
+    )
+    assert code == 2

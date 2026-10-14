@@ -71,7 +71,9 @@ Tokens:   input, output, cache_read, cache_write_5m, cache_write_1h
 
 `passed / N`, where `N` is `fixtures/<fixture>/heldout/N` (fixed per fixture, written by the
 oracle proof); an error, a skip or an uncollected test is not passed. `heldout.txt`'s `passed x/y`
-gives `x`; `y` is not used, since a module that fails to collect shrinks it.
+gives `x`. A `y` below `N` (a module that failed to collect) is scored out of `N` all the same; a
+`y` above `N` is refused (exit 2), since tests the agent added (a conftest, a parametrize) could
+hide failures.
 
 ## Comparison (`compare.py` output)
 
@@ -92,7 +94,7 @@ and `min`/`max` of total cost and of held-out score. Then:
   `` ` `` and `_` stripped, as `attribution.py` strips them) names every task id of
   `fixtures/<fixture>/project/`'s feature `tasks.md`, a range such as `T002–T005` or `T002 to T005`
   naming every id in it.
-- `SC-006`: the probes' output has no `FAIL` line and its closing `probes: <n> ok, 0 FAIL` line, and the version in its `claude` line equals every
+- `SC-006`: the probes' output has no `FAIL` line and its closing `probes: <n> ok, 0 FAIL` line with `n` at least 1, and the version in its `claude` line equals every
   run's `versions.txt` `claude:` (compared as `major.minor.patch`).
 - `SC-007`: in every `with` run's `models.txt`, the count of `general-purpose`/`opus` calls is at
   least the number of `### User Story` headings in `fixtures/<fixture>/project/`'s feature spec (the
@@ -100,7 +102,8 @@ and `min`/`max` of total cost and of held-out score. Then:
 - `SC-008`: every run's `usage.json` exists and satisfies the invariant.
 
 Refused (exit 2): a run whose `status` is not `ok`, an arm without exactly three runs, runs of
-different fixtures, or `versions.txt` that differ in any key but `date` and `arm`.
+different fixtures, `versions.txt` that differ in any key but `date` and `arm`, the same run given
+twice, or a run that collected more held-out tests than `N`.
 
 ## Spend (`compare.py --spent <root> [--fixture <name> --next <arm>...]`)
 
