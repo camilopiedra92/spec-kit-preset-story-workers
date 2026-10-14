@@ -102,9 +102,9 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 ### The fixture and its oracle
 
-- [ ] T022 [US2] Write `tests/eval/fixture/`: a uv Python project with a committed `uv.lock` (pytest, ruff), `CLAUDE.md` with the two rules of research.md R6 (the review started as a `general-purpose` subagent), `.specify/feature.json`, and `specs/001-<slug>/spec.md`, `plan.md` (Technical Context naming `uv run pytest` and `uv run ruff check`, fixing the module and function names) and `tasks.md` for a two-story feature with a setup phase; no `checklists/`; no code yet
-- [ ] T023 [US2] Write `tests/eval/heldout/`: at least one acceptance test per acceptance scenario of the fixture's spec, against the interface its plan fixes; and `tests/eval/reference/`, a correct implementation kept outside the fixture
-- [ ] T024 [US2] Prove the oracle: the held-out tests fail on the fixture as committed (no code, each for the predicted reason), and pass against `tests/eval/reference/`; then one wrong version per story in a scratch copy turns them red
+- [X] T022 [US2] Write `tests/eval/fixture/`: a uv Python project with a committed `uv.lock` (pytest, ruff), `CLAUDE.md` with the two rules of research.md R6 (the review started as a `general-purpose` subagent), `.specify/feature.json`, and `specs/001-<slug>/spec.md`, `plan.md` (Technical Context naming `uv run pytest` and `uv run ruff check`, fixing the module and function names) and `tasks.md` for a two-story feature with a setup phase; no `checklists/`; no code yet
+- [X] T023 [US2] Write `tests/eval/heldout/`: at least one acceptance test per acceptance scenario of the fixture's spec, against the interface its plan fixes; and `tests/eval/reference/`, a correct implementation kept outside the fixture
+- [X] T024 [US2] Prove the oracle: the held-out tests fail on the fixture as committed (no code, each for the predicted reason), and pass against `tests/eval/reference/`; then one wrong version per story in a scratch copy turns them red
 
 ### The probes
 
