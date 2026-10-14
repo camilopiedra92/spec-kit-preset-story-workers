@@ -108,7 +108,7 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 
 ### The probes
 
-- [ ] T025 [US2] Write `tests/eval/probes.sh` (contract `probes.sh`): R1 (1, 3, 4 with `sonnet` and `opus`, 5, 7, 8, 9, 10, 11, 15, 17), hermetic, printing the Claude Code version and `ok`/`FAIL` per probe; exit 1 on any failure; add its invocation to `CLAUDE.md`'s Commands
+- [X] T025 [US2] Write `tests/eval/probes.sh` (contract `probes.sh`): R1 (1, 3, 4 with `sonnet` and `opus`, 5, 7, 8, 9, 10, 11, 15, 17), hermetic, printing the Claude Code version and `ok`/`FAIL` per probe; exit 1 on any failure; add its invocation to `CLAUDE.md`'s Commands
 - [ ] T026 [US2] Break each probe's expectation on purpose once (invert the expected outcome in a scratch copy) and see it go red; then `tests/eval/probes.sh` passes on the installed Claude Code (SC-006)
 
 ### The measurement and the decision
