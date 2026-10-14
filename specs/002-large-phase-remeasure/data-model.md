@@ -93,7 +93,7 @@ and `min`/`max` of total cost and of held-out score. Then:
 Refused (exit 2): a run whose `status` is not `ok`, an arm without exactly three runs, runs of
 different fixtures, or `versions.txt` that differ in any key but `date` and `arm`.
 
-## Spend (`compare.py --spent <root> [--next <arm>...]`)
+## Spend (`compare.py --spent <root> [--fixture <name> --next <arm>...]`)
 
 Walks `<root>` for every `*.jsonl` outside `transcripts/` that holds a stream (a run's
 `stream.jsonl`, each probe's `r*.jsonl`): each one's `result` `costUSD`, else its copied transcripts

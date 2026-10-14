@@ -93,6 +93,19 @@ done < commands.tsv
 # The fragment narrows these core rules and points the worker at these core
 # steps by name; tests/core-anchors.sh names any upstream dropped or reworded.
 "$PRESET/tests/core-anchors.sh" core/speckit.implement.md || fail=1
+# SC-004 (specs/002): each anchor removed from a copy of core turns the check
+# red, naming it, so a check that stopped looking for one cannot pass unseen.
+while IFS= read -r anchor; do
+  "$PY" -c 'import sys
+text = " ".join(open(sys.argv[1], encoding="utf-8").read().split())
+open(sys.argv[3], "w", encoding="utf-8").write(text.replace(sys.argv[2], ""))' \
+    core/speckit.implement.md "$anchor" core-cut.md
+  if said_missing=$("$PRESET/tests/core-anchors.sh" core-cut.md); then
+    problem "core-anchors.sh passed a core without '$anchor'"
+  elif ! grep -qF -- "'$anchor'" <<< "$said_missing"; then
+    problem "core-anchors.sh did not name the removed '$anchor'"
+  fi
+done < <("$PRESET/tests/core-anchors.sh" --list)
 
 quiet specify preset add --from "http://127.0.0.1:$port/preset.zip"
 

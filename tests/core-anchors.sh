@@ -5,16 +5,10 @@
 # revised (constitution I).
 #
 # Usage:  tests/core-anchors.sh <skill-file>
+#         tests/core-anchors.sh --list   (the anchors, one per line, for
+#                                         compose.sh's red check of SC-004)
 # Exit:   0 every anchor present; 1 one or more missing, each named; 2 usage
 set -euo pipefail
-
-[ "$#" -eq 1 ] && [ -r "$1" ] || {
-  echo "usage: tests/core-anchors.sh <readable skill file>" >&2
-  exit 2
-}
-
-# One line, runs of whitespace squeezed: a rewrap upstream is not a rewording.
-text=$(tr -s '[:space:]' ' ' < "$1")
 
 anchors=(
   # Narrowed by the fragment
@@ -28,6 +22,18 @@ anchors=(
   'Implementation execution rules'
   'Progress tracking and error handling'
 )
+
+if [ "${1:-}" = --list ]; then
+  printf '%s\n' "${anchors[@]}"
+  exit 0
+fi
+[ "$#" -eq 1 ] && [ -r "$1" ] || {
+  echo "usage: tests/core-anchors.sh <readable skill file> | --list" >&2
+  exit 2
+}
+
+# One line, runs of whitespace squeezed: a rewrap upstream is not a rewording.
+text=$(tr -s '[:space:]' ' ' < "$1")
 
 missing=0
 for anchor in "${anchors[@]}"; do

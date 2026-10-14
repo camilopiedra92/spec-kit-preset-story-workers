@@ -68,8 +68,9 @@ counting (the eval stops: spec US3 scenario 3); 2 on any refusal, `run.sh`'s inc
 - Held-out N comes from `fixtures/<fixture>/heldout/N` (data model, "Held-out score").
 - `compare.py --gate <without-run-dir>...`: three counted `without` runs; prints the scores and
   `gate open` (exit 0) or `gate closed` (exit 1); 2 on refused input.
-- `compare.py --spent <root> [--next <arm>...]`: the data model's "Spend". Exit 0; 2 on unreadable
-  input. An empty root prints `spent 0`.
+- `compare.py --spent <root> [--fixture <name> --next <arm>...]`: the data model's "Spend"; the
+  fixture names whose counted runs set the estimate and, before any has counted, whose task lines
+  scale 001's cost. Exit 0; 2 on unreadable input. An empty root prints `spent 0`.
 
 ## `tests/eval/oracle.sh [--write-n] <fixture>`
 
@@ -79,6 +80,12 @@ copies the committed `heldout/` in as `tests_heldout/` (as `run.sh` does), runs 
 `heldout/N`; 1 otherwise, with the test output; 2 on an unknown fixture, a missing committed part, or
 no committed `heldout/N` without `--write-n`. `--write-n` writes `y` to `heldout/N` instead of
 checking it. Committed files only: an edit in progress is not what an arm gets.
+
+## `tests/core-anchors.sh --list` and SC-004
+
+`core-anchors.sh --list` prints its anchors, one per line. `tests/compose.sh` removes each in turn
+from a copy of the core `speckit-implement` skill and fails unless `core-anchors.sh` exits 1 naming
+it: SC-004, observed by CI on every push and by the eval's `compose.sh` run on the measured commit.
 
 ## `tests/eval/probes.sh [out-dir]`
 

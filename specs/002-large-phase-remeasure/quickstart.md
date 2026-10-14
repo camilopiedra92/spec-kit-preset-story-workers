@@ -31,7 +31,7 @@ hardening, the review covers what it added.
 ## 1. `without`: the gate
 
 ```bash
-uv run python tests/eval/compare.py --spent /tmp/remeasure --next without
+uv run python tests/eval/compare.py --spent /tmp/remeasure --fixture checkout --next without
 ```
 
 **STOP**: the owner confirms the `without` set: spend so far, estimate, worst case.
@@ -49,7 +49,7 @@ committed, a version change needs nothing fixed; either way, a new attempt at st
 ## 2. `with` and `fallback`, alternating
 
 ```bash
-uv run python tests/eval/compare.py --spent /tmp/remeasure --next with fallback
+uv run python tests/eval/compare.py --spent /tmp/remeasure --fixture checkout --next with fallback
 ```
 
 **STOP**: the owner confirms the `with` and `fallback` sets together.
@@ -63,10 +63,13 @@ uv run python tests/eval/compare.py --probes "$A/probes.txt" "$A"/without-? "$A"
   "$A"/fallback-? | tee "$A/compare.txt"
 ```
 
-SC-004, outside `compare.py`: on the measured commit, with the eval's Spec Kit version, remove each
-anchored core rule and step from a copy of the **core** `speckit-implement` skill and see
-`tests/core-anchors.sh` go red for each (the task that implements this fixes its command); save the
-output as `$A/sc004.txt`.
+SC-004, outside `compare.py`: `tests/compose.sh` on the measured commit removes each anchored core
+rule and step from a copy of the **core** `speckit-implement` skill and fails unless
+`tests/core-anchors.sh` goes red naming it:
+
+```bash
+tests/compose.sh > "$A/sc004.txt" 2>&1                      # ends with `ok: composes on specify …`
+```
 
 **The eval passes** when `compare.py` exits 0 and SC-004 holds; otherwise it fails.
 
