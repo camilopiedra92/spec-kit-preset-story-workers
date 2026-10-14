@@ -62,6 +62,12 @@ harness reporting where every token goes.
 - Q: When does the owner confirm spending? → A: once before each arm's set of counted runs, with
   the usage spent so far and the estimate for the set; reruns of a run that did not count fall under
   that confirmation (same instruction).
+- Q: After the second closed gate (six `without` runs, every held-out test passed), how does 002
+  end? → A: the owner chose to stop measuring and release the preset as measured: the constitution
+  was amended (v2.0.0, principle III) so a rule whose eval does not show its claimed effect can be
+  released on the owner's recorded acceptance; the README records both evals as they came out and
+  the decision beside them (US3 scenario 7). Decided by the owner, 2026-10-14, choosing between a
+  third hardening, a cost-only run of `with` and `fallback`, and stopping.
 - Q: Is a run whose usage cannot be reconciled a measurement? → A: no: the attribution is what this
   feature adds, so a run whose transcripts are missing or do not reconcile is not counted and is
   rerun within the usual bound; a part the harness cannot place in a phase is not a reconciliation
@@ -176,9 +182,14 @@ ended, or for an eval that stopped without a verdict, the day it stopped.
 
 ---
 
+7. **Given** the eval stopped without showing the claimed effect, **When** the owner accepts the
+   preset anyway (constitution III, v2.0.0), **Then** the README records the eval as it came out,
+   never as a pass, beside the owner's decision, its reason and date; the release follows scenario
+   1, its CHANGELOG entry linking the decision; and US4 follows.
+
 ### User Story 4 - The owner's setup adopts a released preset (Priority: P3)
 
-Only after a release, the owner's setup adopts the preset (FR-010). 001 specified these steps and
+Only after a release (scenario 1, or scenario 7), the owner's setup adopts the preset (FR-010). 001 specified these steps and
 never carried them out, because 001 was not adopted.
 
 **Why this priority**: it reaches projects only after User Story 3 passes; on a failure it does not

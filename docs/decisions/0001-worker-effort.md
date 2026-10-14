@@ -1,7 +1,8 @@
 # 0001. The worker's effort is set on its call
 
-- Status: accepted for the measured design, which was not adopted (README, eval of 2026-10-14):
-  it binds a remeasure that keeps the worker, and takes effect only if one is adopted
+- Status: accepted; in effect since the preset's release as v0.1.0 on the owner's acceptance
+  (README, "The owner's decision, 2026-10-14"), after Eval 001 (not adopted, +65% usage) and
+  Eval 002 (no quality difference measurable)
 - Date: 2026-10-13
 - Source: [research.md R7](../../specs/001-story-workers/research.md#r7-the-workers-effort-is-set-this-is-an-exception)
 
