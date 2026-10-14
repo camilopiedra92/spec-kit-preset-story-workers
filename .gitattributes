@@ -1,3 +1,8 @@
 tests/ export-ignore
 .github/ export-ignore
 .gitattributes export-ignore
+.specify/ export-ignore
+.claude/ export-ignore
+specs/ export-ignore
+docs/ export-ignore
+CLAUDE.md export-ignore

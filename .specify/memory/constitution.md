@@ -1,50 +1,85 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Story Workers Preset Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Append, Never Replace
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+The preset appends fragments to core Spec Kit skills and replaces none of them, so upstream changes
+to the rest of each skill keep arriving. A fragment carries no frontmatter, because a description
+there replaces the skill's own. A fragment that narrows a core rule names that rule, and the
+composition test fails when core no longer carries it.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+Rationale: a replaced skill freezes core at the version it was copied from, and a project stops
+receiving upstream fixes without anyone noticing; Spec Kit's preset system offers `append` for
+this reason. Check: `tests/compose.sh` verifies that each composed skill keeps its core body and
+description, ends with its fragment, and that core still carries every rule a fragment narrows.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Verified Against the Real CLI
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Every change is verified by installing the preset from a tag-shaped archive with the real `specify`
+CLI: against the pinned Spec Kit release on every push and pull request, and against the latest
+release weekly. The pinned release moves together with `requires.speckit_version` in `preset.yml`.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Rationale: what a project gets is what the CLI composes, not the fragment files; the weekly run
+against the latest release is how an upstream change reaches this repository before it reaches a
+project. Check: `.github/workflows/ci.yml` runs `tests/compose.sh` pinned and latest; a reviewer
+checks that a change to the pinned release also changes `requires.speckit_version`.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Behaviour Is Measured, Not Asserted
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+A fragment is a prompt, and a prompt's effect is shown by running it. A rule added, changed or
+dropped ships only with an eval: a fixture committed under `tests/`, run headless with the agent it
+targets, comparing the preset with and without the rule on what the rule claims to change and on
+what it must not make worse. The result is recorded in the README with its date, what was compared,
+the number of runs per arm (called directional when it is one), and the version of every tool it
+ran on — Spec Kit, Claude Code, the model IDs, git and the test runner. A rule whose eval does not
+show its claimed effect is not released, and is recorded as an alternative measured and not
+adopted, with the reason. A rule that only restates core or the agent's documented behaviour needs
+its source cited instead of an eval.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Rationale: an instruction can read well and change nothing, or cost more than it saves; Anthropic's
+prompt-engineering guidance puts success criteria and empirical evaluations before iterating on a
+prompt, and the sibling test-first preset was archived on 2026-10-08 after its rules proved costly
+in real use without such a measurement up front. Check: a reviewer finds, for each changed rule,
+the eval under `tests/`, its README entry with versions and runs per arm, and the CHANGELOG entry.
+
+### IV. Degrades to Core
+
+Every instruction the preset adds names what the agent does when the capability it relies on is
+missing — a tool, a model, a hook, an agent other than the one it targets — and that fallback is
+core Spec Kit behaviour, never a refusal and never a state worse than core would leave.
+
+Rationale: projects install the preset on machines, agents and versions this repository never sees;
+an instruction with no fallback fails there in a way nobody planned for. Check: a reviewer finds the
+fallback beside each instruction that depends on a capability, and the eval of principle III covers
+it when the capability can be withheld in the fixture.
+
+### V. Released by Tag
+
+Projects install the preset from a tag's archive, so a release is a tag with a matching version in
+`preset.yml`, a CHANGELOG entry in Keep a Changelog form, and semantic versioning: MAJOR when a
+project's existing tasks or files stop working as before, MINOR for a rule added, PATCH for a fix.
+Whatever is not part of the preset is `export-ignore`.
+
+Rationale: the archive is the artifact; a file in the repository that is not export-ignored lands
+in every project that installs it. Check: `tests/compose.sh` builds the archive with `git archive`
+as GitHub does and fails if the installed preset carries this repository's `.specify/`, `.claude/`,
+`specs/`, `tests/`, `docs/` or `CLAUDE.md`; a reviewer checks that `preset.yml`, the CHANGELOG and the
+tag agree.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution overrides any other practice in this repository where they conflict.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- Changes reach `main` only through pull requests, merged with `gh pr merge --auto` once the
+  required `compose (pinned)` check is green; the ruleset that requires it is declared in
+  `camilopiedra92/dotfiles` (`github/repos.json`) and applied by its `bin/repo-rules.sh`.
+- The owner (camilopiedra92) reviews every pull request against these principles, including a
+  change made outside the Spec Kit commands, before it is marked ready.
+- Amendments: the owner proposes or approves a change to this file in a pull request of its own, or
+  inside the feature whose decision requires it. The commit message carries the impact report:
+  version change, principles changed, what still has to exist for a new principle to be met.
+- Versioning of this file: MAJOR for a principle removed or redefined incompatibly, MINOR for a
+  principle or section added or materially expanded, PATCH for wording.
+
+**Version**: 1.0.0 | **Ratified**: 2026-10-13 | **Last Amended**: 2026-10-13
