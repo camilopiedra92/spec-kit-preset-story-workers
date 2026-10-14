@@ -162,6 +162,15 @@ phrases=(
   "with \`model\` set to this session's model family"
   'carry out the remaining tasks in this session'
   'Carried out in this session:'
+  # Resume (0.2.0): core's marks decide, HEAD is the baseline, nothing is
+  # reconstructed from history (specs/003-resume-from-head).
+  'resumes at the first phase that has a task not marked'
+  '`[X]` or `[x]`'
+  "the baseline is HEAD at the run's start"
+  'may already be done'
+  'Uncommitted changes stay as core leaves them'
+  'Resumed at phase'
+  'With no task marked, the run is a fresh run'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
@@ -169,6 +178,11 @@ phrases=(
 )
 for phrase in "${phrases[@]}"; do
   grep -qF -- "$phrase" <<< "$said" || problem "the fragment does not say '$phrase'"
+done
+# 0.1.0's Resume rule, replaced in 0.2.0: it restarted a feature adopted
+# partway through at Phase 1.
+for phrase in 'A run starts at the phase after the last commit whose message contains'; do
+  ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
 specify version > version.txt 2>&1 || true

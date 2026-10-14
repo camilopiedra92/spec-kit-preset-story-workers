@@ -17,7 +17,7 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 ## Phase 1: Setup
 
-- [ ] T001 Open the feature's PR as a draft from branch `003-resume-from-head` (spec and plan committed), so `compose (pinned)` runs on every push
+- [X] T001 Open the feature's PR as a draft from branch `003-resume-from-head` (spec and plan committed), so `compose (pinned)` runs on every push
 
 ---
 
