@@ -162,15 +162,22 @@ phrases=(
   "with \`model\` set to this session's model family"
   'carry out the remaining tasks in this session'
   'Carried out in this session:'
-  # Resume (0.2.0): core's marks decide, HEAD is the baseline, nothing is
-  # reconstructed from history (specs/003-resume-from-head).
-  'resumes at the first phase that has a task not marked'
+  # Where a run starts (0.2.0, specs/003-resume-from-head): core's marks
+  # decide; nothing is reconstructed from history; uncommitted work is not the
+  # run's. One phrase per clause.
   '`[X]` or `[x]`'
-  "the baseline is HEAD at the run's start"
-  'may already be done'
-  'Uncommitted changes stay as core leaves them'
-  'Resumed at phase'
-  'With no task marked, the run is a fresh run'
+  'where a run starts is never read from commit messages'
+  'skips every phase whose tasks are all marked, wherever it falls'
+  'When every task is marked, start no worker'
+  "the phase's unmarked tasks"
+  'may already be done, in whole or in part'
+  'complete only what is missing'
+  'tasks found already done'
+  'staging only the files it changed, never `git add -A` or `-a`'
+  'Changes uncommitted when the run starts are not the run'
+  'neither asks about them nor stops for them'
+  'the commits made since the recorded HEAD'
+  'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff.'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
@@ -181,7 +188,9 @@ for phrase in "${phrases[@]}"; do
 done
 # 0.1.0's Resume rule, replaced in 0.2.0: it restarted a feature adopted
 # partway through at Phase 1.
-for phrase in 'A run starts at the phase after the last commit whose message contains'; do
+for phrase in 'A run starts at the phase after the last commit whose message contains' \
+  'on resume, the uncommitted diff' 'temporary `git worktree`' 'Resumed at phase' \
+  "the baseline is HEAD at the run's start" 'what earlier workers finished'; do
   ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
