@@ -117,7 +117,9 @@ rule or step is missing from core (SC-004); the end-to-end behaviour is US2's `w
 - [X] T028 [US2] Judge SC-001, SC-002, SC-003 (`attribution.py`), SC-005, SC-006 and SC-007 from the outputs, and write the README entry: the date, the fixture's size, every arm's outputs, reruns and reasons, `versions.txt`, `models.txt`, the probes' output, the isolation, "one counted run per arm, directional", the rules measured (the fragment at the run's commit, every section of it, the worker's brief included) and the one not measured (the non-git fallback, with its cited source), and the limits (FR-009)
 - [X] T029 [US2] Move research.md R7 to `docs/decisions/0001-worker-effort.md` (MADR: context, options, outcome, consequences, linking R7), and point `CLAUDE.md` at `docs/decisions/`
 
-**Checkpoint**: the whole suite green; a fresh review of US2 (harness, fixture, oracle, the README entry against the raw outputs) before the decision is acted on. **Decision**: every success criterion holds → Phase 5. Any does not → the README entry alone goes to `main` in its own PR, recording the rule as measured and not adopted; tag the branch `measured-not-adopted-<date>`, leave it unmerged, and stop here.
+**Checkpoint**: the whole suite green; a fresh review of US2 (harness, fixture, oracle, the README entry against the raw outputs) before the decision is acted on. **Decision**: every success criterion holds → Phase 5. Any does not → the README records the rule as measured and not adopted; tag the measured state `measured-not-adopted-<date>`; the feature's PR merges after a fresh review of the whole diff, with no version tag (spec Clarifications, amended 2026-10-14); Phases 5 and 6 do not run.
+
+**Outcome, 2026-10-14**: SC-001 not met (`with` +65% against `without`), every other criterion met; recorded in `README.md`. Phases 5 and 6 are not run: their tasks stay open as the record of what a pass would have done.
 
 ---
 

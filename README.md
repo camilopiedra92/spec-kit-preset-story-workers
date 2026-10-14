@@ -6,7 +6,8 @@ session (Opus) verifies, reviews and decides.
 
 **Status: measured and not adopted.** The eval below showed the preset using more, not less,
 usage than core `/speckit-implement` on its fixture, so no release was made (constitution III).
-The implementation, harness and raw results stay on the unmerged branch under the tag
+The fragment, the harness and the raw results are in this repository, with no version tag, so
+nothing here is installable as a release; the measured state is tagged
 [`measured-not-adopted-2026-10-14`](https://github.com/camilopiedra92/spec-kit-preset-story-workers/tree/measured-not-adopted-2026-10-14).
 
 ## Eval, 2026-10-14

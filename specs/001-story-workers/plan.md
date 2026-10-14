@@ -127,8 +127,8 @@ runs that use them.
 3. **Story 2**: the Python toolchain (`pyproject.toml` with the dev tools, `uv.lock`, and its steps in
    `tests/check.sh`) with the first Python files; `attribution.py` and `run.sh`'s counting test-first against stub streams; the
    fixture, the held-out tests, `run.sh` and `probes.sh`; the probes, then one counted run per arm;
-   the README entry. If any success criterion does not hold, the README entry alone goes
-   to `main` and the branch is tagged (Clarifications).
+   the README entry. If any success criterion does not hold, the branch merges with the README
+   recording it as not adopted, with no release (Clarifications).
 4. **Before the PR**: research R7 moves to `docs/decisions/0001-worker-effort.md` (MADR), and the
    project CLAUDE.md points at `docs/decisions/`.
 5. **Release** (on a pass): `preset.yml` version 1.0.0, CHANGELOG, tag `v1.0.0`.

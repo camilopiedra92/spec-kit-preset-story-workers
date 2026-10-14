@@ -47,8 +47,13 @@ verification is counted, and whether it delivers code that is any worse.
 - Q: How many runs per arm? → A: one counted run per arm, reported as directional.
 - Q: Who applies a fix that verification or a review finds? → A: a worker briefed with it; the main
   session verifies again.
-- Q: If the measurement fails, what happens to the branch? → A: only the README entry reaches
-  `main`, recording the rule as measured and not adopted; the branch stays unmerged under a tag.
+- Q: If the measurement fails, what happens to the branch? → A: the branch merges to `main` with
+  the README recording the rule as measured and not adopted, and no release: `preset.yml` keeps a
+  pre-release version and no version tag is made, so nothing is installable (projects install from
+  a tag). The measured state is also tagged `measured-not-adopted-<date>`. Amended 2026-10-14 from
+  "only the README reaches `main`, the branch unmerged": the ruleset requires `compose (pinned)` on
+  every pull request to `main`, which a README-only change cannot produce, and the owner chose a
+  follow-up feature that builds on this harness.
 - Q: Does the worker inherit the main session's effort? → A: no: the worker's call sets
   `effort: "medium"`, so raising the main session's effort for planning does not raise every
   worker's; a review inherits the main session's. Recorded as an exception to the owner's policy of
@@ -135,8 +140,9 @@ the versions of Spec Kit, Claude Code, the model IDs and efforts, git, uv, Pytho
 1. **Given** all three arms counted, **When** every success criterion SC-001 to SC-007 holds,
    **Then** the README records the result and the preset is released.
 2. **Given** all three arms counted, **When** any success criterion does not hold, **Then**
-   the preset is not released; the README entry alone reaches `main`, recording the rule as measured
-   and not adopted with the reason, and the branch is tagged and left unmerged.
+   the preset is not released: the branch merges with the README recording the rule as measured
+   and not adopted with the reason, no version tag is made, and the measured state is tagged
+   `measured-not-adopted-<date>` (Clarifications).
 3. **Given** an arm that does not count, **When** it is rerun twice without counting, **Then** no
    result is recorded and the reason is reported to the owner.
 
