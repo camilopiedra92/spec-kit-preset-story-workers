@@ -204,6 +204,9 @@ Observations are dated and name the versions they ran on (constitution III).
 
 ## R7. The worker's effort is set; this is an exception
 
+Moved to [docs/decisions/0001-worker-effort.md](../../docs/decisions/0001-worker-effort.md),
+which binds later features; kept here as the record of how it was reached.
+
 - **Decision**: `effort: "medium"` on the worker's call; nothing on the review's.
 - **Rationale**: R1 (5): without it the worker inherits the main session's effort, so raising the
   session's effort to plan a hard feature would raise every worker's, the opposite of the feature's

@@ -16,6 +16,11 @@ uv run python tests/eval/attribution.py <out-dir>      # SC-003 on a `with` arm
 The eval's whole sequence, reruns included, is in
 `specs/001-story-workers/quickstart.md`.
 
+## Where things live
+
+- `docs/decisions/`: decisions later features build on (MADR). Read the record before reopening a
+  decision it covers.
+
 ## Invariants
 
 @.specify/memory/constitution.md
