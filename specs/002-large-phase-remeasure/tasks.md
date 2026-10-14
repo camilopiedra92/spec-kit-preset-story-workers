@@ -150,7 +150,7 @@ CHANGELOG and the tags.
 - [X] T037 Move research.md R3 (usage attribution from transcripts, reconciled on every run) to `docs/decisions/0002-usage-attribution.md` (MADR: context, options, outcome, consequences, linking R3): later evals build on it; `CLAUDE.md`'s pointer to `docs/decisions/` already covers it
 - [X] T038 Final sweep of `CLAUDE.md`: every statement true after this feature (its description line and Commands; earlier tasks edited parts of it), per the constitution's "correct it in the same commit that made it false"
 - [X] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
-- [ ] T040 Pass, or the owner's acceptance (spec US3 scenario 7): a fresh-context review of the whole diff, its findings fixed; then **the owner reviews the PR against constitution principles I–V** (constitution, Governance) and, on their approval, mark it ready (`gh pr ready`) and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; tag `v0.1.0` on the merge commit and push the tag
+- [X] T040 Pass, or the owner's acceptance (spec US3 scenario 7): a fresh-context review of the whole diff, its findings fixed; then **the owner reviews the PR against constitution principles I–V** (constitution, Governance) and, on their approval, mark it ready (`gh pr ready`) and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; tag `v0.1.0` on the merge commit and push the tag
 - [ ] T041 Fail or stopped without the owner's acceptance (not this feature's outcome): a fresh-context review of the whole diff, its findings fixed; tag the measured state `measured-not-adopted-002-<date>` (fail only); then **the owner reviews the PR against constitution principles I–V** and, on their approval, mark it ready and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; no version tag
 
 ---
@@ -163,13 +163,13 @@ CHANGELOG and the tags.
 
 ### Tests for User Story 4 (write first, see them fail)
 
-- [ ] T042 [US4] In dotfiles, on a branch of its own: extend `~/dotfiles/checks/90-spec-kit.sh` to require `PRESET_STORY_WORKERS_URL` pointing at this repository's `v0.1.0` archive and `sdd-init` installing it after `constitution-authoring`; run `./check.sh` and see it fail for the missing URL
+- [X] T042 [US4] In dotfiles, on a branch of its own: extend `~/dotfiles/checks/90-spec-kit.sh` to require `PRESET_STORY_WORKERS_URL` pointing at this repository's `v0.1.0` archive and `sdd-init` installing it after `constitution-authoring`; run `./check.sh` and see it fail for the missing URL
 
 ### Implementation for User Story 4
 
-- [ ] T043 [US4] Add `PRESET_STORY_WORKERS_URL` and its `specify preset add` to `~/dotfiles/bin/sdd-init.sh` (header comment and commit message updated); `./check.sh` green; `sdd-init` in a scratch repository installs both presets
-- [ ] T044 [US4] In `~/dotfiles/docs/claude-settings.md`, name the worker's `effort: "medium"` as the one exception to the effort policy, its reason in one line, linking this repository's `docs/decisions/0001-worker-effort.md`
-- [ ] T045 [US4] Open the dotfiles PR (draft → fresh review → ready → `gh pr merge --auto --squash` on green CI)
+- [X] T043 [US4] Add `PRESET_STORY_WORKERS_URL` and its `specify preset add` to `~/dotfiles/bin/sdd-init.sh` (header comment and commit message updated); `./check.sh` green; `sdd-init` in a scratch repository installs both presets
+- [X] T044 [US4] In `~/dotfiles/docs/claude-settings.md`, name the worker's `effort: "medium"` as the one exception to the effort policy, its reason in one line, linking this repository's `docs/decisions/0001-worker-effort.md`
+- [X] T045 [US4] Open the dotfiles PR (draft → fresh review → ready → `gh pr merge --auto --squash` on green CI)
 - [ ] T046 [US4] For each existing Spec Kit project the owner names: ask; on a yes, `specify preset add --from <v0.1.0 archive>`, confirm with `git status` that only the preset's files changed, and commit exactly those in a commit of their own through that repository's PR rules
 
 ---
@@ -237,3 +237,17 @@ brought to compose.sh's allowlist by a PATCH amendment (v2.0.1), on the owner's 
 - [X] T066 run.sh writes `passed 0/0` when pytest leaves no junit report, so the run is scored 0 of N rather than refused; the usage.py escape hatch says what would let it go, per spec Edge Cases and the escape-hatch rule (partial)
 
 Converge pass 4 (2026-10-14): nothing above LOW; its two actionable LOWs closed by T066.
+
+---
+
+## Release and adoption record (2026-10-14)
+
+- T040: the owner reviewed PR #2 against constitution I–V and approved it; merged as `e19efbc` on
+  green `compose (pinned)`; tag `v0.1.0` on it. The README's install command, run against the tag
+  on GitHub in a scratch repository, installed "Story workers v0.1.0" and composed
+  `## Story workers` into `speckit-implement`.
+- T042–T045: dotfiles PR #149, merged as `28858ed` on green CI after a fresh review. The sdd-init
+  check was seen red before the script changed; the real `sdd-init` in a scratch repository
+  installed constitution-authoring v1.2.1 and story-workers v0.1.0 in one commit; the effort policy
+  names the worker's level and links decision 0001.
+- T046 waits for the owner, project by project.
