@@ -23,14 +23,20 @@ It appends a `## Story workers` section to core `speckit-implement` and replaces
 (constitution I). Each phase of `tasks.md` goes to one foreground worker started with
 `model: "sonnet"` and `effort: "medium"`; the main session marks a task `[X]` only after its own
 run of the suite, the static checks and a reading of the phase's diff; fixes go back to a worker
-(at most two per phase); any review runs on the main session's model; and with no Agent tool, a
-worker error or no git, the session carries on as core does and says so in its report. To update,
-add the newer tag's archive the same way.
+(at most two per phase); any review runs in a fresh context on the main session's model family;
+and with no Agent tool, a worker error or no git, the session carries on as core does and says so
+in its report. To update to a newer tag:
+
+```bash
+specify preset update story-workers --from <the newer tag's archive URL>
+```
 
 **What it narrows in core**, by name: "For completed tasks, make sure to mark the task off as [X]"
 (the main session marks, after verifying), "parallel tasks [P] can run together" (one worker per
 phase, `[P]` tasks run in turn inside it) and "Halt execution if any non-parallel task fails" (a
-blocked task stays unmarked and the run goes on unless the suite is red).
+failed task or verification goes back to a worker, at most two fix hand-offs per phase, then the
+main session carries out the rest as core does; a task a project hook blocked stays unmarked and
+the run goes on, halting only when the suite is red because of it).
 
 **When not to use it.** When usage is what you are optimising: the only measurement says it costs
 more (Eval 001). When the main session already runs on the smaller model. With agents that have no
@@ -46,9 +52,9 @@ shown the preset to save usage, and one measured it costing 65% more; no eval co
 difference either way. Accepted as released, not as measured to work.
 
 Both evals ran hermetically, without the user's own instructions, settings or plugins, so their
-results are the preset's and reproducible. In a setup whose instructions add work to every story
-(a mutation check, a fresh review per story, red test runs), that work is done in both modes, with
-and without the preset; how it shifts the comparison was not measured.
+results are the preset's and reproducible. How a setup whose instructions add work to every story
+(a mutation check, a fresh review per story, red test runs) shifts the comparison was not measured;
+the evals did show that `fallback`, with no Agent tool, runs no fresh-context review at all.
 
 ## Eval 002, 2026-10-14
 
@@ -82,7 +88,7 @@ and capped per order. Each rule's wrong reading, applied to the reference, turne
 red. Core still passed them all.
 
 **Runs.** Three counted `without` runs per attempt; every try counted at once, no rerun; no
-deadline change. `with` and `fallback` never ran, so no success criterion of the comparison
+deadline change; no attempt discarded for a harness fault or a Claude Code version change. `with` and `fallback` never ran, so no success criterion of the comparison
 (SC-001, SC-002, SC-003, SC-005, SC-007) was judged.
 
 | Run | Held-out | Suite | Total | Main session | Reviews (3) |
@@ -97,7 +103,7 @@ deadline change. `with` and `fallback` never ran, so no success criterion of the
 Medians: attempt 1 $1.827 (min $1.789, max $1.960); attempt 2 $1.860 (min $1.779, max $1.951).
 Three runs bound what can be said about variance to these extremes. Every run's usage reconciled
 with what Claude Code reported, to the token and within $0.000001 (SC-008, `usage.txt` per run).
-Total spent on the eval, probes included: $13.79.
+Total spent on the eval, probes included: $13.79 (`spent.txt`, from `compare.py --spent`).
 
 **Checks that did run.** Probes: 14 of 14 ok on Claude Code 2.1.299 in both attempts (SC-006).
 SC-004 (the composition test red on each removed core anchor): `tests/compose.sh` on every push,
@@ -105,14 +111,15 @@ SC-004 (the composition test red on each removed core anchor): `tests/compose.sh
 
 **Isolation and versions.** As Eval 001, plus Claude Code's auto-updater disabled for every run
 and the probes. Spec Kit 1.1.3; Claude Code 2.1.299; main session `claude-opus-5-5` at `--effort
-medium`; git 2.56.0; uv 0.13.0; Python 3.12.12; pytest 9.1.1; ruff 0.17.0 (each run's
+medium`, its three reviews per run also on `claude-opus-5-5`; git 2.56.0; uv 0.13.0; Python 3.12.12; pytest 9.1.1; ruff 0.17.0 (each run's
 `versions.txt`). Output style `default`, no MCP server, only Claude Code's built-in plugins.
 
 **Reading.** On these fixtures, core `/speckit-implement` on Opus made no mistake a held-out test
 could see, in six runs out of six, including on rules built to be misread. So the eval could not
 show the preset making code better or worse, and by its own design (the gate) it did not go on to
 measure cost on large phases. What remains measured is Eval 001's: on small phases the preset cost
-65% more, its main session alone costing more than core's whole session (research R2 of 002).
+65% more, its main session alone costing more than core's main session, though it wrote no code
+($0.505 against $0.382, research R2 of 002).
 
 ## Eval, 2026-10-14
 

@@ -58,7 +58,7 @@ fixture moved; 9 counted runs plus up to 2 reruns each; README entry; on a pass,
 |---|---|
 | I. Append, never replace | No fragment change (FR-006); `tests/compose.sh` and `tests/core-anchors.sh` keep checking 001's anchors. |
 | II. Verified against the real CLI | Unchanged: CI runs `tests/check.sh` pinned and latest; the eval installs the preset from a tag-shaped archive. |
-| III. Behaviour is measured, not asserted | This feature is the measurement: a committed fixture under `tests/`, run headless in three arms, three runs per arm (no longer directional), with every tool's version recorded; a fail is recorded as not adopted with its reason. The usage attribution is itself reconciled on every run, not trusted. |
+| III. Behaviour is measured, not asserted | This feature is the measurement: a committed fixture under `tests/`, run headless in three arms, three runs per arm (no longer directional), with every tool's version recorded; a fail is recorded as not adopted with its reason, unless the owner accepts the release with the result recorded as it is (v2.0.0). The usage attribution is itself reconciled on every run, not trusted. |
 | IV. Degrades to core | Unchanged fragment; the `fallback` arm runs again on the new fixture (SC-005). |
 | V. Released by tag | On a pass: `preset.yml` version, CHANGELOG entry, tag together; `fixtures/` lives under `tests/`, already `export-ignore`, and `tests/compose.sh` still fails if `tests/` reaches the archive. |
 
@@ -117,7 +117,7 @@ tests/eval/
         └── attempt-<k>/         # every attempt: runs, statuses, probes, gate, compare, sc004
 pyproject.toml                   # pytest norecursedirs: fixtures
 README.md                        # the remeasure entry beside 001's
-CHANGELOG.md, preset.yml         # only on a pass: created / release 0.1.0, tag v0.1.0
+CHANGELOG.md, preset.yml         # on a pass or the owner's acceptance: release 0.1.0, tag v0.1.0
 CLAUDE.md                        # Commands: the new run.sh call, compare.py
 ```
 

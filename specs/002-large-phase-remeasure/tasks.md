@@ -196,3 +196,17 @@ CHANGELOG and the tags.
 - MVP: US1 and US2 (the fixture with its proven oracle, and attributed usage), which make the eval
   worth running; US3 runs it and decides; US4 only on a pass.
 - A negative result (not adopted) or a stop (not measured) is a valid outcome, recorded as such.
+
+---
+
+## Phase 8: Convergence
+
+- [ ] T047 CRITICAL: record the owner's reason for accepting the release in README "The owner's decision, 2026-10-14" and in spec Clarifications per Constitution III (partial)
+- [X] T048 Replace README's "add the newer tag's archive the same way" with `specify preset update story-workers --from <newer tag's archive URL>` per US3/sc.1, T036 (contradicts)
+- [X] T049 Correct README's Eval 002 reading: 001's `with` main session cost more than core's main session ($0.505 against $0.382), not more than its whole session, per FR-009 and research R2 (contradicts)
+- [X] T050 Close H1 by a fresh-context review of commit 2a6edd3's change and record it under "Hardening 1" in heldout-review.md per FR-002 (partial)
+- [X] T051 Narrow README's hermetic caveat to what is known: per-story work the user's instructions ask for is not measured, and `fallback` (no Agent tool) runs no fresh-context review, per the owner's claims rule (contradicts)
+- [X] T052 README install summary: reviews on the main session's model family; "Halt execution…" glossed by the hand-off rule with the hook case as its exception, per the fragment (partial)
+- [X] T053 Eval 002 entry: say no attempt was discarded for a harness fault or a version change, and that reviews ran on `claude-opus-5-5`, per FR-009 and Constitution III (partial)
+- [X] T054 Commit the eval's spend (`compare.py --spent` output) as tests/eval/results/002-large-phase-remeasure/spent.txt so the README's $13.79 can be rebuilt, per FR-009 (partial)
+- [X] T055 Bring plan.md (Constitution Check III, the release files' comment), quickstart.md step 3 (the acceptance route; typo "Plus and the") and spec.md's status in line with constitution v2.0.0 and US3 scenario 7 (partial)

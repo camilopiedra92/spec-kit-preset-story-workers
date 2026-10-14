@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-14
 
-**Status**: Draft
+**Status**: Implemented; ended by the owner's acceptance (Clarifications, US3 scenario 7)
 
 **Input**: User description: "Remeasure the story-workers preset with a fixture whose phases are
 large (6–10 tasks each) and hard enough that core `/speckit-implement` makes mistakes, reusing the

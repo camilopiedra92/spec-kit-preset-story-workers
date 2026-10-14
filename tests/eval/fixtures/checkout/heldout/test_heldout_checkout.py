@@ -593,7 +593,8 @@ def test_us3_3_remaining_units_refund_the_rest(co: Modules) -> None:
 
 def test_us3_3_one_unit_at_a_time(co: Modules) -> None:
     """US3-3: "returned one unit at a time instead, the refunds are 701, 700 and 699: partial
-    returns never refund more than was paid, and without a restocking fee, a full return refunds all of it."
+    returns never refund more than was paid, and without a restocking fee, a full return refunds
+    all of it."
     """
     order = journal_order(co)
     totals = [order.return_units("JOURNAL", 1).total for _ in range(3)]

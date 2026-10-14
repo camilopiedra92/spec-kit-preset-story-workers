@@ -45,3 +45,9 @@ value; no existing scenario made inconsistent but for H1's prose.
 |---|---|---|---|
 | H1 (low) | "gets back exactly what those units cost" and US3-3's "a full return refunds all of it" read as general rules, false once a restocking fee exists; no asserted value rests on them. | Now "…tax included, less any restocking fee" and "without a restocking fee, a full return refunds all of it", in the spec and the docstring quoting it; the quote script finds 0 mismatches and the oracle passes 59 of 59. | yes |
 | H2 (info) | "A rejected return charges no fee" is guarded only nominally by `test_us3_9_fee_cap_across_returns`. | Left as is: a test strength note, not an ambiguity; no expected value is at stake. | yes |
+
+Closure of H1, 2026-10-14: a fresh-context reviewer, who did not write the change, found it
+settled: the new text agrees with the fee rule and with US3-3, US3-8 and US3-9; the docstring still
+quotes the spec verbatim; no expected value is affected; no new second reading; the oracle passes 59
+of 59. Its cosmetic note (the two rewritten lines past the 100-column wrap) was fixed by rewrapping
+them, which leaves the whitespace-normalised quote unchanged.

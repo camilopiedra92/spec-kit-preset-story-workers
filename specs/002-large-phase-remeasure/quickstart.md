@@ -24,7 +24,7 @@ tests/eval/probes.sh "$A/probes" > "$A/probes.txt"          # every probe ok, el
 tests/eval/oracle.sh checkout                               # every held-out test passes, count = N
 ```
 
-Plus and the fresh-context review of the held-out tests, recorded in
+Plus the fresh-context review of the held-out tests, recorded in
 `specs/002-large-phase-remeasure/heldout-review.md` with every finding closed (spec FR-002); after a
 hardening, the review covers what it added.
 
@@ -80,4 +80,5 @@ tests/compose.sh > "$A/sc004.txt" 2>&1                      # ends with `ok: com
 Copy every attempt into `tests/eval/results/002-large-phase-remeasure/attempt-<k>/` as spec FR-012
 lists, never streams or transcripts. The README entry, `Eval 002, <date>`, takes every field spec
 FR-009 lists. Pass: spec US3 scenario 1, then FR-010. Fail: US3 scenario 2, tag
-`measured-not-adopted-002-<date>`. Stopped without a verdict: US3 scenario 6.
+`measured-not-adopted-002-<date>`. Stopped without a verdict: US3 scenario 6. Either of the last two
+accepted for release by the owner (constitution III, v2.0.0): US3 scenario 7, then FR-010.
