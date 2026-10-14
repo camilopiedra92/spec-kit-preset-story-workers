@@ -279,7 +279,7 @@ suites = [root] if root.tag == "testsuite" else list(root)
 n = lambda k: sum(int(s.get(k, 0)) for s in suites)
 total = n("tests")
 print("passed %d/%d" % (total - n("failures") - n("errors") - n("skipped"), total))' \
-    "$out/heldout.xml" || echo "passed 0/unknown: no junit report"
+    "$out/heldout.xml" || echo "passed 0/0: no junit report"
   cat "$out/heldout.log"
 } > "$out/heldout.txt"
 

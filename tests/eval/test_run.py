@@ -87,6 +87,7 @@ shift  # run
 case "$*" in
   *--version*) echo "$1 9.9.9"; exit 0 ;;
   *--junitxml=*)
+    [ -e "$here/nojunit" ] && { echo "pytest crashed"; exit 3; }
     for a in "$@"; do case "$a" in --junitxml=*) xml=${a#--junitxml=} ;; esac; done
     echo '<testsuites><testsuite tests="4" failures="1" errors="0" skipped="0"/></testsuites>' > "$xml"
     echo "3 passed, 1 failed"; exit 1 ;;
@@ -709,3 +710,12 @@ def test_the_held_out_tests_are_the_measured_commits(
     assert run(checkout, stubs, "without", out).returncode == 0
     assert (out / "repo/tests_heldout/test_greet.py").read_text() == committed
     assert not (out / "repo/tests_heldout/N").exists()
+
+
+def test_no_junit_report_is_scored_zero_not_unreadable(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (stubs / "nojunit").write_text("")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "without", out).returncode == 0
+    assert (out / "heldout.txt").read_text().startswith("passed 0/0: no junit report\n")

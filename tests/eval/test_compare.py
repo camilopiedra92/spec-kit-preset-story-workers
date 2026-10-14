@@ -649,3 +649,16 @@ def test_gate_refuses_a_run_that_collected_beyond_n(
         ["--gate", *map(str, runs)], fixtures=env["fixtures"], results=env["results"]
     )
     assert code == 2
+
+
+def test_a_run_with_no_junit_report_scores_zero(
+    env: dict[str, Path], capsys: pytest.CaptureFixture[str]
+) -> None:
+    # run.sh's line when pytest left no report: the run is scored 0 of N, not refused.
+    root = env["root"]
+    runs = nine(root)
+    (root / "with-1/heldout.txt").write_text("passed 0/0: no junit report\n")
+    (root / "with-2/heldout.txt").write_text("passed 0/0: no junit report\n")
+    code, out = verdict(env, runs, capsys)
+    assert code == 1, out
+    assert line(out, "SC-002").startswith("SC-002 FAIL") and f"0/{N}" in out

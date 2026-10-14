@@ -435,7 +435,11 @@ def main(argv: list[str], fixtures: Path = FIXTURES) -> int:
         )
         (out / "usage.txt").write_text(render(run, models, parts))
         return 0
-    except Exception:  # noqa: BLE001 - every other failure is this script's own fault
+    # Every failure not handled above is this script's own fault, and run.sh tells it
+    # apart from an unreconciled run only by exit 2, so it is caught whatever its type.
+    # It could go if run.sh read Python's own exit code for an uncaught exception
+    # instead; it already treats that as a fault (contract, usage.py's exit codes).
+    except Exception:  # noqa: BLE001
         traceback.print_exc()
         return 2
 

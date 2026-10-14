@@ -149,7 +149,7 @@ CHANGELOG and the tags.
 
 - [X] T037 Move research.md R3 (usage attribution from transcripts, reconciled on every run) to `docs/decisions/0002-usage-attribution.md` (MADR: context, options, outcome, consequences, linking R3): later evals build on it; `CLAUDE.md`'s pointer to `docs/decisions/` already covers it
 - [X] T038 Final sweep of `CLAUDE.md`: every statement true after this feature (its description line and Commands; earlier tasks edited parts of it), per the constitution's "correct it in the same commit that made it false"
-- [ ] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
+- [X] T039 `/speckit-converge` until a pass finds nothing above LOW; its tasks, if any, implemented before T040/T041
 - [ ] T040 Pass, or the owner's acceptance (spec US3 scenario 7): a fresh-context review of the whole diff, its findings fixed; then **the owner reviews the PR against constitution principles I–V** (constitution, Governance) and, on their approval, mark it ready (`gh pr ready`) and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; tag `v0.1.0` on the merge commit and push the tag
 - [ ] T041 Fail or stopped without the owner's acceptance (not this feature's outcome): a fresh-context review of the whole diff, its findings fixed; tag the measured state `measured-not-adopted-002-<date>` (fail only); then **the owner reviews the PR against constitution principles I–V** and, on their approval, mark it ready and merge with `gh pr merge --auto --squash` on green `compose (pinned)`; no version tag
 
@@ -234,3 +234,6 @@ CHANGELOG and the tags.
 Notes: T054's "so the README's $13.79 can be rebuilt" overstated it; the README and spent.txt now say
 it cannot be rebuilt from committed files. Constitution V's Check, which named the denylist paths, was
 brought to compose.sh's allowlist by a PATCH amendment (v2.0.1), on the owner's instruction.
+- [X] T066 run.sh writes `passed 0/0` when pytest leaves no junit report, so the run is scored 0 of N rather than refused; the usage.py escape hatch says what would let it go, per spec Edge Cases and the escape-hatch rule (partial)
+
+Converge pass 4 (2026-10-14): nothing above LOW; its two actionable LOWs closed by T066.
