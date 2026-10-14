@@ -215,6 +215,40 @@ def test_each_commit_clause_fails_on_its_own(tmp_path: Path, commits: str) -> No
     assert result.stdout.count("FAIL") == 1, result.stdout
 
 
+@pytest.mark.parametrize(
+    "line",
+    [
+        "- **Carried out in this session:** none",
+        "> Carried out in this session: `none`",
+        "**Carried out in this session:** none.",
+        "## Carried out in this session: none",
+    ],
+)
+def test_the_report_line_holds_whatever_markup_wraps_it(tmp_path: Path, line: str) -> None:
+    events = passing_stream(tmp_path / "repo")
+    set_result(events, result=f"All phases done.\n\n{line}\n")
+    write_out(tmp_path, events)
+    result = attribution(tmp_path)
+    assert result.returncode == 0, result.stdout
+
+
+@pytest.mark.parametrize(
+    "first_line",
+    [
+        "Phase 2: User Story 1 - Greet",
+        "**Phase 2: User Story 1 - Greet**",
+        "### Phase 2: User Story 1 - Greet",
+    ],
+)
+def test_a_phase_heading_counts_whatever_markup_wraps_it(tmp_path: Path, first_line: str) -> None:
+    events = passing_stream(tmp_path / "repo")
+    call = [e for e in events if _is_worker(e)][1]["message"]["content"][0]["input"]
+    call["prompt"] = first_line + "\n\n- [ ] T002 do it\n"
+    write_out(tmp_path, events)
+    result = attribution(tmp_path)
+    assert result.returncode == 0, result.stdout
+
+
 def test_a_status_other_than_ok_exits_2(tmp_path: Path) -> None:
     write_out(tmp_path, passing_stream(tmp_path / "repo"))
     (tmp_path / "status").write_text("not counted: exit 1\n")

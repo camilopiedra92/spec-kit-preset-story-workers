@@ -29,6 +29,7 @@ OUTPUTS = [
     "versions.txt",
     "models.txt",
     "commits.txt",
+    "report.txt",
 ]
 
 CLAUDE = r"""#!/bin/sh
@@ -46,7 +47,9 @@ here=$(dirname "$0")
 case "$1" in
   init) mkdir -p .specify .claude/skills/speckit-implement
         echo core > .claude/skills/speckit-implement/SKILL.md ;;
-  preset) echo "$@" >> "$here/specify.preset" ;;
+  preset) echo "$@" >> "$here/specify.preset"
+          [ -e "$here/specify.nocompose" ] ||
+            echo "## Story workers" >> .claude/skills/speckit-implement/SKILL.md ;;
   version) echo "specify 1.1.3" ;;
 esac
 """
@@ -98,13 +101,22 @@ def agent_call(id_: str, subagent_type: str, **input_: Any) -> dict[str, Any]:
     }
 
 
+def agent_result(id_: str, is_error: bool = False) -> dict[str, Any]:
+    block = {"type": "tool_result", "tool_use_id": id_, "content": "done", "is_error": is_error}
+    return {"type": "user", "parent_tool_use_id": None, "message": {"content": [block]}}
+
+
 def result_event(**fields: Any) -> dict[str, Any]:
     event = {
         "type": "result",
         "is_error": False,
         "result": "Carried out in this session: none",
         "modelUsage": {
-            "claude-opus-5-5": {"costUSD": 1.25},
+            "claude-opus-5-5": {
+                "costUSD": 1.25,
+                "cacheReadInputTokens": 100,
+                "cacheCreationInputTokens": 20,
+            },
             "claude-sonnet-5-5": {"costUSD": 0.5},
         },
         "permission_denials": [],
@@ -119,7 +131,11 @@ def rate_limit(utilization: float) -> dict[str, Any]:
 
 
 def stream(*, init: dict[str, Any] | None = None, results: int = 1, **result: Any) -> list[Any]:
-    reviews = [agent_call(f"r{n}", "general-purpose") for n in range(STORIES)]
+    reviews = [
+        event
+        for n in range(STORIES)
+        for event in (agent_call(f"r{n}", "general-purpose"), agent_result(f"r{n}"))
+    ]
     return [
         init or init_event(),
         rate_limit(0.5),
@@ -222,6 +238,15 @@ def test_a_checkout_with_changes_is_refused(
     assert not (tmp_path / "out").exists()
 
 
+def test_an_out_dir_inside_the_checkout_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    # Its ancestors' CLAUDE.md would load into the run.
+    out = checkout / "runs/out"
+    assert run(checkout, stubs, "with", out).returncode == 2
+    assert not out.exists()
+
+
 def test_an_ignored_file_is_not_a_change(checkout: Path, stubs: Path, tmp_path: Path) -> None:
     (checkout / "ignored.txt").write_text("x")
     assert run(checkout, stubs, "with", tmp_path / "out").returncode == 0
@@ -246,6 +271,45 @@ def test_a_missing_tool_is_refused(
 
 
 # Counting: status with the reason, no usage.txt or heldout.txt, exit 1.
+
+
+def test_an_errored_review_is_not_a_review(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    events = stream()
+    events[3] = agent_result("r0", is_error=True)
+    script(stubs, events)
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "without", out).returncode == 1
+    assert "reviews: 1 of 2" in (out / "status").read_text()
+
+
+def test_a_review_without_subagent_type_is_general_purpose(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    # The Agent tool's default type is general-purpose.
+    events = stream()
+    del events[2]["message"]["content"][0]["input"]["subagent_type"]
+    script(stubs, events)
+    assert run(checkout, stubs, "without", tmp_path / "out").returncode == 0
+
+
+def test_a_preset_that_did_not_compose_does_not_count(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (stubs / "specify.nocompose").write_text("")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 1
+    assert "preset not composed" in (out / "status").read_text()
+    assert not (stubs / "claude.args").exists()
+
+
+def test_files_git_ignores_stay_out_of_the_fixture_copy(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    (checkout / "tests/eval/fixture/ignored.txt").write_text("stray")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    assert not (out / "repo/ignored.txt").exists()
+
 
 NOT_COUNTED = [
     ("exit 1", "with", stream(), 1),
@@ -328,6 +392,8 @@ def test_a_counted_run_writes_every_output(
     assert "claude-opus-5-5 1.25" in usage
     assert "sum 1.75" in usage
     assert "five_hour 0.5 0.52" in usage
+    assert "claude-opus-5-5 1.25 cache_read 100 cache_creation 20" in usage
+    assert (out / "report.txt").read_text() == "Carried out in this session: none\n"
 
     commits = (out / "commits.txt").read_text()
     assert "fixture: work" in commits
