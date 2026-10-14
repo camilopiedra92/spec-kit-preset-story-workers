@@ -70,10 +70,16 @@ phase goes to a worker as usual. The completion report always carries
 the line `Carried out in this session: none`, or `Carried out in this session:` followed by the
 task ids and, for fix items, the phase and a short name of each.
 
-**Resume.** `tasks.md`'s `[X]` marks are the record of what is done, as in core, whatever made
-them (this preset, core, or a project that adopted the preset partway through a feature): a run
-resumes at the first phase that has a task not marked [X], and hands its worker only that phase's
-unmarked tasks. Take that phase's baseline at the last commit that changed `tasks.md` (with none, at
-HEAD) in a temporary `git worktree`, and verify the phase's commits since then as above. Uncommitted changes to files other
-than `tasks.md` go to a worker briefed with the diff, to finish or discard; uncommitted changes to
-`tasks.md` are yours to keep or drop.
+**Resume.** Where a run resumes is read from `tasks.md`'s marks as committed at HEAD, `[X]` (or
+`[x]`): core's own record of what is done, whatever made the marks (this preset, core, or a project
+that adopted the preset partway through a feature). The run resumes at the first phase that has a
+task not marked. Its baseline is the last commit whose message contains `tasks: mark phase` (the
+previous phase's marking), or HEAD when there is none: take the static checks there in a temporary
+`git worktree`, verify the phase's commits since then as above, and brief its worker with those
+commits and only the phase's unmarked tasks, so committed work is not redone. A resumed phase gets
+its own two fix hand-offs. Settle uncommitted changes first. A phase whose marks are made in the
+working tree but not committed resumes at its verification, review and marking commit, and is
+never skipped. Uncommitted changes to other files cannot be told apart between tasks already
+marked and the phase's own work: ask the user whether to commit them as finished work or hand them
+to the phase's worker, and do neither until they answer; with no one to ask (a headless run), stop
+and say why in the completion report.
