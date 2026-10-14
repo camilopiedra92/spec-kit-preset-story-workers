@@ -163,21 +163,35 @@ phrases=(
   'carry out the remaining tasks in this session'
   'Carried out in this session:'
   # Where a run starts (0.2.0, specs/003-resume-from-head): core's marks
-  # decide; nothing is reconstructed from history; uncommitted work is not the
-  # run's. One phrase per clause.
+  # decide; nothing is reconstructed from history; changes made before the run
+  # are the user's. One phrase per clause. A phrase proves the clause is there,
+  # not that no qualifier ("except ...") was added beside it: that is the
+  # reviewer's to read.
   '`[X]` or `[x]`'
+  'read from the file as core reads it'
   'where a run starts is never read from commit messages'
   'skips every phase whose tasks are all marked, wherever it falls'
-  'When every task is marked, start no worker'
+  'it starts at the first phase with an unmarked task, at Phase 1 when none is marked'
+  'When every task is marked, start no worker, commit nothing'
+  "Each phase's baseline is taken as Verification says"
+  "Before a phase's first worker, record HEAD"
   "the phase's unmarked tasks"
   'may already be done, in whole or in part'
+  'check each against the code and `git log`'
   'complete only what is missing'
   'tasks found already done'
+  'the static checks and its reading of the commit or file the worker cites'
   'staging only the files it changed, never `git add -A` or `-a`'
-  'Changes uncommitted when the run starts are not the run'
+  "(Phase 1's worker only)"
+  'record `git status --porcelain`'
   'neither asks about them nor stops for them'
+  'no worker edits, stages, commits or reverts them'
+  'carry `tasks.md` as it stands'
+  'A task that needs a file changed before the run'
   'the commits made since the recorded HEAD'
-  'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff.'
+  'lists nothing beyond that record and `tasks.md`'
+  'In a git repository the completion report carries the line'
+  'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
