@@ -1,0 +1,26 @@
+All five tasks (T001–T005) are done and marked `[X]` in `tasks.md`. The suite passes (14 tests) and `uv run ruff check` is clean.
+
+**What was built**
+- **`src/wordstats.py`** has three functions:
+  - `tokenize`, the word definition from FR-001, written as one regex;
+  - `count_words`, which counts what `tokenize` returns;
+  - `top_words`, which counts words case-insensitively and sorts by count descending, then word ascending. It returns at most n pairs and raises `ValueError` when n is negative.
+- **Tests:** `tests/test_count_words.py` (7 tests) and `tests/test_top_words.py` (7 tests). There is one test per acceptance scenario, and each story's tests were seen failing before its code was written.
+
+**How it ran**
+- **One worker per phase:** each phase went to a single worker, one after another. Each task got its own commit with the `fixture:` prefix. After each phase I ran the suite and ruff myself and read the diff from the phase's starting commit before marking its tasks and committing `tasks.md` (`tasks: mark phase 1/2/3`).
+- **Story reviews:** as CLAUDE.md requires, a separate agent checked each story against `spec.md` once its tasks were done. Neither review found anything that fails the spec, so no fixes were needed.
+- **Phase 1:** with no tests yet, the suite ran and collected nothing, which is all T001 asks for. Note that pytest exits with code 5 when it collects no tests, so a CI job that requires exit 0 would have failed at that point.
+
+**Spec ambiguities the reviews raised.** The spec's wording doesn't decide these, so they don't count as failures:
+- **Curly apostrophe:** a typographic apostrophe (`’`, U+2019) splits a word. `count_words("don’t")` gives 2, while `"don't"` gives 1.
+- **Number symbols:** fractions and Roman numerals count as words. `count_words("½")` gives 1.
+- **Combining marks:** accent marks typed as separate characters split words. Hindi `"हिन्दी"` counts as 3 words instead of 1.
+- **ß:** `top_words` lower-cases with `.lower()`, so `"Straße"` and `"STRASSE"` are counted as different words.
+- **Sort order:** ties are sorted by raw character code, so accented words sort after `z`.
+
+If any of these should behave differently, the spec needs to say so first, for example through `/speckit-clarify`.
+
+There were no checklists and no `.specify/extensions.yml`, so no hooks ran before or after implementation. The constitution is still the unfilled template, so it added no rules. The project's instructions name both commands that were run (suite and static check), so nothing was left unchecked.
+
+Carried out in this session: none

@@ -98,6 +98,8 @@ if [ "$arm" != without ]; then
   port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
   python3 -m http.server "$port" --bind 127.0.0.1 --directory "$www" > /dev/null 2>&1 &
   server=$!
+  # Killed by the EXIT trap; disowned so bash does not report it as a job.
+  disown "$server"
   for _ in $(seq 50); do
     curl -sf -o /dev/null "http://127.0.0.1:$port/preset.zip" && break
     sleep 0.1

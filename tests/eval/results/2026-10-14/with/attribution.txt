@@ -1,0 +1,26 @@
+ok   main session writes only tasks.md
+ok   modelUsage has a Sonnet entry
+ok   every worker call in the foreground
+ok   each phase opens a worker's brief
+ok   no worker starts while another is open
+ok   a commit changes code
+ok   code commits start with fixture:
+ok   report says Carried out in this session: none
+ok   no permission denials
+
+main session's Bash commands:
+  cd "$PWD"; ls -a; cat .specify/extensions.yml 2>&1; .specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks; git log --oneline
+  ls -R specs .claude; cat specs/001-wordstats/*.md; cat .gitignore pyproject.toml; ls .specify/memory 2>&1; cat .claude/settings*.json 2>&1
+  cat .specify/memory/constitution.md | head -50; git rev-parse HEAD; uv run ruff check; echo "ruff=$?"; uv run pytest 2>&1 | tail -3
+  git log --oneline 67ea923..HEAD; git diff 67ea923 --stat; git diff 67ea923; git status --short; uv run pytest 2>&1 | tail -2; echo "pytest=$?"; uv run ruff check; echo "ruff=$?"
+  sed -i '' 's/^- \[ \] T001/- [X] T001/' specs/001-wordstats/tasks.md && git add specs/001-wordstats/tasks.md && git commit -q -m "fixture: tasks: mark phase 1
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git log --oneline -1 && git rev-parse HEAD && uv run ruff check
+  git log --oneline f97df1f..HEAD; git status --short; git diff f97df1f; uv run pytest -q 2>&1 | tail -2; uv run ruff check
+  sed -i '' -e 's/^- \[ \] T002/- [X] T002/' -e 's/^- \[ \] T003/- [X] T003/' specs/001-wordstats/tasks.md && git add specs/001-wordstats/tasks.md && git commit -q -m "fixture: tasks: mark phase 2
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git rev-parse --short HEAD && uv run ruff check
+  git log --oneline f8c822b..HEAD; git status --short; git diff f8c822b; uv run pytest -q 2>&1 | tail -2; uv run ruff check
+  sed -i '' -e 's/^- \[ \] T004/- [X] T004/' -e 's/^- \[ \] T005/- [X] T005/' specs/001-wordstats/tasks.md && git add specs/001-wordstats/tasks.md && git commit -q -m "fixture: tasks: mark phase 3
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git log --oneline && grep -c '\[ \]' specs/001-wordstats/tasks.md; git status --short

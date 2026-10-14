@@ -1,0 +1,33 @@
+commit fb2513d3dba5e767143ee18ad27fdb7c7fb4a7ad
+fixture: add wordstats module and tests package
+
+src/wordstats.py
+tests/conftest.py
+commit f97df1fe825520efa21e14074b1afe0755a08bf7
+fixture: tasks: mark phase 1
+
+specs/001-wordstats/tasks.md
+commit af32043e8153829a9a595348c81220a66f716194
+fixture: add count_words tests for user story 1
+
+tests/test_count_words.py
+commit 16aa4585f6dd8e6f7293cfd7e9652d613ee4505b
+fixture: implement tokenizer and count_words
+
+src/wordstats.py
+commit f8c822b61927d55c8eed2a0685b2a5a958f8a726
+fixture: tasks: mark phase 2
+
+specs/001-wordstats/tasks.md
+commit b21ac257d679dd18b23c9223b970b478df73bb8b
+fixture: add top_words tests for user story 2
+
+tests/test_top_words.py
+commit cbd71d7437b704a96cbd12235019113fb3550905
+fixture: implement top_words
+
+src/wordstats.py
+commit e5637b9346697c039b75aa75fb72017f45ebcdab
+fixture: tasks: mark phase 3
+
+specs/001-wordstats/tasks.md

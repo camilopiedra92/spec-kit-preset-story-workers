@@ -1,0 +1,3 @@
+claude-opus-5-5 0.5985347999999999 cache_read 475794 cache_creation 51363
+sum 0.5985347999999999
+five_hour 0.08 0.09
