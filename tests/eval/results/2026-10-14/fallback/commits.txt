@@ -1,0 +1,34 @@
+commit ffec2ad2b6796962f49b98b132627879abdca3b9
+fixture: T001 set up src/wordstats.py and tests/
+
+.gitignore
+src/wordstats.py
+tests/conftest.py
+commit 43bcbba535715b849d085613bd2d15f347fa28ff
+fixture: tasks: mark phase 1
+
+specs/001-wordstats/tasks.md
+commit 634d948626b066e47854610c645a89c4cd176ecd
+fixture: T002 tests for count_words (User Story 1)
+
+tests/test_count_words.py
+commit 6942906a22a3049358061535af7c078f7ab0d4e3
+fixture: T003 tokenizer and count_words
+
+src/wordstats.py
+commit c62724422a60fdc9e7488a980a80a16e09c99a3c
+fixture: tasks: mark phase 2
+
+specs/001-wordstats/tasks.md
+commit f1ebb47d742094dafd57bb0322025553f4f1824c
+fixture: T004 tests for top_words (User Story 2)
+
+tests/test_top_words.py
+commit 35c3f0b51885d6e0aba55a28c9ce0620fc93cd07
+fixture: T005 top_words on the shared tokenizer
+
+src/wordstats.py
+commit 5c29e0b44bc32d2e5b662cf77df697c9dde482a6
+fixture: tasks: mark phase 3
+
+specs/001-wordstats/tasks.md

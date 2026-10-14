@@ -1,0 +1,16 @@
+All five tasks are done and marked `[X]`: the suite passes (11 tests) and ruff is clean. **But the review CLAUDE.md requires after each user story did not run.** That review needs a fresh `general-purpose` subagent, and this session has no Agent tool to start one. Reviewing the code myself wouldn't count, because I wrote it. So no independent check of either story against `spec.md` has been done yet.
+
+**Carried out in this session:** T001, T002, T003, T004, T005. The story-workers process hands each phase to a separate worker, but with no Agent tool there was no way to start one, so I wrote all the code here myself.
+
+**What was built**
+- **Phase 1 (T001):** created `src/wordstats.py` and `tests/conftest.py`, and added `*.pyc`, `dist/`, `*.egg-info/` and `.DS_Store` to `.gitignore`.
+- **Phase 2, User Story 1 (T002–T003):** tests for every scenario, confirmed failing first. Then one word tokenizer, shared by both functions, following FR-001: runs of letters and digits, with an apostrophe kept only between two of them. `count_words` is built on it.
+- **Phase 3, User Story 2 (T004–T005):** tests confirmed failing first. Then `top_words`: words in lower case, sorted by count (highest first) then alphabetically, cut to `n`, and `ValueError` when `n` is negative.
+
+**How each phase was checked:** I ran `uv run pytest` and `uv run ruff check` and found no new ruff findings. I also read the diff to confirm it only changed what the phase's tasks asked for. Each task has its own commit, followed by a `fixture: tasks: mark phase <n>` commit.
+
+**Other notes**
+- There are no checklists in `specs/001-wordstats/` and no `.specify/extensions.yml`, so no checklist gate or extension hooks applied.
+- The apostrophe rule only covers the plain `'` character. The typographic `’` splits a word in two, because the spec doesn't mention it.
+
+**Next step:** run the two missing reviews in a session that has the Agent tool, checking `6942906` (User Story 1) and `35c3f0b` (User Story 2) against `spec.md`.

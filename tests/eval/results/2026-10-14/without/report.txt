@@ -1,0 +1,12 @@
+I've implemented both user stories and marked all 5 tasks `[X]` in `tasks.md`. `uv run pytest` passes all 12 tests and `uv run ruff check` is clean.
+
+**What was built:**
+- **Setup (T001):** `src/wordstats.py`, and `tests/conftest.py` with only a docstring. I also added `*.pyc`, `dist/`, `*.egg-info/` and `.DS_Store` to `.gitignore`.
+- **Story 1, counting words (T002–T003):** `tests/test_count_words.py` has one test per acceptance scenario, and I saw it fail before writing any code. `count_words` uses one shared tokenizer, the regex `[^\W_]+(?:'[^\W_]+)*`. That means runs of letters and digits, joined by an apostrophe only when it sits between two of them.
+- **Story 2, most frequent words (T004–T005):** `tests/test_top_words.py` has one test per acceptance scenario, also seen failing first. `top_words` uses the same tokenizer and lower-cases the words. It orders them by count, most frequent first, with ties in alphabetical order, and returns at most `n` pairs. It returns `[]` when `n` is 0 and raises `ValueError` when `n` is negative.
+
+**Reviews:** as `CLAUDE.md` asks, a fresh subagent checked each story against `spec.md` after its tasks were done. Neither review found anything that falls short of the spec. The first review raised two cases the spec doesn't decide; I left both as they are:
+- **Curly apostrophe:** only the plain `'` joins words, so `don’t` written with `’` counts as two words.
+- **Separately stored accents:** an accent stored as its own character after a letter (rather than as one combined character) splits the word.
+
+**Not done:** I haven't committed anything; everything is uncommitted on `master`. If you want commits, they'll start with `fixture:` as the project convention requires. There's no `.specify/extensions.yml`, so there were no hooks to run before or after.

@@ -1,0 +1,31 @@
+schema_version: "1.0"
+
+# Appends to core speckit-implement rather than replacing it, so upstream
+# changes to the rest of it keep arriving. The fragment carries no frontmatter:
+# a description there replaces the skill's own. tests/compose.sh checks this
+# against the real CLI.
+
+preset:
+  id: "story-workers"
+  name: "Story workers"
+  # Pre-release: measured on 2026-10-14 and not adopted (README); no version is tagged.
+  version: "0.1.0"
+  description: "/speckit-implement hands each phase of tasks.md to a worker subagent on Sonnet; the main session verifies, reviews and decides, and falls back to core when a worker cannot carry on"
+  author: "camilopiedra92"
+  repository: "https://github.com/camilopiedra92/spec-kit-preset-story-workers"
+  license: "MIT"
+
+requires:
+  speckit_version: ">=1.1.0"
+
+provides:
+  templates:
+    - type: "command"
+      name: "speckit.implement"
+      file: "commands/speckit.implement.md"
+      description: "One foreground Sonnet worker per phase; [X] only after the main session's own suite, static checks and diff reading; fixes to workers, reviews on the session's family, core as the fallback"
+      strategy: "append"
+
+tags:
+  - "implement"
+  - "subagents"

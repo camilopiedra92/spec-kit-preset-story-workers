@@ -1,0 +1,4 @@
+claude-opus-5-5 0.7532080000000003 cache_read 611585 cache_creation 52760
+claude-sonnet-5-5 0.2320418 cache_read 238598 cache_creation 59752
+sum 0.9852498000000003
+five_hour 0.09 0.11
