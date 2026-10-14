@@ -185,22 +185,30 @@ phrases=(
   "(Phase 1's worker only)"
   'neither asks about them nor stops for them'
   'the commits made since the recorded HEAD'
-  'In a git repository the completion report carries the line'
   # A clean tree outside the feature directory (the third review's design).
   'commits what Project Setup Verification changes in a commit of its own'
   'never edits, stages, commits or reverts a file in the feature directory'
   'run before its own suite and static-check runs, lists nothing outside the feature directory'
   'goes back to it as a finding'
   'Outside the items this session carries out, your only edits'
-  'Before the first worker, run `git status --porcelain --untracked-files=all`'
   'When it lists a path outside the feature directory'
   'carry out the run in this session as core does'
   'they are not a finding'
   'no worker edits, stages, commits or reverts a file there'
   'carry `tasks.md` as it stands, its earlier edits included'
   'A task that changes a file in the feature directory is carried out in this session as core does'
-  "it commits before the next phase's worker starts"
   '`tasks: carried out in this session`'
+  'uncommitted changes stay as they are'
+  'and left uncommitted, as core leaves it'
+  'What this session changes outside the feature directory while carrying out'
+  'leaves a task that needs one unfinished, saying so'
+  'and `git status --porcelain --untracked-files=all`, run before its own suite'
+  'except one that changes the feature directory, which this session carries out'
+  'any file the suite or the static checks generate that git does not ignore'
+  "Before the first worker and before any of the run's own suite or static-check runs"
+  'it commits as soon as it has carried them out, before any later Verification or worker'
+  "Commits that core's extension hooks make are core's"
+  'When a phase went to a worker, the completion report carries the line'
   'uncommitted changes outside the feature directory'
   'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
   # Each narrowed core rule, named by its exact text (constitution I).
@@ -216,7 +224,8 @@ done
 for phrase in 'A run starts at the phase after the last commit whose message contains' \
   'on resume, the uncommitted diff' 'temporary `git worktree`' 'Resumed at phase' \
   "the baseline is HEAD at the run's start" 'what earlier workers finished' \
-  'Changes made before the run' 'beyond that record'; do
+  'Changes made before the run' 'beyond that record' \
+  "it commits before the next phase's worker starts"; do
   ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
