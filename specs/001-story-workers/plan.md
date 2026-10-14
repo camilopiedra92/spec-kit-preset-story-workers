@@ -21,7 +21,7 @@ on. On a pass, the owner's setup adopts it (dotfiles, existing projects).
 `tests/eval/run.sh`, `tests/eval/probes.sh`); Python 3.11+ for `tests/eval/attribution.py` and `tests/eval/bounded.py`.
 
 **Primary Dependencies**: Spec Kit CLI (`SPECKIT_PINNED` v1.1.0 in CI, as the sibling presets; 1.1.3
-locally); Claude Code 2.1.296 for the observations and the eval; `jq`; dev only: ruff, mypy, pytest,
+locally); Claude Code 2.1.296–2.1.299 for the observations (R1 names each one's), and whatever the eval runs on, recorded in its `versions.txt`; `jq`; dev only: ruff, mypy, pytest,
 pytest-timeout through uv.
 
 **Storage**: N/A.

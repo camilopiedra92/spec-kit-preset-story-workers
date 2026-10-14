@@ -12,7 +12,7 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    the previous one's verification; never two at once; `[P]` tasks run inside their phase's worker.
 2. **The call**: `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`,
    `run_in_background: false`.
-3. **The brief** (spec FR-003): opens with the phase's heading as `tasks.md` writes it; the phase's tasks, and for a fix the finding, on resume the
+3. **The brief** (spec FR-003): "opens with the phase's heading" as `tasks.md` writes it; the phase's tasks, and for a fix the finding, on resume the
    uncommitted diff; the feature directory; the suite and static-check commands (the project's
    instructions, else `plan.md`'s Technical Context); what earlier workers finished; "follow core's"
    `Load and analyze the implementation context`, `Project Setup Verification` (first phase only),
@@ -90,7 +90,7 @@ Reads `stream.jsonl` and `commits.txt`, checks every clause of SC-003 and prints
 what failed: the main session's (no `parent_tool_use_id`) Write, Edit and NotebookEdit calls not on
 the feature's `tasks.md`; a Sonnet entry in `modelUsage`; every main-session Agent call with
 `model: "sonnet"` has `run_in_background: false`; each `## Phase` heading of the fixture's `tasks.md`
-appears in the prompt of at least one of them; and none starts while another has no `tool_result`
+is the first line of at least one of their prompts; and none starts while another has no `tool_result`
 yet (R1 17); the commits after the setup commit that
 change more than `tasks.md` (at least one, each starting with `fixture:`); the `Carried out in this
 session: none` line; no `permission_denials`. Then it lists the main session's Bash commands. Exit 0

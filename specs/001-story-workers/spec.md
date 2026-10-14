@@ -285,7 +285,7 @@ its own.
   NotebookEdit call the main session makes targets the feature's `tasks.md` (its shell commands are
   listed beside the result, for a reviewer to confirm none writes code); `modelUsage` has a Sonnet
   entry; every worker call (`model: "sonnet"`) is in the foreground (`run_in_background: false`),
-  each phase heading of the fixture's `tasks.md` opens the brief of at least one of them, and none
+  each phase heading of the fixture's `tasks.md` is the first line of at least one of their briefs, and none
   starts while another has not returned its result (FR-001); among the commits after the setup commit, at least one changes more than `tasks.md`, and
   every such commit's message starts with `fixture:`; the completion report says `Carried out in this
   session: none`; and the result has no `permission_denials` (a worker reaching for a tool outside
