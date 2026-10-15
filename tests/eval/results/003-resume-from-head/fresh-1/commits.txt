@@ -1,0 +1,150 @@
+commit ab8e105c0a9242ea4b7b48c929a2f1e177a45c03
+fixture: T001 create checkout package and tests conftest
+
+src/checkout/__init__.py
+tests/conftest.py
+commit 678617c0e496c6a4ee9ffdfb116adb7008cc538c
+fixture: tasks: mark phase 1
+
+specs/001-checkout/tasks.md
+commit 5d693f494d4de90b8b39d188d3a8c6f27fc5e2a1
+fixture: T002 write tests/test_catalog.py
+
+tests/test_catalog.py
+commit 5d0648eab8125f4d6892b50f91e4a653f9b1c5c9
+fixture: T003 write tests/test_cart.py
+
+tests/test_cart.py
+commit 6b0f934bde358020722b05f8b548f370a2ce911a
+fixture: T004 write tests/test_tax.py
+
+tests/test_tax.py
+commit 18cdeff605e4b44cbff9dec6d9295f6fb210a6f7
+fixture: T005 write tests/test_pricing.py
+
+tests/test_pricing.py
+commit 405cf7eebb8003d2c0b9381ef5da9a381d3883ef
+fixture: T006 implement apply_rate in money.py
+
+src/checkout/money.py
+commit 693d2ccd4827a977e1d0a289747d579fdf7671df
+fixture: T007 implement UnknownSku, Product and Catalog
+
+src/checkout/catalog.py
+commit aabd8d4d1d8a24876aa7cc9d1d4d3dd981c45256
+fixture: T008 implement line_unit_price
+
+src/checkout/catalog.py
+commit 4c1485c3f64a794bf82fea8b6044c96508eee56f
+fixture: T009 implement UnknownCategory, TaxTable and line_tax
+
+src/checkout/tax.py
+commit 8e04f7653e447a5b5d4b2701c81766da8ee5fddd
+fixture: T010 implement InvalidQuantity, CartLine and Cart
+
+src/checkout/cart.py
+commit c16360e79ce897848fbf010cb719670e51ea1024
+fixture: T011 implement PricedLine, Receipt and price without promotions
+
+src/checkout/cart.py
+commit 46265aa72cb99abfb2e96ec6fc900f9a8c59f3a7
+fixture: T011 ruff fixes in US1 tests
+
+tests/test_cart.py
+tests/test_catalog.py
+tests/test_tax.py
+commit dbdf8a59ea02703f78158af0646585a51745d9ca
+fixture: tasks: mark phase 2
+
+specs/001-checkout/tasks.md
+commit f5ff9318ed66b6cdccebe861d4c385c2f8e15b93
+fixture: T012 write tests/test_promotions.py
+
+tests/support.py
+tests/test_promotions.py
+commit c9719116dbdc60629cfc8bbd7ab3dcec659b92cb
+fixture: T013 write tests/test_allocation.py
+
+tests/test_allocation.py
+commit 69e382195bdc82abd6ec11d188274d0576f1bf62
+fixture: T014 write tests/test_exclusivity.py; T012-T014 fail (no promotions or allocation module)
+
+tests/test_exclusivity.py
+commit 9e339b7f805776edebe59bb2a9784769a8835558
+fixture: T015 implement allocate
+
+src/checkout/allocation.py
+commit a1be526d6442331a9e2c69572eb6662206e8d674
+fixture: T016 implement promotions and the stacking order in line_discounts
+
+src/checkout/promotions.py
+commit a67d56a62e501014c86c3bba6f3cbc98064412a8
+fixture: T017 add the minimum net to line_discounts
+
+src/checkout/promotions.py
+commit 59920f2db39b5618ba12b2e9ada4178eb0900cd6
+fixture: T018 add the discount cap to line_discounts
+
+src/checkout/promotions.py
+commit 860bb9125190d7d8816885f2f895796556df091a
+fixture: T019 keep the free units of buy X get Y outside the discount cap
+
+src/checkout/promotions.py
+commit d7be8e9c6ef36a98eebf09bbf779a73b341eac43
+fixture: T020 add exclusivity and its tie-breaks to line_discounts
+
+src/checkout/promotions.py
+commit b1d08661f6f2a2c7ba6f67d44710321f4d2d5c32
+fixture: T021 price with promotions and the discount cap in price
+
+src/checkout/cart.py
+commit 67fddbb92e249b365f69fc55e0b59fda6d33a58f
+fixture: T021 ruff fixes in US2 tests
+
+tests/test_allocation.py
+tests/test_exclusivity.py
+tests/test_promotions.py
+commit 0bd11431eca4f3bdaa1dcb26f98f8fc4294358be
+fixture: tasks: mark phase 3
+
+specs/001-checkout/tasks.md
+commit 3339a9a3676e9d79d5763d0e91085e462038c0f2
+fixture: T022 write tests/test_returns.py
+
+tests/test_returns.py
+commit 9c5b94dcbf416c391577691a2daee48d0b528a83
+fixture: T023 write tests/test_return_rejections.py
+
+tests/test_return_rejections.py
+commit 92cc641fcfdfcea43b53d1f88a8b8ec1e13a629f
+fixture: T024 write tests/test_return_fees.py; T022-T024 fail (no returns module)
+
+tests/test_return_fees.py
+commit 224acba32746265cdac6cdf5d760a8b2add4fa0b
+fixture: T025 implement per_unit in allocation.py
+
+src/checkout/allocation.py
+commit b112eae30281a91b3e74f19f21037324d0f86e47
+fixture: T026 add unit_nets and unit_taxes to PricedLine, filled by price
+
+src/checkout/cart.py
+commit 5ff74dd7856e18e76235363be8495a9932896ac0
+fixture: T027 implement Refund, Order and Order.return_units
+
+src/checkout/returns.py
+commit e66efb46e7eb052f1451d081ca238241332bf22e
+fixture: T028 add OverReturn and the rejections of Order.return_units
+
+src/checkout/returns.py
+commit 90cbc581127079b8eaf2753b99fb24755cd6aa0a
+fixture: T029 add the restocking fee to returns
+
+src/checkout/returns.py
+commit bac5a80fa4bc95d8633355fc1cad05008ef1f5ec
+fixture: T030 add the fee cap across the order's returns
+
+src/checkout/returns.py
+commit 0e5f2ddc275556783935b8415494936128ef93a1
+fixture: tasks: mark phase 4
+
+specs/001-checkout/tasks.md

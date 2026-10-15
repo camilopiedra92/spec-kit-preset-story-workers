@@ -2,6 +2,8 @@
 # repository (streams and transcripts, which price the probes and runs, are not committed).
 dirty-1 1.9879180
 doc-1 1.9109505
+fresh-1 2.2684014
+fresh-v010-1 2.8205710
 probes/r1-1.jsonl 0.0929127
 probes/r1-10.jsonl 0.0923968
 probes/r1-11.jsonl 0.0463580
@@ -18,4 +20,4 @@ probes/r1-8-max.jsonl 0.1084027
 probes/r1-9.jsonl 0.0808772
 v010-1 2.2903088
 with-1 1.9713409
-spent 9.5220161
+spent 14.6109885

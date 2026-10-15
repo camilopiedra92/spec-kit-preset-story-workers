@@ -8,7 +8,8 @@ All notable changes to this preset are recorded here, in the form of
 
 Measured against `v0.1.0` in [Eval 003](README.md#eval-003-2026-10-14): on a feature adopted with
 Phases 1–2 done, `0.2.0` started at Phase 3 and passed its nine checks, in three states; `v0.1.0`
-re-verified the finished Phase 2 (a review, a fix worker, an empty mark commit). One run per arm, directional.
+re-verified the finished Phase 2 (a review, a fix worker, an empty mark commit). On a fresh feature
+both passed every held-out test and `0.2.0` every check. One run per arm, directional.
 
 ### Changed
 

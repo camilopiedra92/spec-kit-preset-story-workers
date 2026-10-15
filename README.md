@@ -106,10 +106,11 @@ checks). Spec, plan and research (the reviews' findings are summarised in its Cl
 research R1 and R4): `specs/003-resume-from-head/`.
 
 **Runs.** One counted run per arm, no rerun: directional. The probes ran first: 14 ok on Claude Code
-2.1.300 (`probes.txt`). The fragment under measurement, `0.2.0`'s (`preset.yml` still read `0.1.0`
-at those commits), is the same in its three runs and in this release (`git diff e7cfbf0 288a34f -- commands/ preset.yml` is empty, and so is `git diff 288a34f -- commands/`
-since); `v0.1.0`
-was installed from its tag's archive (`run.sh --preset v0.1.0`). Outputs:
+2.1.300 (`probes.txt`). The fragment under measurement is `0.2.0`'s: the same in `with-1`, `doc-1` and
+`dirty-1` (`git diff e7cfbf0 288a34f -- commands/ preset.yml` is empty; `preset.yml` still read
+`0.1.0` there); the fresh runs' commit `8a2fdbe` differs from it only by bold markup on one
+cross-reference in Hand-offs, and is the released fragment (`git diff 8a2fdbe -- commands/` is
+empty since). `v0.1.0` was installed from its tag's archive (`run.sh --preset v0.1.0`). Outputs:
 `tests/eval/results/003-resume-from-head/` (no streams or transcripts: they carry local paths and
 session ids). `resume_check.py` cannot be rerun from these files: it also reads the stream and the
 run's working tree, neither committed; the verdicts are recorded, each run's `resume.txt`.
@@ -120,8 +121,10 @@ run's working tree, neither committed; the verdicts are recorded, each run's `re
 | `v010-1` | `v0.1.0` | `phase-2-done` | 5 of 9 | 59/59 | $2.290 |
 | `doc-1` | `0.2.0` (`288a34f`) | `phase-2-done-doc-task` | 9 of 9 | 59/59 | $1.911 |
 | `dirty-1` | `0.2.0` (`288a34f`) | `phase-2-done-dirty` | 9 of 9 | 59/59 | $1.988 |
+| `fresh-1` | `0.2.0` (`8a2fdbe`) | none (fresh run) | 9 of 9 | 59/59 | $2.268 |
+| `fresh-v010-1` | `v0.1.0` | none (fresh run) | 8 of 9 | 59/59 | $2.821 |
 
-Spent with the probes: $9.52 (`spent.txt`).
+Spent with the probes: $14.61 (`spent.txt`).
 
 **What it showed.**
 
@@ -144,10 +147,11 @@ Spent with the probes: $9.52 (`spent.txt`).
   covers it. `0.2.0` does not re-read work committed before the run, by design, and says so in its
   report; `doc-1`'s review noted the same gap without acting on it, as outside its phase. A run that
   starts partway through a feature trusts its finished phases to their own verification.
-- **Not measured**: a fresh `0.2.0` run (no task marked). The rules every run now follows (staging
-  only a worker's own files, Project Setup Verification's own commit, the clean-tree start check,
-  Verification reading commits, the main session's commits) ran in the three runs above; a run from
-  Phase 1 is covered only by `tests/compose.sh`'s clause phrases.
+- **A fresh run, with and without the rule** (what it must not make worse): on `checkout` with no
+  task marked, `0.2.0` started at Phase 1 and passed the nine checks; `v0.1.0` passed eight, failing
+  only `report names the start`, since its report has no such line. Both: 59/59 held-out, every task
+  marked, no question. Costs, $2.27 for `0.2.0` against $2.82 for `v0.1.0`, are one run each:
+  directional, not a measured saving.
 
 **Versions.** Spec Kit `specify` 1.1.3; Claude Code 2.1.300; main session `claude-opus-5-5`
 (effort medium), workers `claude-sonnet-5-5` (effort medium), reviews `claude-opus-5-5`; git 2.56.0;

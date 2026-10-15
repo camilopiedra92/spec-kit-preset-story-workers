@@ -1,0 +1,19 @@
+Checkout pricing is fully built: all 30 tasks in `specs/001-checkout/tasks.md` are done and marked, the suite passes (65 tests) and `uv run ruff check` reports no problems.
+
+| Phase | Tasks | Verification |
+|---|---|---|
+| 1 Setup | T001 | the suite and ruff run |
+| 2 US1: price a cart with tax | T002–T011 | 20 tests pass, ruff clean, review found nothing it could prove |
+| 3 US2: promotions | T012–T021 | 50 tests pass, ruff clean, review found nothing it could prove |
+| 4 US3: returns | T022–T030 | 65 tests pass, ruff clean, review found nothing it could prove |
+
+- **How it ran:** each phase went to its own worker agent, in order, and each task got its own commit. The tests for each story were written first and seen failing. For every phase I checked the commits, the suite, ruff and that nothing was left uncommitted outside the feature directory before marking it. The `tasks.md` updates are in commits `678617c`, `dbdf8a5`, `0bd1143` and `0e5f2dd`.
+- **Reviews:** as `CLAUDE.md` asks, each story ended with a fresh review against `spec.md`. None needed a fix.
+- **One suspicion I did not act on:** the US1 review noticed that `Cart.add` accepts non-whole quantities such as `1.5` or `True`, which gives amounts in fractions of a cent. `plan.md` declares the quantity as an `int` and no scenario uses one, so I left it. If you want "a whole number" enforced at runtime, it needs a new task.
+- **Test gaps, behaviour correct:** a few in-between figures in the spec aren't asserted directly. Examples are US3-2's per-unit taxes 34/33/33 and US3-6's net and tax split. The reviews checked each of these by hand and the code is correct.
+- **Extra test helper:** the US2 worker added `tests/support.py`, which holds the shared catalog and tax table, though no task called for it.
+- **Hooks:** there is no `.specify/extensions.yml`, so no hooks ran before or after.
+
+Started at phase 1: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.
+
+Carried out in this session: none
