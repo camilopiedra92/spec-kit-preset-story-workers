@@ -441,3 +441,45 @@ def test_a_state_chain_deeper_than_five_is_refused(
     )
     assert code == 2
     assert "more than 5 deep" in capsys.readouterr().err
+
+
+# A fresh run (no state): the same checks, the start at Phase 1.
+
+PHASE_1 = "## Phase 1: User Story 1 - One (Priority: P1)"
+FRESH_REPORT = (
+    "Started at phase 1: work committed before this run was covered by the whole suite, "
+    "not read as a diff, its static-check findings in the baseline."
+)
+
+
+def fresh_run(fixtures: Path, root: Path, **over: Any) -> Path:
+    args: dict[str, Any] = {
+        "state": "-",
+        "briefs": [f"{PHASE_1}\n\nTasks T001, T002.", f"{PHASE_2}\n\nTasks T003, T004."],
+        "final": TASKS.replace("- [ ]", "- [X]"),
+        "report": FRESH_REPORT,
+    }
+    return write_run(fixtures, root, **{**args, **over})
+
+
+def test_a_fresh_run_passes(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out = check(fixtures, fresh_run(fixtures, tmp_path), capsys)
+    assert code == 0, out
+    assert "ok first brief opens the first unfinished phase" in out
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"briefs": [f"{PHASE_2}\n\nTasks T003, T004."]},
+        {"report": "Carried out in this session: none"},
+    ],
+    ids=["skipped-phase-1", "no-start-line"],
+)
+def test_a_fresh_run_that_skips_or_omits_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], over: dict[str, Any]
+) -> None:
+    code, _ = check(fixtures, fresh_run(fixtures, tmp_path, **over), capsys)
+    assert code == 1

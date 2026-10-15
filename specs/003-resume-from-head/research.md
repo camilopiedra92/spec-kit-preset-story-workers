@@ -97,6 +97,12 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   a fresh review of User Story 1, then a fix worker on Phase 2 that changed `cart.py` and
   `tests/test_cart.py`, then an empty `tasks: mark phase 2` commit; it left the uncommitted note
   alone by its own judgement. It failed four checks, not `uncommitted changes untouched`.
+- **A fresh run, with and without the rule** (owner, 2026-10-14, convergence T026): constitution
+  III asks what the rule must not make worse, and every run follows 0.2.0's new rules (staging,
+  Project Setup Verification's commit, Verification reading commits, the start check). One `0.2.0`
+  and one `v0.1.0` run on `checkout` with no state, judged by the same checks (`state: -`: the start
+  at Phase 1); `v0.1.0` is expected to fail only `report names the start`, its report having no
+  such line; held-out, marks, questions and cost compared side by side.
 - **What counts as a worker**: a main-session Agent call whose brief opens with one of the state's
   phase headings, whatever model it names (a review's prompt opens otherwise); `every task marked`
   requires each task the state names, present and marked, in the final `tasks.md`. A plain-text

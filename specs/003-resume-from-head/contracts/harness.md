@@ -69,4 +69,5 @@ brief opens a finished phase`, `every task marked`, `no question asked`, `held-o
 names the start` (FR-005's whole line), `feature-directory tasks carried out in this session`. When
 the state leaves a path uncommitted outside the feature directory, the run is core's: `no worker
 started` and `report names the paths outside the feature directory` replace the first-brief and
-start-line checks. Exit 0 all ok, 1 one fails, 2 unreadable input or a status other than `ok`.
+start-line checks. With no state (`state: -`), a fresh run: the project's own `tasks.md`, no
+finished phase, so the start is Phase 1. Exit 0 all ok, 1 one fails, 2 unreadable input or a status other than `ok`.

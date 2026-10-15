@@ -16,6 +16,11 @@ tests/eval/run.sh --state phase-2-done-doc-task checkout with "$A/doc-1"
 uv run python tests/eval/resume_check.py "$A/doc-1" | tee "$A/doc-1/resume.txt"
 tests/eval/run.sh --state phase-2-done-dirty checkout with "$A/dirty-1"
 uv run python tests/eval/resume_check.py "$A/dirty-1" | tee "$A/dirty-1/resume.txt"
+# A fresh run, with and without the rule (T026, constitution III: what it must not make worse).
+tests/eval/run.sh checkout with "$A/fresh-1"
+uv run python tests/eval/resume_check.py "$A/fresh-1" | tee "$A/fresh-1/resume.txt"
+tests/eval/run.sh --preset v0.1.0 checkout with "$A/fresh-v010-1"
+uv run python tests/eval/resume_check.py "$A/fresh-v010-1" | tee "$A/fresh-v010-1/resume.txt"
 ```
 
 Passes when `resume_check.py` exits 0 on `with-1`, `doc-1` and `dirty-1` (its nine checks:

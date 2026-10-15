@@ -106,7 +106,9 @@ def check(out: Path, fixtures: Path) -> list[str]:
         feature = json.loads(
             usage.fixture_file(fixtures, commit, f"{project}/.specify/feature.json")
         )["feature_directory"]
-        dirs = [f"{fixture}/states/{name}" for name in layers(fixtures, commit, fixture, state)]
+        # No state (`state: -`): a fresh run on the fixture's project as committed.
+        names = [] if state == "-" else layers(fixtures, commit, fixture, state)
+        dirs = [f"{fixture}/states/{name}" for name in names]
         parts = {
             part: {d: state_files(fixtures, commit, f"{d}/{part}") for d in dirs}
             for part in ("committed", "uncommitted")
@@ -117,7 +119,12 @@ def check(out: Path, fixtures: Path) -> list[str]:
             top = next(d for d in reversed(dirs) if name in parts[part][d])
             return usage.fixture_file(fixtures, commit, f"{top}/{part}/{name}")
 
-        tasks = layered("committed", f"{feature}/tasks.md")
+        has_tasks = any(f"{feature}/tasks.md" in parts["committed"][d] for d in dirs)
+        tasks = (
+            layered("committed", f"{feature}/tasks.md")
+            if has_tasks
+            else usage.fixture_file(fixtures, commit, f"{project}/{feature}/tasks.md")
+        )
         held = set().union(*parts["committed"].values()) - {f"{feature}/tasks.md"}
         left = set().union(*parts["uncommitted"].values())
         final = (out / "repo" / feature / "tasks.md").read_text()
@@ -150,8 +157,10 @@ def check(out: Path, fixtures: Path) -> list[str]:
 
     def before(name: str) -> str | None:
         """A file as the run found it: the state's, else the project's, else none."""
-        if name in held or f"{feature}/tasks.md" == name:
+        if name in held:
             return layered("committed", name)
+        if name == f"{feature}/tasks.md":
+            return tasks
         try:
             return usage.fixture_file(fixtures, commit, f"{project}/{name}")
         except ValueError:
