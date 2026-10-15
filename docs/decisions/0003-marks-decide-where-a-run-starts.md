@@ -25,7 +25,7 @@ adopted partway through restarted at Phase 1.
 
 Option 1. The marks are core's own record of what is done ("For completed tasks, make sure to mark
 the task off as [X]"), whoever made them. Every run is treated alike: the brief says an unmarked
-task may already be done, the worker checks the code and `git log`, and the completion report names
+task may already be done, the worker checks the code and `git log`, and, when a phase went to a worker, the completion report names
 the phase the run started at. Options 2 and 3 read a history with several writers (the preset,
 core, hooks, the user) and each was misread in review (PR #4: a baseline after the commits to
 verify, a hook-blocked task reopening a finished phase). Option 4 restarts an adopted feature whose

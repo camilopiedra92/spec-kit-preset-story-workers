@@ -86,3 +86,13 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 Phase 1 → Phase 2 → Phase 3 (the run needs the fragment) → Phase 4. T012 waits for the owner's
 confirmation; T016 for the owner's review.
+
+## Phase 5: Convergence
+
+- [ ] T026 Run a fresh `with` arm and a fresh `--preset v0.1.0` arm on `checkout` and record them in Eval 003, or record the owner's acceptance of the unmeasured fresh path beside README's "Not measured", linked from CHANGELOG 0.2.0, per Constitution III (partial)
+- [X] T027 Bring 001 spec FR-006/FR-007 and contracts/fragment.md §6/§9 to 0.2.0's hand-off exception, the main session's own commits and the dirty-tree fallback trigger per T021/T022 docs-to-match (partial)
+- [X] T028 Add compose phrases for "name those paths in the completion report" and "say so in the completion report in place of the line below", each seen red, per FR-007 (partial)
+- [X] T029 Reconcile US1/AC5, the second-session clarification and decision 0003 with FR-005's "when a phase went to a worker" per US1/AC5 (contradicts)
+- [X] T030 Test the state-chain depth refusal (deeper than 5, and a cycle) in test_run.py and test_resume_check.py, seen red, per contracts/harness.md (partial)
+- [X] T031 Update plan.md's Testing spend line to four runs and $9.52 per plan: Technical Context (partial)
+- [X] T032 Bold the "A clean tree outside the feature" cross-reference in the fragment's Hand-offs per Constitution I wording (partial)

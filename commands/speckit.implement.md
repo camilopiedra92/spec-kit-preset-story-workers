@@ -50,16 +50,16 @@ message containing `tasks: mark phase <n>` (after any prefix the project's instr
 none when the phase marked nothing new), and only then start the next phase's worker.
 
 **Hand-offs.** This narrows core's "Halt execution if any non-parallel task fails": every unfinished
-task (except one that changes the feature directory, which this session carries out, as A clean tree
-outside the feature says), failed verification or review finding goes to a worker briefed with it,
-then verification again; a review finding passes when a fresh review of it no longer reports it. A
-phase gets at most two fix hand-offs, every hand-off after its first counting, whatever items it
-carries; when verification still fails after them (a fresh review still reporting its finding
-included), carry out the phase's remaining items in this session as core does. Tasks a worker
-reports finding join the current phase in `tasks.md`, committed with a message containing `tasks:
-add found tasks`, and go to its next hand-off. Outside the items this session carries out, your only
-edits to tracked files are `tasks.md` (checkboxes, found tasks) and its commits; running the suite,
-the static checks or core's extension hooks is not writing code.
+task (except one that changes the feature directory, which this session carries out, as **A clean
+tree outside the feature** says), failed verification or review finding goes to a worker briefed
+with it, then verification again; a review finding passes when a fresh review of it no longer
+reports it. A phase gets at most two fix hand-offs, every hand-off after its first counting,
+whatever items it carries; when verification still fails after them (a fresh review still reporting
+its finding included), carry out the phase's remaining items in this session as core does. Tasks a
+worker reports finding join the current phase in `tasks.md`, committed with a message containing
+`tasks: add found tasks`, and go to its next hand-off. Outside the items this session carries out,
+your only edits to tracked files are `tasks.md` (checkboxes, found tasks) and its commits; running
+the suite, the static checks or core's extension hooks is not writing code.
 
 **Reviews.** Start any review the user's or the project's instructions, or a command, call for in a
 fresh context: `subagent_type: "general-purpose"`, with `model` set to this session's model family

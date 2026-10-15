@@ -48,7 +48,7 @@ takes them as they are and starts from the repository as it finds it.
 
 - Q: Are a fresh and a resumed run told apart? → A: no. Every run reads the marks the same way;
   the brief always says an unmarked task may already be done; the report always carries `Started at
-  phase <n>:` in a git repository. A run interrupted in Phase 1 before anything was marked would
+  phase <n>:` when a phase went to a worker (FR-005). A run interrupted in Phase 1 before anything was marked would
   otherwise count as fresh and lose both.
 - Q: Where are the marks read? → A: from `tasks.md` as core reads it, the working tree; the main
   session only marks after verification, so uncommitted marks are verified ones.
@@ -117,7 +117,8 @@ with every held-out test passing.
    neither asks nor stops, as core would not, and no commit or revert the run makes touches them,
    `tasks.md` aside, which its mark commits carry as it stands; commits core's extension hooks make
    are core's.
-5. **Given** a run in a git repository, **When** it finishes, **Then** its completion report names
+5. **Given** a run in which a phase went to a worker, **When** it finishes, **Then** its completion
+   report names
    the phase it started at and says that work committed before the run was covered by the whole
    suite but not read as a diff.
 6. **Given** phases all marked after an unfinished one, **When** the run reaches them, **Then** it

@@ -209,6 +209,8 @@ phrases=(
   'it commits as soon as it has carried them out, before any later Verification or worker'
   "Commits that core's extension hooks make are core's"
   'When a phase went to a worker, the completion report carries the line'
+  'name those paths in the completion report'
+  'say so in the completion report in place of the line below'
   'uncommitted changes outside the feature directory'
   'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
   # Each narrowed core rule, named by its exact text (constitution I).

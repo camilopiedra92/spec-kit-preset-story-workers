@@ -4,6 +4,7 @@ Each test commits a three-phase fixture with a state that has Phase 1 done, then
 directory that passes every check, and breaks one check at a time.
 """
 
+import itertools
 import json
 import subprocess
 from pathlib import Path
@@ -405,3 +406,38 @@ def test_a_task_line_deleted_fails(
     code, out = check(fixtures, write_run(fixtures, tmp_path, final=final), capsys)
     assert code == 1
     assert "FAIL every task marked: T004" in out
+
+
+def test_a_circular_state_chain_is_refused(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root = fixtures.parent
+    for name, base in [("loop-a", "loop-b"), ("loop-b", "loop-a")]:
+        (fixtures / "fx/states" / name).mkdir(parents=True)
+        (fixtures / "fx/states" / name / "extends").write_text(base + "\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(root)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "loop"], check=True)
+    code = resume_check.main(
+        [str(write_run(fixtures, tmp_path, state="loop-a"))], fixtures=fixtures
+    )
+    assert code == 2
+    assert "more than 5 deep" in capsys.readouterr().err
+
+
+def test_a_state_chain_deeper_than_five_is_refused(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # deep-0 extends deep-1 ... deep-5 extends one-done: seven layers.
+    names = [f"deep-{n}" for n in range(6)] + ["one-done"]
+    for name, base in itertools.pairwise(names):
+        (fixtures / "fx/states" / name).mkdir(parents=True)
+        (fixtures / "fx/states" / name / "extends").write_text(base + "\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(fixtures.parent)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "deep"], check=True)
+    code = resume_check.main(
+        [str(write_run(fixtures, tmp_path, state="deep-0"))], fixtures=fixtures
+    )
+    assert code == 2
+    assert "more than 5 deep" in capsys.readouterr().err

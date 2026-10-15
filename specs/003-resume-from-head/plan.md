@@ -24,7 +24,8 @@ dotfiles' `sdd-init` and supertrader to it.
 outputs under `tests/eval/results/003-resume-from-head/`.
 
 **Testing**: `tests/check.sh`; new `test_resume_check.py`; `test_run.py` extended for `--state`;
-`compose.sh` phrases per clause, seen red. The eval spends usage (one `with` run on this branch and one on `v0.1.0`, about $6),
+`compose.sh` phrases per clause, seen red. The eval spends usage (three `with` runs on this branch, one per state, and one on `v0.1.0`: $9.52 with the probes,
+`tests/eval/results/003-resume-from-head/spent.txt`),
 confirmed by the owner first.
 
 **Target Platform**: as 001 and 002.

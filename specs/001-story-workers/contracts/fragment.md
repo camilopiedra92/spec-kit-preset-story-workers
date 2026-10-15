@@ -42,15 +42,18 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    the phase's remaining items in this session". Tasks a worker reported finding join the current
    phase (committed with a message containing `tasks: add found tasks`) and go to its next hand-off. "Verification still
    fails" includes a fresh review still reporting its finding. The main session's only edits to tracked files are `tasks.md` (checkboxes, tasks a
-   worker reported finding) and its commits of them.
+   worker reported finding) and its commits of them. 0.2.0: a task that changes the feature
+   directory is not handed off but carried out by the main session, which commits what it carries
+   out outside the feature directory (`tasks: carried out in this session`).
 7. **Reviews**: any review the user's or the project's instructions, or a command, call for, `subagent_type: "general-purpose"`,
    "with `model` set to this session's model family" and no `effort`, in a fresh context, never a
    worker; with no fresh context possible, the review does not run and the report says so.
 8. **Hooks**: a call a project hook blocks is the worker's to follow or report; the main session
    never makes it itself, also in the fallback: the task is not handed off again, stays unmarked, is
    reported, and the next phase starts without it.
-9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, or a
-   project that is not a git repository: "carry out the remaining tasks in this session" as core does
+9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, a
+   project that is not a git repository, or (0.2.0) uncommitted changes outside the feature
+   directory when the run starts: "carry out the remaining tasks in this session" as core does
    (the bound of 6 is narrower: that phase's remaining items only, then the next phase goes to a worker), and say which and why in
    the completion report. The completion report always carries the line `Carried out in this session:
    none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.

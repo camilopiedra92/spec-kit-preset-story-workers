@@ -901,3 +901,22 @@ def test_a_state_extending_a_missing_state_is_refused(
     result = run(checkout, stubs, "with", tmp_path / "out", state="orphan")
     assert result.returncode == 2
     assert "no-such-state" in result.stderr
+
+
+@pytest.mark.parametrize("names", [["loop-a", "loop-b"], [f"deep-{n}" for n in range(6)]])
+def test_a_state_chain_too_deep_or_circular_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, names: list[str]
+) -> None:
+    # Each state extends the next; a two-name loop never ends, six names exceed five layers.
+    states = checkout / "tests/eval/fixtures/greet/states"
+    for i, name in enumerate(names):
+        (states / name / "committed").mkdir(parents=True)
+        (states / name / "committed/.keep").write_text("")
+        if i + 1 < len(names) or len(names) == 2:
+            (states / name / "extends").write_text(names[(i + 1) % len(names)] + "\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "chain"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out", state=names[0])
+    assert result.returncode == 2
+    assert "more than 5 deep" in result.stderr

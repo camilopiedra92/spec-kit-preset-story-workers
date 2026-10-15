@@ -238,7 +238,8 @@ its own.
   and the completion report says so: core has no review, and a review by the context that wrote the
   code is not one.
 - **FR-006**: Every hand-off — unfinished tasks, a failed verification, a review finding — MUST go
-  to a worker briefed with it, then verification again; a review finding passes when a fresh review
+  to a worker briefed with it (0.2.0: except a task that changes the feature directory, which the
+  main session carries out), then verification again; a review finding passes when a fresh review
   of that finding no longer reports it. A phase gets at most two fix hand-offs — every hand-off of
   the phase after its first counts, whatever items it carries; when verification — a fresh review still reporting its finding included — still fails after
   them, the main session carries out the phase's
@@ -249,10 +250,13 @@ its own.
   "Halt execution if any non-parallel task fails" applies and the run ends with the report. Apart
   from that, the main session's only edits to tracked files are `tasks.md` — its checkboxes, and the
   tasks a worker reported finding — and its commits of them; running the suite, the static checks or
-  core's extension hooks is not writing code.
+  core's extension hooks is not writing code. (0.2.0: outside the items it carries out, and it commits
+  what it carries out outside the feature directory with a message containing `tasks: carried out
+  in this session`.)
 - **FR-007**: When no worker can carry on — no Agent tool, a worker's error (a usage limit included)
   or missing report, or a project that is not a git repository (the hand-off's commits, diff and
-  baseline need git) — the main session MUST carry out the remaining tasks as core does and say which
+  baseline need git), or (0.2.0) uncommitted changes outside the feature directory when the run
+  starts — the main session MUST carry out the remaining tasks as core does and say which
   and why in the completion report (constitution IV). FR-006's bound is narrower: only that phase's
   remaining items run in the main session, and the next phase goes to a worker as usual. The completion report always
   carries the line `Carried out in this session: none`, or `Carried out in this session:` followed by
