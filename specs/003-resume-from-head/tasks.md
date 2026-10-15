@@ -78,9 +78,9 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 
 - [X] T014 `preset.yml` 0.2.0, `CHANGELOG.md` 0.2.0 (Changed: the Resume rule; the eval), README status and install URL, `CLAUDE.md`'s version mention
 - [X] T015 `/speckit-converge` until a pass finds nothing above LOW
-- [ ] T016 Fresh review of the whole PR; **the owner reviews against constitution I–V**; on approval, mark ready, `gh pr merge --auto --squash` on green, tag `v0.2.0`, and install from the tag in a scratch repository
-- [ ] T017 Dotfiles: `sdd-init`'s story-workers URL to `v0.2.0` (the check pins the shape, so no red is owed for a version move), `./check.sh`, a real `sdd-init` in a scratch repository, PR draft → fresh review → ready → merge on green
-- [ ] T018 supertrader: on `main`, `specify preset update story-workers --from <v0.2.0>` in a worktree, a fresh-context review (its governance), commit; then merge `main` into `001-truthful-market-simulation` with the owner's uncommitted work untouched (git refuses on overlap)
+- [X] T016 Fresh review of the whole PR; **the owner reviews against constitution I–V**; on approval, mark ready, `gh pr merge --auto --squash` on green, tag `v0.2.0`, and install from the tag in a scratch repository
+- [X] T017 Dotfiles: `sdd-init`'s story-workers URL to `v0.2.0` (the check pins the shape, so no red is owed for a version move), `./check.sh`, a real `sdd-init` in a scratch repository, PR draft → fresh review → ready → merge on green
+- [X] T018 supertrader: on `main`, `specify preset update story-workers --from <v0.2.0>` in a worktree, a fresh-context review (its governance), commit; then merge `main` into `001-truthful-market-simulation` with the owner's uncommitted work untouched (git refuses on overlap)
 
 ## Dependencies
 
