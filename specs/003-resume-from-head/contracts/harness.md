@@ -62,7 +62,7 @@ its old path too.
 ## `tests/eval/resume_check.py <out-dir>`
 
 Reads `status`, `versions.txt` (`fixture`, `state`, `commit`), `commits.txt`, `stream.jsonl`,
-`heldout.txt`, `report.txt`, `repo/<feature>/tasks.md` (the run's final one), and the fixture and
+`heldout.txt`, `report.txt`, `repo/specs/<feature>/tasks.md` (the run's final one), and the fixture and
 its state's layers at the run's commit. Prints nine lines (`ok` / `FAIL …`): `finished phases
 untouched`, `uncommitted changes untouched`, `first brief opens the first unfinished phase`, `no
 brief opens a finished phase`, `every task marked`, `no question asked`, `held-out N of N`, `report

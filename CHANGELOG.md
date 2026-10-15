@@ -39,7 +39,6 @@ both passed every held-out test and `0.2.0` every check. One run per arm, direct
 
 - Reading the diff of work committed before the run: it is covered by the whole suite only, and the
   report says so (`Started at phase <n>: …`).
-
 - Handing uncommitted changes found at the start to a worker to finish or discard, and the baseline
   taken in a temporary `git worktree` at the last marker commit.
 

@@ -27,6 +27,6 @@ Passes when `resume_check.py` exits 0 on `with-1`, `doc-1`, `dirty-1` and `fresh
 checks: contract `resume_check.py`); `v010-1`'s and `fresh-v010-1`'s outputs are recorded beside
 them, whatever they are. `attribution.py` is not run: its "each phase opens a
 worker's brief" reads the final `tasks.md`, whose Phases 1–2 never get a worker here by design.
-Record: copy the run's committed files (no stream, no transcripts) and `repo/<feature>/tasks.md` to
+Record: copy the run's committed files (no stream, no transcripts) and `repo/specs/<feature>/tasks.md` to
 `tests/eval/results/003-resume-from-head/`, write the README's Eval 003 entry, then
 release `0.2.0`.

@@ -103,6 +103,9 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   and one `v0.1.0` run on `checkout` with no state, judged by the same checks (`state: -`: the start
   at Phase 1); `v0.1.0` is expected to fail only `report names the start`, its report having no
   such line; held-out, marks, questions and cost compared side by side.
+- **Not exercised by any run** (recorded in the README): the `tasks: carried out in this session`
+  commit, ignore-file entries, a partly marked phase, a resumed hook-blocked task, every task marked,
+  a task reported already done; `dirty-1`'s whole-run fallback committed under per-task messages.
 - **What counts as a worker**: a main-session Agent call whose brief opens with one of the state's
   phase headings, whatever model it names (a review's prompt opens otherwise); `every task marked`
   requires each task the state names, present and marked, in the final `tasks.md`. A plain-text

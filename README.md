@@ -6,11 +6,13 @@ phase of a feature's tasks to a worker subagent on a smaller model (Sonnet), whi
 
 **Status: `v0.2.0`.** Its change to where a run starts was measured against `v0.1.0` in
 [Eval 003](#eval-003-2026-10-14) (directional, one run per arm). The preset itself was released as
-`v0.1.0` on the owner's decision, without an eval showing its claimed effect. Two evals, below, are recorded as they came out: [Eval 001](#eval-2026-10-14) measured the
+`v0.1.0` on the owner's decision, without an eval showing its claimed effect. Two evals, below, are
+recorded as they came out: [Eval 001](#eval-2026-10-14) measured the
 preset at **65% more usage** than core on a small fixture, and [Eval 002](#eval-002-2026-10-14)
 could not measure a quality difference, core passing every held-out test in six runs on two
 versions of a larger fixture, so the cost question on large phases was not run. The owner accepted
-the preset on 2026-10-14 under constitution III (v2.0.0): [the decision](#the-owners-decision-2026-10-14).
+the preset on 2026-10-14 under constitution III (v2.0.0): [the
+decision](#the-owners-decision-2026-10-14).
 The measured state of 001 is tagged
 [`measured-not-adopted-2026-10-14`](https://github.com/camilopiedra92/spec-kit-preset-story-workers/tree/measured-not-adopted-2026-10-14).
 
@@ -32,7 +34,8 @@ sends another's run to core. Observed on 2026-10-14 with git 2.56.0: with one wo
 status --porcelain --untracked-files=all` in the other listed nothing. Each phase's baseline, its
 commits and the `tasks: mark phase` commits stay on that worktree's branch. Workers run in the main
 session's directory, so in its worktree too. Spec Kit's `.specify/.gitignore` ignores
-`.specify/feature.json`, so each worktree points at its own feature. Not measured with a full run in parallel worktrees. Three
+`.specify/feature.json`, so each worktree points at its own feature. Not measured with a full run in
+parallel worktrees. Three
 things to keep in mind:
 
 - The install is per branch: a branch made before the preset was installed on `main` runs as core
@@ -45,7 +48,8 @@ It appends a `## Story workers` section to core `speckit-implement` and replaces
 (constitution I). Each phase of `tasks.md` goes to one foreground worker started with
 `model: "sonnet"` and `effort: "medium"`; the main session marks a task `[X]` only after its own
 run of the suite, the static checks and a reading of the phase's commits; a run starts at the
-first phase with an unmarked task, so a feature adopted partway through goes on where it is; fixes go back to a worker
+first phase with an unmarked task, so a feature adopted partway through goes on where it is; fixes
+go back to a worker
 (at most two per phase); any review runs in a fresh context on the main session's model family;
 and with no Agent tool, a worker error, no git, or uncommitted changes outside the feature directory
 when the run starts, the session carries on as core does and says so in its report; a task that
@@ -61,7 +65,8 @@ git add .specify .claude && git commit -m "Update the story-workers preset"
 (the main session marks, after verifying), "parallel tasks [P] can run together" (one worker per
 phase, `[P]` tasks run in turn inside it) and "Halt execution if any non-parallel task fails" (a
 failed task or verification goes back to a worker, at most two fix hand-offs per phase, then the
-main session carries out the rest of that phase as core does; a task a project hook blocked stays unmarked and
+main session carries out the rest of that phase as core does; a task a project hook blocked stays
+unmarked and
 the run goes on, halting only when the suite is red because of it).
 
 **When not to use it.** When usage is what you are optimising: the only measurement says it costs
@@ -85,7 +90,8 @@ the ceiling), so the preset is released to be judged in real use on real feature
 will watch its usage and quality.
 
 Both evals ran hermetically, without the user's own instructions, settings or plugins, so their
-results are not shaped by a user's setup and can be rerun. How a setup whose instructions add work to every story
+results are not shaped by a user's setup and can be rerun. How a setup whose instructions add work
+to every story
 (a mutation check, a fresh review per story, red test runs) shifts the comparison was not measured;
 Eval 001 showed, in one directional run, that `fallback`, with no Agent tool, runs no fresh-context
 review at all.
@@ -106,7 +112,8 @@ checks). Spec, plan and research (the reviews' findings are summarised in its Cl
 research R1 and R4): `specs/003-resume-from-head/`.
 
 **Runs.** One counted run per arm, no rerun: directional. The probes ran first: 14 ok on Claude Code
-2.1.300 (`probes.txt`). The fragment under measurement is `0.2.0`'s: the same in `with-1`, `doc-1` and
+2.1.300 (`probes.txt`). The fragment under measurement is `0.2.0`'s: the same in `with-1`, `doc-1`
+and
 `dirty-1` (`git diff e7cfbf0 288a34f -- commands/ preset.yml` is empty; `preset.yml` still read
 `0.1.0` there); the fresh runs' commit `8a2fdbe` differs from it only by bold markup on one
 cross-reference in Hand-offs, and is the released fragment (`git diff 8a2fdbe -- commands/` is
@@ -152,6 +159,13 @@ Spent with the probes: $14.61 (`spent.txt`).
   only `report names the start`, since its report has no such line. Both: 59/59 held-out, every task
   marked, no question. Costs, $2.27 for `0.2.0` against $2.82 for `v0.1.0`, are one run each:
   directional, not a measured saving.
+- **Not exercised by any run**: the `tasks: carried out in this session` commit outside the feature
+  directory (`doc-1`'s T031 changed only `plan.md`); ignore-file entries for generated files; a
+  partly marked phase; a resumed hook-blocked task; every task marked, so no worker starts; a task a
+worker reports already done. Observed in `dirty-1`'s whole-run fallback: the session committed what
+  it carried out under per-task messages and `tasks: mark phase` commits, not under `tasks: carried
+  out in this session`; no check reads that message. These are covered by `tests/compose.sh`'s
+  clause phrases only.
 
 **Versions.** Spec Kit `specify` 1.1.3; Claude Code 2.1.300; main session `claude-opus-5-5`
 (effort medium), workers `claude-sonnet-5-5` (effort medium), reviews `claude-opus-5-5`; git 2.56.0;
@@ -190,7 +204,8 @@ and capped per order. Each rule's wrong reading, applied to the reference, turne
 red. Core still passed them all.
 
 **Runs.** Three counted `without` runs per attempt; every try counted at once, no rerun; no
-deadline change; no attempt discarded for a harness fault or a Claude Code version change. `with` and `fallback` never ran, so no success criterion of the comparison
+deadline change; no attempt discarded for a harness fault or a Claude Code version change. `with`
+and `fallback` never ran, so no success criterion of the comparison
 (SC-001, SC-002, SC-003, SC-005, SC-007) was judged.
 
 | Run | Held-out | Suite | Total | Main session | Reviews (3) |
@@ -215,7 +230,8 @@ SC-004 (the composition test red on each removed core anchor): `tests/compose.sh
 
 **Isolation and versions.** As Eval 001, plus Claude Code's auto-updater disabled for every run
 and the probes. Spec Kit 1.1.3; Claude Code 2.1.299; main session `claude-opus-5-5` at `--effort
-medium`, its three reviews per run also on `claude-opus-5-5`; git 2.56.0; uv 0.13.0; Python 3.12.12; pytest 9.1.1; ruff 0.17.0 (each run's
+medium`, its three reviews per run also on `claude-opus-5-5`; git 2.56.0; uv 0.13.0; Python 3.12.12;
+pytest 9.1.1; ruff 0.17.0 (each run's
 `versions.txt`). Output style `default`, no MCP server, only Claude Code's built-in plugins.
 
 **Reading.** On these fixtures, core `/speckit-implement` on Opus made no mistake a held-out test

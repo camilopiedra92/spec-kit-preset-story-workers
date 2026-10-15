@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-14
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "Resume as a fresh start from HEAD: a run resumes at the first phase
 that has a task not marked in tasks.md, with HEAD at the run's start as its baseline, so a project
