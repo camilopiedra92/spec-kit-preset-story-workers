@@ -8,7 +8,7 @@ All notable changes to this preset are recorded here, in the form of
 
 Measured against `v0.1.0` in [Eval 003](README.md#eval-003-2026-10-14): on a feature adopted with
 Phases 1–2 done, `0.2.0` started at Phase 3 and passed its nine checks, in three states; `v0.1.0`
-re-ran the finished Phase 2. One run per arm, directional.
+re-verified the finished Phase 2 (a review, a fix worker, an empty mark commit). One run per arm, directional.
 
 ### Changed
 
@@ -29,8 +29,15 @@ re-ran the finished Phase 2. One run per arm, directional.
   the main session commits what it carries out outside the feature directory
   (`tasks: carried out in this session`); no `tasks: mark phase` commit when a phase marked nothing
   new.
+- Project Setup Verification is Phase 1's worker's only, so a run that starts later skips it (was:
+  the first phase's).
+- Uncommitted changes to `tasks.md` are carried by the run's `tasks:` commits as they stand (was:
+  the user's to keep or drop); commits made by core's extension hooks are core's, not the run's.
 
 ### Removed
+
+- Reading the diff of work committed before the run: it is covered by the whole suite only, and the
+  report says so (`Started at phase <n>: …`).
 
 - Handing uncommitted changes found at the start to a worker to finish or discard, and the baseline
   taken in a temporary `git worktree` at the last marker commit.

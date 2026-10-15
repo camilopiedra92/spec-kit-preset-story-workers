@@ -70,6 +70,7 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 - [X] T024 [US3] States may extend another (`extends`, in `run.sh` and `resume_check.py`, tests seen red first); `phase-2-done-doc-task` and `phase-2-done-dirty`; `resume_check.py`'s feature-directory-task check and its core's-run mode (tests seen red first): the rule's parts `phase-2-done` does not exercise, measured instead of accepted
 
 **Checkpoint**: a fresh review of US3 (harness, state, the README entry against the committed outputs). Pass → Phase 4; fail → the result goes to the owner, no release.
+- [X] T025 [US3] Apply the US3 checkpoint review: `resume_check.py` counts any main-session Agent call briefed with a phase as a worker, whatever its model, and requires every task the state names present and marked (tests seen red first; the four recorded verdicts unchanged); README, CHANGELOG and research corrected (v0.1.0's re-verification, reproducibility, not measured, fallback triggers, the update's commit); decision records 0003 and 0004
 
 ---
 

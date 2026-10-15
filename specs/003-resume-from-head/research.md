@@ -80,8 +80,10 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   them fails the check, though the fixture's tasks call for neither (T001 keeps `conftest.py`
   empty).
 - **Rationale**: a behaviour check, not a comparison, so one counted run decides it; the script
-  makes the verdict reproducible, as `compare.py` does for 002: its output and every input but the
-  stream are committed (the stream holds local paths and session ids, so it stays local).
+  records the verdict as `compare.py` does for 002: its output and its inputs are committed except
+  the stream and the run's working tree (the stream holds local paths and session ids; the tree is
+  not copied), so the verdict is recorded, not rebuildable from the repository; from the committed
+  files alone, `every task marked`, `held-out N of N` and the report checks can be rerun.
 - **Alternatives considered**: *reading the verdict by hand*: one more place for a slip, which
   002's reviews found more than once. *A `without` arm beside it*: core resumes by redoing nothing
   only because it never reads history; comparing it says nothing about the preset's rule.
@@ -91,7 +93,14 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   so it is expected to brief Phase 1 and fail `first brief opens the first unfinished phase`; its
   0.1.0 handling of uncommitted changes (a worker to finish or discard them) is expected to fail
   `uncommitted changes untouched`. The comparison is the two runs' `resume_check.py` outputs side by
-  side; both are directional (one run each).
+  side; both are directional (one run each). *Observed* (`v010-1`): it briefed Phase 2, not Phase 1:
+  a fresh review of User Story 1, then a fix worker on Phase 2 that changed `cart.py` and
+  `tests/test_cart.py`, then an empty `tasks: mark phase 2` commit; it left the uncommitted note
+  alone by its own judgement. It failed four checks, not `uncommitted changes untouched`.
+- **What counts as a worker**: a main-session Agent call whose brief opens with one of the state's
+  phase headings, whatever model it names (a review's prompt opens otherwise); `every task marked`
+  requires each task the state names, present and marked, in the final `tasks.md`. A plain-text
+  question that ends the turn is caught only through `every task marked`.
 - **The rule's other parts, measured too** (owner, 2026-10-14): two states extend `phase-2-done`
   (a state's `extends` file names its base; `run.sh` and `resume_check.py` lay the chain base
   first). `phase-2-done-doc-task` adds T031, a Phase 4 task that writes `specs/001-checkout/plan.md`:

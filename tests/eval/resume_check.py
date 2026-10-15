@@ -179,16 +179,17 @@ def check(out: Path, fixtures: Path) -> list[str]:
         if not altered
         else f"FAIL uncommitted changes untouched: {', '.join(altered)}"
     )
-    briefs = [
+    # A worker is a main-session Agent call whose brief opens with one of the state's
+    # phase headings, whatever model it names: a review's prompt opens otherwise.
+    phase_titles = {heading(t) for t, _, _ in all_phases}
+    calls = [
         str(block.get("input", {}).get("prompt", ""))
         for event in events
         if event.get("type") == "assistant" and event.get("parent_tool_use_id") is None
         for block in event.get("message", {}).get("content", [])
-        if block.get("type") == "tool_use"
-        and block.get("name") == "Agent"
-        and block.get("input", {}).get("model") == "sonnet"
+        if block.get("type") == "tool_use" and block.get("name") == "Agent"
     ]
-    opened = [heading(b.split("\n", 1)[0]) for b in briefs]
+    opened = [o for o in (heading(c.split("\n", 1)[0]) for c in calls) if o in phase_titles]
     first = opened[0] if opened else "(no worker)"
     if outside:
         lines.append(
@@ -210,7 +211,10 @@ def check(out: Path, fixtures: Path) -> list[str]:
         if not redone
         else f"FAIL no brief opens a finished phase: {', '.join(redone)}"
     )
-    unmarked = re.findall(r"^- \[ \] (T\d+)", final, re.MULTILINE)
+    # Every task the state names, present and marked: a deleted line is not a done task.
+    marked = set(re.findall(r"^- \[[xX]\] (T\d+)", final, re.MULTILINE))
+    unmarked = sorted(set(re.findall(r"^- \[[ xX]\] (T\d+)", tasks, re.MULTILINE)) - marked)
+    unmarked += sorted(set(re.findall(r"^- \[ \] (T\d+)", final, re.MULTILINE)) - set(unmarked))
     lines.append(
         "ok every task marked" if not unmarked else f"FAIL every task marked: {', '.join(unmarked)}"
     )

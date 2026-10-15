@@ -24,7 +24,8 @@ uv run python tests/eval/compare.py --help             # verdict, gate and spend
 
 An eval's whole sequence, reruns included: `specs/002-large-phase-remeasure/quickstart.md`
 (three runs per arm, the gate, the spend; 001's single-run sequence is in
-`specs/001-story-workers/quickstart.md`).
+`specs/001-story-workers/quickstart.md`; 003's resume eval, its states and the v0.1.0 arm in
+`specs/003-resume-from-head/quickstart.md`).
 
 ## Where things live
 

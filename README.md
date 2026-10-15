@@ -47,11 +47,14 @@ It appends a `## Story workers` section to core `speckit-implement` and replaces
 run of the suite, the static checks and a reading of the phase's commits; a run starts at the
 first phase with an unmarked task, so a feature adopted partway through goes on where it is; fixes go back to a worker
 (at most two per phase); any review runs in a fresh context on the main session's model family;
-and with no Agent tool, a worker error or no git, the session carries on as core does and says so
-in its report. To update to a newer tag:
+and with no Agent tool, a worker error, no git, or uncommitted changes outside the feature directory
+when the run starts, the session carries on as core does and says so in its report; a task that
+changes the feature directory is carried out by the main session, left uncommitted. To update to a
+newer tag:
 
 ```bash
 specify preset update story-workers --from <the newer tag's archive URL>
+git add .specify .claude && git commit -m "Update the story-workers preset"
 ```
 
 **What it narrows in core**, by name: "For completed tasks, make sure to mark the task off as [X]"
@@ -97,13 +100,19 @@ without any marker commit, and an owner's note left uncommitted in the feature's
 (`tests/eval/fixtures/checkout/states/phase-2-done/`). Two more states extend it to measure the
 rule's other parts: `phase-2-done-doc-task` adds T031, a task that writes the feature's `plan.md`;
 `phase-2-done-dirty` leaves `NOTES.md` uncommitted at the project root. Each run is judged by
-`tests/eval/resume_check.py`'s nine checks. Spec, plan and reviews: `specs/003-resume-from-head/`.
+`tests/eval/resume_check.py`'s nine checks (for `dirty-1`, a core's-run variant: `no worker started`
+and `report names the paths outside the feature directory` replace the first-brief and start-line
+checks). Spec, plan and research (the reviews' findings are summarised in its Clarifications and in
+research R1 and R4): `specs/003-resume-from-head/`.
 
-**Runs.** One counted run per arm, no rerun: directional. The preset under measurement is the same
-in the three `0.2.0` runs (`git diff e7cfbf0 288a34f -- commands/ preset.yml` is empty); `v0.1.0`
+**Runs.** One counted run per arm, no rerun: directional. The probes ran first: 14 ok on Claude Code
+2.1.300 (`probes.txt`). The fragment under measurement, `0.2.0`'s (`preset.yml` still read `0.1.0`
+at those commits), is the same in its three runs and in this release (`git diff e7cfbf0 288a34f -- commands/ preset.yml` is empty, and so is `git diff 288a34f -- commands/`
+since); `v0.1.0`
 was installed from its tag's archive (`run.sh --preset v0.1.0`). Outputs:
 `tests/eval/results/003-resume-from-head/` (no streams or transcripts: they carry local paths and
-session ids).
+session ids). `resume_check.py` cannot be rerun from these files: it also reads the stream and the
+run's working tree, neither committed; the verdicts are recorded, each run's `resume.txt`.
 
 | Run | Preset | State | Checks | Held-out | Cost |
 |---|---|---|---|---|---|
@@ -119,8 +128,9 @@ Spent with the probes: $9.52 (`spent.txt`).
 - `0.2.0` started at Phase 3, its first worker briefed with it, no brief for a finished phase, no
   change to a file only Phases 1–2 left, the uncommitted note untouched, every task marked, no
   question, and the report's `Started at phase 3: …` line.
-- `v0.1.0` reviewed and re-ran the finished Phase 2: its first worker was briefed with Phase 2, it
-  changed `tests/test_cart.py` and committed `tasks: mark phase 2`, and its report names no start.
+- `v0.1.0` re-verified the finished Phase 2: a fresh review of User Story 1, then a fix worker
+  briefed with Phase 2 that changed `src/checkout/cart.py` and `tests/test_cart.py`, and an empty
+  `tasks: mark phase 2` commit; its report names no start.
   It left the uncommitted note alone, by its own judgement rather than its rule (which hands such
   changes to a worker to finish or discard).
 - `doc-1`: the main session carried out T031 itself, `plan.md` changed and in no commit, T031 on the
@@ -134,6 +144,10 @@ Spent with the probes: $9.52 (`spent.txt`).
   covers it. `0.2.0` does not re-read work committed before the run, by design, and says so in its
   report; `doc-1`'s review noted the same gap without acting on it, as outside its phase. A run that
   starts partway through a feature trusts its finished phases to their own verification.
+- **Not measured**: a fresh `0.2.0` run (no task marked). The rules every run now follows (staging
+  only a worker's own files, Project Setup Verification's own commit, the clean-tree start check,
+  Verification reading commits, the main session's commits) ran in the three runs above; a run from
+  Phase 1 is covered only by `tests/compose.sh`'s clause phrases.
 
 **Versions.** Spec Kit `specify` 1.1.3; Claude Code 2.1.300; main session `claude-opus-5-5`
 (effort medium), workers `claude-sonnet-5-5` (effort medium), reviews `claude-opus-5-5`; git 2.56.0;

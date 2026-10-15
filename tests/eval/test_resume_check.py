@@ -369,3 +369,39 @@ def test_a_dirty_path_unnamed_or_touched_fails(
     code, out = check(fixtures, dirty_run(fixtures, tmp_path, **over), capsys)
     assert code == 1
     assert "NOTES.md" in out
+
+
+# A worker is any main-session Agent call briefed with a phase, whatever its model.
+
+
+@pytest.mark.parametrize("model", ["claude-sonnet-5-5", None])
+def test_a_worker_on_any_model_counts(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], model: str | None
+) -> None:
+    event = worker(f"{PHASE_2}\n\nTasks T003, T004.")
+    call = event["message"]["content"][0]
+    if model is None:
+        del call["input"]["model"]
+    else:
+        call["input"]["model"] = model
+    code, out = check(fixtures, dirty_run(fixtures, tmp_path, extra_events=[event]), capsys)
+    assert code == 1
+    assert "FAIL no worker started" in out
+
+
+def test_a_review_call_is_not_a_worker(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    review = worker("You are a fresh reviewer. Do not edit files.")
+    review["message"]["content"][0]["input"]["model"] = "opus"
+    code, out = check(fixtures, dirty_run(fixtures, tmp_path, extra_events=[review]), capsys)
+    assert code == 0, out
+
+
+def test_a_task_line_deleted_fails(
+    fixtures: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    final = "\n".join(line for line in ALL_MARKED.splitlines() if "T004" not in line) + "\n"
+    code, out = check(fixtures, write_run(fixtures, tmp_path, final=final), capsys)
+    assert code == 1
+    assert "FAIL every task marked: T004" in out
