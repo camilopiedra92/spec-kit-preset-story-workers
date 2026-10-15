@@ -144,10 +144,10 @@ the `Started at phase 1:` line.
 
 **Why this priority**: the change must not move the measured path (Evals 001 and 002).
 
-**Independent Test**: the fresh-run checks that already run (the composition test's phrases) still
-pass, and the fresh `with` path of the eval harness is untouched; the resume eval's own fixture
-starts with Phase 1 done, so a fresh run is checked by the composed fragment's text and by the
-unchanged harness tests, not by a new paid run.
+**Independent Test**: the composition test's phrases pass, and one fresh run of `0.2.0` and one of
+`v0.1.0` on `checkout` with no state (convergence T026) are judged by `resume_check.py`: `0.2.0`
+starts at Phase 1 and passes its nine checks, and neither arm does worse on held-out tests, marks or
+questions.
 
 **Acceptance Scenarios**:
 
@@ -234,7 +234,8 @@ runs, versions, result); `preset.yml`, the CHANGELOG and the tag agree on `0.2.0
   MUST fail if a `v0.1.0` resume clause is still there; each check seen red once.
 - **FR-008**: A resume eval MUST exist under `tests/` (the `checkout` fixture in a state with Phases
   1–2 done, marked and committed, and an edit to the feature's spec left uncommitted) and be run
-  once with the preset and once with `v0.1.0` (the arm without the rule, research R3) before
+  once with the preset and once with `v0.1.0` (the arm without the rule, research R3), and on the
+  fixture with no state once with each (a fresh run, T026), before
   release; it passes when the `0.2.0` run meets every condition below, and the `v0.1.0` run's result
   is recorded beside it; the `0.2.0` run passes when no commit of the run changes a file only
   finished phases' tasks name and the run's tree holds those files as the state does, the

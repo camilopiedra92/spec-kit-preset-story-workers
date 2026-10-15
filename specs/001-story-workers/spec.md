@@ -229,7 +229,8 @@ its own.
   status` listing nothing uncommitted outside the feature directory; a task found
   already done is marked on the suite, the static checks and the commit or file cited). A review the phase calls for (FR-005), and every fix
   it leads to, resolves before the phase is marked; then the main session commits `tasks.md` with a
-  message containing `tasks: mark phase <n>` (after any prefix the project's instructions require), and only then does the next phase's worker start. A worker's report
+  message containing `tasks: mark phase <n>` (after any prefix the project's instructions require;
+  0.2.0: none when the phase marked nothing new), and only then does the next phase's worker start. A worker's report
   never marks a task.
 - **FR-005**: Any review the user's or the project's instructions, or a command, call for MUST be
   started in a fresh context with `subagent_type: "general-purpose"`, `model` set to the main

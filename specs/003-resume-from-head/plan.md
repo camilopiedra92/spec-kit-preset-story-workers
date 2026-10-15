@@ -9,8 +9,9 @@
 Replace the fragment's Resume rule with one start rule for every run: the first phase with an
 unmarked task, each phase verified from HEAD before its first worker, the worker told to check what
 the repository already holds, and a clean tree outside the feature directory (else the run is core's); a fresh run on a
-clean tree verifies and marks as before. Measure it with one resume run of the preset on 002's `checkout` fixture in a
-"Phases 1–2 done" state (a `run.sh --state` overlay), judged by a script. Release `0.2.0`, then move
+clean tree verifies and marks as before. Measure it on 002's `checkout` fixture: the preset and `v0.1.0` on a "Phases 1–2 done" state (a
+`run.sh --state` overlay), the preset on two states extending it, and both on a fresh run, judged by
+a script. Release `0.2.0`, then move
 dotfiles' `sdd-init` and supertrader to it.
 
 ## Technical Context
@@ -24,7 +25,8 @@ dotfiles' `sdd-init` and supertrader to it.
 outputs under `tests/eval/results/003-resume-from-head/`.
 
 **Testing**: `tests/check.sh`; new `test_resume_check.py`; `test_run.py` extended for `--state`;
-`compose.sh` phrases per clause, seen red. The eval spends usage (three `with` runs on this branch, one per state, and one on `v0.1.0`: $9.52 with the probes,
+`compose.sh` phrases per clause, seen red. The eval spends usage (six runs: the preset on three states and fresh, `v0.1.0` on `phase-2-done` and fresh; $14.61
+with the probes,
 `tests/eval/results/003-resume-from-head/spent.txt`),
 confirmed by the owner first.
 
@@ -38,7 +40,7 @@ confirmed by the owner first.
 IV); the release only on a passing resume eval (constitution III).
 
 **Scale/Scope**: one fragment paragraph and a brief clause; one `run.sh` flag; one state overlay;
-one check script with tests; one paid run; release and two adoptions.
+one check script with tests; six paid runs; release and two adoptions.
 
 ## Constitution Check
 

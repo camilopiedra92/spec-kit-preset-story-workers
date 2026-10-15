@@ -10,7 +10,7 @@ two fresh reviews (2026-10-14) are the evidence for R1's rejected alternatives.
   baseline is HEAD before its first worker, as Verification already says. Every run is treated
   alike: the brief always says an unmarked task may already be done (check against the code and
   `git log`, complete only what is missing), the worker's report lists tasks found done, and the
-  completion report always carries `Started at phase <n>:`, since work committed before the run is
+  completion report carries `Started at phase <n>:` whenever a phase went to a worker, since work committed before the run is
   covered by the suite and not read as a diff. Uncommitted work is kept apart by a clean tree
   outside the feature directory (R4).
 - **Rationale**: the marks are core's own record ("For completed tasks, make sure to mark the task

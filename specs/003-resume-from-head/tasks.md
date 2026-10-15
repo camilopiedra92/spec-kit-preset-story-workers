@@ -77,7 +77,7 @@ Each story closes with `tests/check.sh` and a fresh-context review.
 ## Phase 4: Release and adoption
 
 - [X] T014 `preset.yml` 0.2.0, `CHANGELOG.md` 0.2.0 (Changed: the Resume rule; the eval), README status and install URL, `CLAUDE.md`'s version mention
-- [ ] T015 `/speckit-converge` until a pass finds nothing above LOW
+- [X] T015 `/speckit-converge` until a pass finds nothing above LOW
 - [ ] T016 Fresh review of the whole PR; **the owner reviews against constitution I–V**; on approval, mark ready, `gh pr merge --auto --squash` on green, tag `v0.2.0`, and install from the tag in a scratch repository
 - [ ] T017 Dotfiles: `sdd-init`'s story-workers URL to `v0.2.0` (the check pins the shape, so no red is owed for a version move), `./check.sh`, a real `sdd-init` in a scratch repository, PR draft → fresh review → ready → merge on green
 - [ ] T018 supertrader: on `main`, `specify preset update story-workers --from <v0.2.0>` in a worktree, a fresh-context review (its governance), commit; then merge `main` into `001-truthful-market-simulation` with the owner's uncommitted work untouched (git refuses on overlap)
@@ -96,3 +96,10 @@ confirmation; T016 for the owner's review.
 - [X] T030 Test the state-chain depth refusal (deeper than 5, and a cycle) in test_run.py and test_resume_check.py, seen red, per contracts/harness.md (partial)
 - [X] T031 Update plan.md's Testing spend line to four runs and $9.52 per plan: Technical Context (partial)
 - [X] T032 Bold the "A clean tree outside the feature" cross-reference in the fragment's Hand-offs per Constitution I wording (partial)
+
+## Phase 6: Convergence
+
+- [X] T033 Align US2's Independent Test and FR-008's list of runs with the two fresh runs recorded in Eval 003 per US2 Independent Test (contradicts)
+- [X] T034 Update plan.md (Summary, Technical Context Testing, Scale/Scope) and quickstart.md (spend, pass conditions incl. fresh-1) to the six runs and $14.61 of spent.txt per plan: Technical Context (partial)
+- [X] T035 Qualify research R1's "always carries `Started at phase <n>:`" with "when a phase went to a worker" per FR-005 (contradicts)
+- [X] T036 Add "0.2.0: none when the phase marked nothing new" to 001 spec FR-004's `tasks: mark phase <n>` per FR-006 (partial)
