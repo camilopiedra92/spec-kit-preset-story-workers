@@ -1,0 +1,9 @@
+ok finished phases untouched
+ok uncommitted changes untouched
+ok first brief opens the first unfinished phase
+ok no brief opens a finished phase
+ok every task marked
+ok no question asked
+ok held-out N of N (59)
+ok report names the start
+ok feature-directory tasks carried out in this session: T031

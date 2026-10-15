@@ -19,6 +19,11 @@ dev = [
 target-version = "py311"
 line-length = 100
 
+[tool.ruff.lint.isort]
+# The eval fixtures' package; a fixture state's files sit outside their project's
+# src/, where ruff would otherwise call it third-party (tests/eval/fixtures/*/states).
+known-first-party = ["checkout"]
+
 [tool.mypy]
 files = ["tests/eval/*.py"]
 strict = true

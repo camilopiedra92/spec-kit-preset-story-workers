@@ -162,6 +162,57 @@ phrases=(
   "with \`model\` set to this session's model family"
   'carry out the remaining tasks in this session'
   'Carried out in this session:'
+  # Where a run starts (0.2.0, specs/003-resume-from-head): core's marks
+  # decide; nothing is reconstructed from history; changes made before the run
+  # are the user's. One phrase per clause. A phrase proves the clause is there,
+  # not that no qualifier ("except ...") was added beside it: that is the
+  # reviewer's to read.
+  '`[X]` or `[x]`'
+  'read from the file as core reads it'
+  'where a run starts is never read from commit messages'
+  'skips every phase whose tasks are all marked, wherever it falls'
+  'it starts at the first phase with an unmarked task, at Phase 1 when none is marked'
+  'When every task is marked, start no worker, commit nothing'
+  "Each phase's baseline is taken as Verification says"
+  "Before a phase's first worker, record HEAD"
+  "the phase's unmarked tasks"
+  'may already be done, in whole or in part'
+  'check each against the code and `git log`'
+  'complete only what is missing'
+  'tasks found already done'
+  'the static checks and its reading of the commit or file the worker cites'
+  'staging only the files it changed, never `git add -A` or `-a`'
+  "(Phase 1's worker only)"
+  'neither asks about them nor stops for them'
+  'the commits made since the recorded HEAD'
+  # A clean tree outside the feature directory (the third review's design).
+  'commits what Project Setup Verification changes in a commit of its own'
+  'never edits, stages, commits or reverts a file in the feature directory'
+  'run before its own suite and static-check runs, lists nothing outside the feature directory'
+  'goes back to it as a finding'
+  'Outside the items this session carries out, your only edits'
+  'When it lists a path outside the feature directory'
+  'carry out the run in this session as core does'
+  'they are not a finding'
+  'no worker edits, stages, commits or reverts a file there'
+  'carry `tasks.md` as it stands, its earlier edits included'
+  'A task that changes a file in the feature directory is carried out in this session as core does'
+  '`tasks: carried out in this session`'
+  'uncommitted changes stay as they are'
+  'its files in the feature directory are left uncommitted, as core leaves them'
+  'What this session changes outside the feature directory while carrying out'
+  'leaves a task that needs one unfinished, saying so'
+  'and `git status --porcelain --untracked-files=all`, run before its own suite'
+  'except one that changes the feature directory, which this session carries out'
+  'any file the suite or the static checks generate that git does not ignore'
+  "Before the first worker and before any of the run's own suite or static-check runs"
+  'it commits as soon as it has carried them out, before any later Verification or worker'
+  "Commits that core's extension hooks make are core's"
+  'When a phase went to a worker, the completion report carries the line'
+  'name those paths in the completion report'
+  'say so in the completion report in place of the line below'
+  'uncommitted changes outside the feature directory'
+  'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
@@ -169,6 +220,15 @@ phrases=(
 )
 for phrase in "${phrases[@]}"; do
   grep -qF -- "$phrase" <<< "$said" || problem "the fragment does not say '$phrase'"
+done
+# 0.1.0's Resume rule, replaced in 0.2.0: it restarted a feature adopted
+# partway through at Phase 1.
+for phrase in 'A run starts at the phase after the last commit whose message contains' \
+  'on resume, the uncommitted diff' 'temporary `git worktree`' 'Resumed at phase' \
+  "the baseline is HEAD at the run's start" 'what earlier workers finished' \
+  'Changes made before the run' 'beyond that record' \
+  "it commits before the next phase's worker starts"; do
+  ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
 
 specify version > version.txt 2>&1 || true

@@ -3,10 +3,12 @@
 # /speckit-implement without the preset, with it, or with it but no Agent tool,
 # hermetic so the result is the preset's and anyone can rerun it.
 #
-# Usage:  tests/eval/run.sh [--baseline <run-dir>] <fixture> <without|with|fallback> <out-dir>
+# Usage:  tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>
 #         <fixture> is a directory under tests/eval/fixtures/ holding project/
 #         (what the agent gets) and heldout/ (copied in after a counted run);
-#         --baseline names a counted run whose versions this one must match
+#         --baseline names a counted run whose versions this one must match;
+#         --state lays fixtures/<fixture>/states/<name>/ over the project, after
+#         the state its extends file names
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
 #         most twice); 2 refused (fix it, do not retry): before the out-dir
 #         exists nothing is written; after, status says why
@@ -23,20 +25,33 @@ refuse() {
 src=${BASH_SOURCE[0]}
 case $src in */*) here=$(cd "${src%/*}" && pwd) ;; *) here=$(pwd) ;; esac
 
-usage="usage: tests/eval/run.sh [--baseline <run-dir>] <fixture> <without|with|fallback> <out-dir>"
+usage="usage: tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>"
 baseline=
-if [ "${1:-}" = --baseline ]; then
-  [ "$#" -ge 2 ] || refuse "$usage"
-  baseline=$2
+state=
+preset=
+while [ "$#" -gt 3 ]; do
+  case $1 in
+    --baseline)
+      baseline=$2
+      [ -f "$baseline/versions.txt" ] || refuse "baseline $baseline has no versions.txt"
+      ;;
+    # A committed state of the fixture laid over its project, as a feature
+    # partly done (specs/003-resume-from-head, research R2).
+    --state) state=$2 ;;
+    # The preset as another ref archives it: the arm without the rule under
+    # measurement, on the same fixture (specs/003-resume-from-head, research R3).
+    --preset) preset=$2 ;;
+    *) refuse "$usage" ;;
+  esac
   shift 2
-  [ -f "$baseline/versions.txt" ] || refuse "baseline $baseline has no versions.txt"
-fi
+done
 [ "$#" -eq 3 ] || refuse "$usage"
 fixture=$1
 arm=$2
 # A plain name: no path can lead outside fixtures/.
 case $fixture in "" | */* | . | ..) refuse "unknown fixture '$fixture'" ;; esac
 case $arm in without | with | fallback) ;; *) refuse "unknown arm '$arm'" ;; esac
+[ -z "$preset" ] || [ "$arm" != without ] || refuse "--preset applies to the with and fallback arms"
 out_arg=$3
 for tool in claude specify uv git python3 jq; do
   command -v "$tool" > /dev/null || refuse "missing $tool"
@@ -47,6 +62,30 @@ fixture_dir=fixtures/$fixture
 for part in project heldout; do
   [ -d "$here/$fixture_dir/$part" ] || refuse "fixture '$fixture' has no $part/"
 done
+fixture_rel=$(git -C "$here" rev-parse --show-prefix)$fixture_dir
+preset_sha=$(git -C "$root" rev-parse --verify --quiet "${preset:-HEAD}^{commit}") ||
+  refuse "unknown preset ref '$preset'"
+# The state and the states it extends, base first: a state's extends file names
+# the one it is laid over (specs/003-resume-from-head, research R2).
+layers=()
+name=$state
+while [ -n "$name" ]; do
+  case $name in */* | . | ..) refuse "unknown state '$name'" ;; esac
+  git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$name" 2> /dev/null ||
+    refuse "fixture '$fixture' has no committed state '$name'"
+  [ "${#layers[@]}" -lt 5 ] || refuse "state '$state' extends more than 5 deep"
+  layers=("$name" ${layers[@]+"${layers[@]}"})
+  # No extends file: the base of the chain.
+  name=$({ git -C "$root" show "HEAD:$fixture_rel/states/$name/extends" 2> /dev/null || :; } |
+    tr -d '[:space:]')
+done
+lay() { # <committed|uncommitted>: each layer's part, as committed, base first
+  local layer
+  for layer in ${layers[@]+"${layers[@]}"}; do
+    git -C "$root" cat-file -e "HEAD:$fixture_rel/states/$layer/$1" 2> /dev/null || continue
+    git -C "$root" archive --format=tar "HEAD:$fixture_rel/states/$layer/$1" | tar -xf - -C "$repo"
+  done
+}
 physical() { # <path>: its deepest existing ancestor resolved, symlinks and .. included
   local dir=$1 rest=
   case $dir in /*) ;; *) dir=$PWD/$dir ;; esac
@@ -72,6 +111,9 @@ repo=$out/repo
 mkdir "$repo"
 (cd "$here/$fixture_dir" && git ls-files -z project | tar --null -T - -cf -) |
   tar -xf - -C "$repo" --strip-components 1
+# committed/ as committed in this repository, laid over the project before the
+# setup commit; uncommitted/ comes after it (below).
+lay committed
 feature=$(jq -r .feature_directory "$repo/.specify/feature.json")
 
 # Every step below runs in this environment: nothing of the caller's but what
@@ -123,7 +165,7 @@ cmp -s "$here/$fixture_dir/project/.specify/feature.json" .specify/feature.json 
 if [ "$arm" != without ]; then
   # As a project installs it: the tag archive's shape, from HEAD, served from
   # localhost because the CLI takes plain HTTP from there only.
-  git -C "$root" archive --format=zip --prefix="$(basename "$root")/" -o "$www/preset.zip" HEAD
+  git -C "$root" archive --format=zip --prefix="$(basename "$root")/" -o "$www/preset.zip" "$preset_sha"
   port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
   python3 -m http.server "$port" --bind 127.0.0.1 --directory "$www" > /dev/null 2>&1 &
   server=$!
@@ -145,6 +187,9 @@ fi
 step "git add" git add -A
 step "setup commit" git commit -qm "fixture: setup"
 setup=$(git rev-parse HEAD)
+# A state's uncommitted/: changes the agent finds in the working tree, as a
+# user leaves them (specs/003-resume-from-head, research R2).
+lay uncommitted
 measured=$(git -C "$root" rev-parse HEAD)
 
 # The versions known before the agent starts, none read from the scratch
@@ -163,6 +208,8 @@ semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
   echo "fixture: $fixture"
   echo "arm: $arm"
   echo "autoupdater: disabled"
+  echo "state: ${state:--}"
+  echo "preset: ${preset:-HEAD} $preset_sha"
 } > "$out/versions.txt"
 differing() { # <key>...: those whose line differs between this run and the baseline
   local key
@@ -171,7 +218,7 @@ differing() { # <key>...: those whose line differs between this run and the base
       printf '%s ' "$key"
   done
 }
-pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater)
+pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater state preset)
 if [ -n "$baseline" ]; then
   keys=$(differing "${pre_run[@]}")
   [ -z "$keys" ] || refused "versions differ from the baseline: ${keys% }"
@@ -298,7 +345,8 @@ result='.[] | select(.type == "result")'
     | \"agent \(.[0].subagent_type) \(.[0].model // \"-\") \(.[0].effort // \"-\") \(length)\""
 } > "$out/models.txt"
 
-clean 600 git log --reverse --format='commit %H%n%s' --name-only "$setup..HEAD" > "$out/commits.txt"
+# --no-renames: a moved file shows its old path too.
+clean 600 git log --reverse --no-renames --format='commit %H%n%s' --name-only "$setup..HEAD" > "$out/commits.txt"
 # The completion report, for SC-005's task ids and SC-003's line.
 q "$result | .result" > "$out/report.txt"
 echo ok > "$out/status"

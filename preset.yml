@@ -8,9 +8,10 @@ schema_version: "1.0"
 preset:
   id: "story-workers"
   name: "Story workers"
-  # Released as v0.1.0 on the owner's acceptance (README, "The owner's decision"): Eval 001
-  # measured 65% more usage than core; Eval 002 could not measure a quality difference.
-  version: "0.1.0"
+  # The preset itself was released as v0.1.0 on the owner's acceptance (README, "The owner's
+  # decision"): Eval 001 measured 65% more usage than core; Eval 002 could not measure a quality
+  # difference. 0.2.0 changes where a run starts, measured against v0.1.0 in Eval 003.
+  version: "0.2.0"
   description: "/speckit-implement hands each phase of tasks.md to a worker subagent on Sonnet; the main session verifies, reviews and decides, and falls back to core when a worker cannot carry on"
   author: "camilopiedra92"
   repository: "https://github.com/camilopiedra92/spec-kit-preset-story-workers"
@@ -24,7 +25,7 @@ provides:
     - type: "command"
       name: "speckit.implement"
       file: "commands/speckit.implement.md"
-      description: "One foreground Sonnet worker per phase; [X] only after the main session's own suite, static checks and diff reading; fixes to workers, reviews on the session's family, core as the fallback"
+      description: "One foreground Sonnet worker per phase; [X] only after the main session's own suite, static checks and reading of the phase's commits; runs start at the first unmarked task; fixes to workers, reviews on the session's family, core as the fallback"
       strategy: "append"
 
 tags:

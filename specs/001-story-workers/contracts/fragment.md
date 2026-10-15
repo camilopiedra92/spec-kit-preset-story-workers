@@ -13,45 +13,54 @@ same way for each narrowed rule and each step the brief names, and exits 1 namin
    the previous one's verification; never two at once; `[P]` tasks run inside their phase's worker.
 2. **The call**: `subagent_type: "general-purpose"`, `model: "sonnet"`, `effort: "medium"`,
    `run_in_background: false`.
-3. **The brief** (spec FR-003): "opens with the phase's heading" as `tasks.md` writes it; the phase's tasks, and for a fix the finding, on resume the
-   uncommitted diff; the feature directory; the suite and static-check commands (the project's
-   instructions, else `plan.md`'s Technical Context); what earlier workers finished; "follow core's"
-   `Load and analyze the implementation context`, `Project Setup Verification` (first phase only),
+3. **The brief** (spec FR-003): "opens with the phase's heading" as `tasks.md` writes it; the phase's tasks, and for a fix the finding (0.2.0: only
+   the unmarked tasks, which may already be partly done); the feature directory; the suite and static-check commands (the project's
+   instructions, else `plan.md`'s Technical Context); the phases already marked (0.2.0); "follow core's"
+   `Load and analyze the implementation context`, `Project Setup Verification` (Phase 1's worker only, 0.2.0),
    `Execute implementation`, `Implementation execution rules` and `Progress tracking and error
    handling` steps of `.claude/skills/speckit-implement/SKILL.md`; the worker "commits each task",
+   staging only the files it changed and never a file in the feature directory (0.2.0),
    returns the report of 4, follows or reports a call a project hook blocks, and does not edit
    `tasks.md` (core's "mark the task off as [X]" in those steps is the main session's), start a
    review or start a worker.
-4. **The report**: first and last commit; tasks done; for each task not done, what stopped it;
+4. **The report**: first and last commit; tasks done; tasks found already done, with the commit or
+   file holding each (0.2.0); for each task not done, what stopped it;
    anything found that no task covers; the output of its last whole-suite run.
 5. **Verification**: before the phase's first worker, the main session records HEAD and runs the
    static checks as the baseline. It "marks a task [X] only after" its own runs show the whole suite
    passing and no static-check finding the baseline lacked, and its reading of the diff from the
-   recorded HEAD finds nothing the phase's tasks do not call for (suite and checks when named). A
+   recorded HEAD finds nothing the phase's tasks do not call for (suite and checks when named);
+   0.2.0 reads the commits since that HEAD, requires nothing uncommitted outside the feature
+   directory, and marks a task found done on the suite, the static checks and the commit or file
+   cited. A
    review the phase calls for, and its fixes, resolve first; then it commits `tasks.md` with a
-   message containing `tasks: mark phase <n>` (after any prefix the project requires), and only then starts the next phase's worker.
+   message containing `tasks: mark phase <n>` (after any prefix the project requires; 0.2.0: none
+   when the phase marked nothing new), and only then starts the next phase's worker.
 6. **Hand-offs**: every unfinished task, failed verification or review finding goes to a worker,
    then verification again; a review finding passes when a fresh review of it no longer reports it.
    A phase gets "at most two fix hand-offs" (every hand-off of the phase after its first counts); when verification still fails after them, "carry out
    the phase's remaining items in this session". Tasks a worker reported finding join the current
    phase (committed with a message containing `tasks: add found tasks`) and go to its next hand-off. "Verification still
    fails" includes a fresh review still reporting its finding. The main session's only edits to tracked files are `tasks.md` (checkboxes, tasks a
-   worker reported finding) and its commits of them.
+   worker reported finding) and its commits of them. 0.2.0: a task that changes the feature
+   directory is not handed off but carried out by the main session, which commits what it carries
+   out outside the feature directory (`tasks: carried out in this session`).
 7. **Reviews**: any review the user's or the project's instructions, or a command, call for, `subagent_type: "general-purpose"`,
    "with `model` set to this session's model family" and no `effort`, in a fresh context, never a
    worker; with no fresh context possible, the review does not run and the report says so.
 8. **Hooks**: a call a project hook blocks is the worker's to follow or report; the main session
    never makes it itself, also in the fallback: the task is not handed off again, stays unmarked, is
    reported, and the next phase starts without it.
-9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, or a
-   project that is not a git repository: "carry out the remaining tasks in this session" as core does
+9. **Fallback**: no Agent tool, a worker's error (a usage limit included) or missing report, a
+   project that is not a git repository, or (0.2.0) uncommitted changes outside the feature
+   directory when the run starts: "carry out the remaining tasks in this session" as core does
    (the bound of 6 is narrower: that phase's remaining items only, then the next phase goes to a worker), and say which and why in
    the completion report. The completion report always carries the line `Carried out in this session:
    none`, or the same prefix followed by the task ids and, for fix items, the phase and a short name; `tests/compose.sh` greps for it.
-10. **Resume**: the phase starts after the last commit whose message contains `tasks: mark phase
-    <n>`, or at the first phase when there is none; the baseline is taken there (with none, at the
-    commit before the first phase's first commit), in a temporary `git worktree`; uncommitted changes to files other than `tasks.md` go to
-    a worker with the diff, to finish or discard; uncommitted `tasks.md` changes are the main session's.
+10. **Where a run starts** (0.2.0): as `specs/003-resume-from-head/contracts/harness.md` states
+    it: the first phase with an unmarked task, all-marked phases skipped, each phase's baseline as
+    Verification says, the worker checking what is already done, a clean tree outside the feature
+    directory (else core), the main session committing what it carries out there, a `Started at phase <n>:` report line.
 11. **Narrowed, by name**: core's `For completed tasks, make sure to mark the task off as [X]`,
     `parallel tasks [P] can run together` and `Halt execution if any non-parallel task fails`.
 

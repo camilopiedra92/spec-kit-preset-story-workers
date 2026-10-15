@@ -1,0 +1,9 @@
+ok finished phases untouched
+ok uncommitted changes untouched
+ok first brief opens the first unfinished phase
+ok no brief opens a finished phase
+ok every task marked
+ok no question asked
+ok held-out N of N (59)
+FAIL report names the start: no line 'Started at phase 1: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
+ok feature-directory tasks carried out in this session: none

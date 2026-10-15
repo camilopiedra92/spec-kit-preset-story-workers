@@ -1,0 +1,84 @@
+commit 21c74de61635d70c6534109da12bbd14edfac4e2
+fixture: T012 test buy X get Y, percentage off and stacking order (US2-1-3, US2-9)
+
+tests/test_promotions.py
+commit 95cc2fadf046cc7bca433de2a57f405971ec1dfc
+fixture: T013 test fixed-amount allocation and minimum net (US2-4, US2-5, US2-10)
+
+tests/test_allocation.py
+commit 33486e3c4d939d75b485663f88d8fcd1d7698dba
+fixture: T014 test discount cap and exclusivity (US2-6-8, US2-11-13)
+
+tests/test_exclusivity.py
+commit 2967b886269990bb0eb45f907e4899a224488e16
+fixture: T015 implement allocate by largest remainder
+
+src/checkout/allocation.py
+commit 07ebe1ffc64003f3d6965cdc9437c107b9f66c19
+fixture: T016 implement promotions and their stacking order in line_discounts
+
+src/checkout/promotions.py
+commit 656f0d5e80b56e2eda2d10c14cec3e5b0d111a1b
+fixture: T017 add the fixed amount's minimum net to line_discounts
+
+src/checkout/promotions.py
+commit 9b6195cb3b11d8597a29ef59ef74ffae401c140a
+fixture: T018 add the discount cap to line_discounts
+
+src/checkout/promotions.py
+commit 0d14ca13d9f2cfb7f5bd07dd20cbc04a4df3a81a
+fixture: T019 keep buy X get Y free units outside the discount cap
+
+src/checkout/promotions.py
+commit 2a359ff86a8cb810062a08d9f66974d0f5f0f731
+fixture: T020 add exclusivity and its tie-breaks to line_discounts
+
+src/checkout/promotions.py
+commit ff46e89856d186df33b3c85fd1206d99cbc98d74
+fixture: T021 price carts with promotions and the discount cap
+
+src/checkout/cart.py
+commit 8e1a56ce358b4cdf11f4e2f3a7d7f58c8e23b920
+fixture: tasks: mark phase 3
+
+specs/001-checkout/tasks.md
+commit c1b51d3087c1975d94e2006f4174fa76c07b91ec
+fixture: T022 test full and partial refunds (US3-1 to US3-5)
+
+tests/test_returns.py
+commit d3416d7b9b1c05658fabf310e25dd041db57ef76
+fixture: T023 test return rejections (US3-6, US3-7)
+
+tests/test_return_rejections.py
+commit edf9fdd44b0f4351a01ec82b7c6a8b576861d379
+fixture: T024 test the restocking fee and its cap (US3-8, US3-9)
+
+tests/test_return_fees.py
+commit 6936f824fa09d04ea62717ae86c95fa7ce6bc464
+fixture: T025 implement per_unit
+
+src/checkout/allocation.py
+commit 3ac79251f88f0386101f08fff32cb49df9b55a4b
+fixture: T026 add per-unit nets and taxes to PricedLine
+
+src/checkout/cart.py
+commit 8a06802c0aeb3466af13bd9aee74a79b8e6a88f8
+fixture: T027 implement Refund, Order and Order.return_units
+
+src/checkout/returns.py
+commit 8cb3cae3b79ed1ac379821689f906e3226a8418f
+fixture: T028 reject over-returns, quantities below 1 and SKUs not in the order
+
+src/checkout/returns.py
+commit 23b2fc80381e267792505632f12c9baf5d28b7da
+fixture: T029 add the restocking fee to returns
+
+src/checkout/returns.py
+commit b07886f453e284d229bedcebd64eead68d671692
+fixture: T030 cap the restocking fee across the order's returns
+
+src/checkout/returns.py
+commit 6f282c41aef2de95e99e339ecfe20e3943361640
+fixture: tasks: mark phase 4
+
+specs/001-checkout/tasks.md

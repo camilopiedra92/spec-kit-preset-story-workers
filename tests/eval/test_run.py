@@ -11,6 +11,7 @@ import os
 import shutil
 import stat
 import subprocess
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -40,8 +41,13 @@ printf '%s\n' "$@" > "$here/claude.args"
 echo "${DISABLE_AUTOUPDATER-unset}" > "$here/claude.autoupdater"
 # What versions.txt holds when the agent starts (the cwd is <out>/repo).
 cp ../versions.txt "$here/versions.seen" 2> /dev/null || : > "$here/versions.seen"
+git status --porcelain --untracked-files=all > "$here/status.seen"
 # A worker's commit, so commits.txt has something after the setup commit.
 git commit -q --allow-empty -m "fixture: work"
+if [ -e "$here/claude.rename" ]; then
+  echo x > moved-from.txt && git add moved-from.txt && git commit -qm "fixture: add"
+  git mv moved-from.txt moved-to.txt && git commit -qm "fixture: rename"
+fi
 cat "$here/stream.jsonl"
 exit "$(cat "$here/claude.exit")"
 """
@@ -52,6 +58,7 @@ case "$1" in
   init) mkdir -p .specify .claude/skills/speckit-implement
         echo core > .claude/skills/speckit-implement/SKILL.md ;;
   preset) echo "$@" >> "$here/specify.preset"
+          python3 -c 'import sys, urllib.request; open(sys.argv[2], "wb").write(urllib.request.urlopen(sys.argv[1]).read())' "$4" "$here/preset.zip"
           [ -e "$here/specify.nocompose" ] ||
             echo "## Story workers" >> .claude/skills/speckit-implement/SKILL.md ;;
   version) echo "specify 1.1.3" ;;
@@ -237,12 +244,16 @@ def run(
     fixture: str = "greet",
     baseline: Path | None = None,
     home: Path | None = None,
+    state: str | None = None,
+    preset: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = {
         "HOME": str(home or stubs / "home"),
         "PATH": path or f"{stubs}:{os.environ['PATH']}",
     }
     args = ["--baseline", str(baseline)] if baseline else []
+    args += ["--state", state] if state else []
+    args += ["--preset", preset] if preset else []
     return subprocess.run(
         [BASH, str(checkout / "tests/eval/run.sh"), *args, fixture, arm, str(out)],
         check=False,
@@ -514,6 +525,8 @@ def test_the_auto_updater_is_disabled_for_the_agent(
 
 
 PRE_RUN = [
+    "state",
+    "preset",
     "commit",
     "claude",
     "specify",
@@ -719,3 +732,191 @@ def test_no_junit_report_is_scored_zero_not_unreadable(
     out = tmp_path / "out"
     assert run(checkout, stubs, "without", out).returncode == 0
     assert (out / "heldout.txt").read_text().startswith("passed 0/0: no junit report\n")
+
+
+# 003: --state overlays a committed state of the fixture before the setup commit.
+
+
+def add_state(checkout: Path, commit: bool = True) -> None:
+    root = checkout / "tests/eval/fixtures/greet/states/done-1"
+    state = root / "committed"
+    (state / "src").mkdir(parents=True)
+    (root / "uncommitted/specs/001-greet").mkdir(parents=True)
+    (root / "uncommitted/specs/001-greet/spec.md").write_text("# Spec, edited\n")
+    (state / "src/greet.py").write_text("def greet() -> str:\n    return 'hi'\n")
+    (state / "specs/001-greet").mkdir(parents=True)
+    (state / "specs/001-greet/tasks.md").write_text(
+        "# Tasks\n\n## Phase 1: Setup\n\n- [X] T001 a\n"
+    )
+    if commit:
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+        subprocess.run([*git, "add", "tests/eval/fixtures/greet/states"], check=True)
+        subprocess.run([*git, "commit", "-qm", "state"], check=True)
+
+
+def test_a_state_is_laid_over_the_project_in_the_setup_commit(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    add_state(checkout)
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "with", out, state="done-1")
+    assert result.returncode == 0, result.stdout + result.stderr
+    repo = out / "repo"
+    assert (repo / "src/greet.py").read_text() == "def greet() -> str:\n    return 'hi'\n"
+    assert "- [X] T001" in (repo / "specs/001-greet/tasks.md").read_text()
+    log = subprocess.run(
+        ["git", "-C", str(repo), "log", "--format=%s", "--", "src/greet.py"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    assert log[-2:] == ["fixture:", "setup"]
+    assert "state: done-1" in (stubs / "versions.seen").read_text()
+    # uncommitted/ is laid over after every commit: the agent finds it changed, not committed.
+    assert (stubs / "status.seen").read_text() == " M specs/001-greet/spec.md\n"
+    assert (repo / "specs/001-greet/spec.md").read_text() == "# Spec, edited\n"
+
+
+def test_without_a_state_versions_say_none(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    assert "state: -" in (out / "versions.txt").read_text()
+
+
+@pytest.mark.parametrize("committed", [False, None])
+def test_a_state_not_committed_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, committed: bool | None
+) -> None:
+    if committed is not None:
+        add_state(checkout, commit=False)
+        (checkout / ".gitignore").write_text("ignored.txt\nusage.exit\nusage.args\nstates/\n")
+        git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+        subprocess.run([*git, "commit", "-qam", "ignore states"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out", state="done-1")
+    assert result.returncode == 2
+    assert "state" in result.stderr
+    assert not (tmp_path / "out").exists()
+
+
+def test_commits_name_both_sides_of_a_rename(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    # A run that moves a finished file away must not hide the old path (resume_check).
+    (stubs / "claude.rename").write_text("")
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    rename = (out / "commits.txt").read_text().split("fixture: rename\n")[1]
+    assert "moved-from.txt" in rename and "moved-to.txt" in rename
+
+
+# 003: --preset <ref> installs the preset as that ref archives it (the v0.1.0 arm).
+
+
+def tag_old_preset(checkout: Path) -> str:
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    (checkout / "commands").mkdir()
+    (checkout / "commands/speckit.implement.md").write_text("## Story workers\nold\n")
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "old preset"], check=True)
+    subprocess.run([*git, "-c", "tag.gpgSign=false", "tag", "v-old"], check=True)
+    sha = subprocess.run(
+        [*git, "rev-parse", "v-old"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    (checkout / "commands/speckit.implement.md").write_text("## Story workers\nnew\n")
+    subprocess.run([*git, "commit", "-qam", "new preset"], check=True)
+    return sha
+
+
+def test_a_preset_ref_is_installed_as_that_ref_archives_it(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    sha = tag_old_preset(checkout)
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "with", out, preset="v-old")
+    assert result.returncode == 0, result.stdout + result.stderr
+    with zipfile.ZipFile(stubs / "preset.zip") as archive:
+        name = next(n for n in archive.namelist() if n.endswith("commands/speckit.implement.md"))
+        assert archive.read(name).decode() == "## Story workers\nold\n"
+    assert f"preset: v-old {sha}" in (out / "versions.txt").read_text()
+
+
+def test_without_a_preset_ref_head_is_installed(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    head = subprocess.run(
+        ["git", "-C", str(checkout), "rev-parse", "HEAD"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert f"preset: HEAD {head}" in (out / "versions.txt").read_text()
+
+
+@pytest.mark.parametrize(("arm", "ref"), [("without", "v-old"), ("with", "no-such-ref")])
+def test_a_preset_ref_is_refused_where_it_cannot_apply(
+    checkout: Path, stubs: Path, tmp_path: Path, arm: str, ref: str
+) -> None:
+    tag_old_preset(checkout)
+    result = run(checkout, stubs, arm, tmp_path / "out", preset=ref)
+    assert result.returncode == 2
+    assert "preset" in result.stderr
+    assert not (tmp_path / "out").exists()
+
+
+# 003: a state may extend another: the base's layers first, then its own.
+
+
+def test_a_state_extends_its_base(checkout: Path, stubs: Path, tmp_path: Path) -> None:
+    add_state(checkout)
+    child = checkout / "tests/eval/fixtures/greet/states/done-1-dirty"
+    (child / "committed/specs/001-greet").mkdir(parents=True)
+    (child / "committed/specs/001-greet/tasks.md").write_text("# Tasks\n\n- [X] T001 b\n")
+    (child / "uncommitted").mkdir()
+    (child / "uncommitted/NOTES.md").write_text("notes\n")
+    (child / "extends").write_text("done-1\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "child state"], check=True)
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "with", out, state="done-1-dirty")
+    assert result.returncode == 0, result.stdout + result.stderr
+    repo = out / "repo"
+    # The base's committed file, the child's tasks.md over the base's.
+    assert (repo / "src/greet.py").read_text() == "def greet() -> str:\n    return 'hi'\n"
+    assert (repo / "specs/001-greet/tasks.md").read_text() == "# Tasks\n\n- [X] T001 b\n"
+    # Both uncommitted layers, uncommitted.
+    seen = (stubs / "status.seen").read_text().splitlines()
+    assert sorted(seen) == [" M specs/001-greet/spec.md", "?? NOTES.md"]
+
+
+def test_a_state_extending_a_missing_state_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    child = checkout / "tests/eval/fixtures/greet/states/orphan"
+    child.mkdir(parents=True)
+    (child / "extends").write_text("no-such-state\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "orphan"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out", state="orphan")
+    assert result.returncode == 2
+    assert "no-such-state" in result.stderr
+
+
+@pytest.mark.parametrize("names", [["loop-a", "loop-b"], [f"deep-{n}" for n in range(6)]])
+def test_a_state_chain_too_deep_or_circular_is_refused(
+    checkout: Path, stubs: Path, tmp_path: Path, names: list[str]
+) -> None:
+    # Each state extends the next; a two-name loop never ends, six names exceed five layers.
+    states = checkout / "tests/eval/fixtures/greet/states"
+    for i, name in enumerate(names):
+        (states / name / "committed").mkdir(parents=True)
+        (states / name / "committed/.keep").write_text("")
+        if i + 1 < len(names) or len(names) == 2:
+            (states / name / "extends").write_text(names[(i + 1) % len(names)] + "\n")
+    git = ["git", "-c", "user.name=t", "-c", "user.email=t@t", "-C", str(checkout)]
+    subprocess.run([*git, "add", "-A"], check=True)
+    subprocess.run([*git, "commit", "-qm", "chain"], check=True)
+    result = run(checkout, stubs, "with", tmp_path / "out", state=names[0])
+    assert result.returncode == 2
+    assert "more than 5 deep" in result.stderr

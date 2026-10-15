@@ -178,12 +178,14 @@ its own.
   follows it or leaves the task unfinished with the message in its report; the main session never
   makes the blocked call itself, also under FR-007: such a task stays unfinished and goes into the
   completion report.
-- **A run resumes** after an interruption: the phase starts after the last commit whose message
-  contains `tasks: mark phase <n>` (FR-004), or at the first phase when there is none; its commits are verified
-  as FR-004 says; uncommitted changes to files other than `tasks.md` go to a worker briefed with the diff, to finish
-  or discard; uncommitted changes to `tasks.md` are the main session's to keep or drop. The
-  static-check baseline is taken at that commit (with none, at the commit before the first phase's
-  first commit), in a temporary `git worktree` of it.
+- **A run resumes** (rule of 0.2.0, feature 003): every run starts at the first phase with a task
+  not marked `[X]` or `[x]`, skipping all-marked phases; each phase's baseline is taken as
+  Verification says; the worker gets only the unmarked tasks and checks what the repository already
+  holds; a run that finds uncommitted changes outside the feature directory is
+  carried out as core does; the main session commits what it carries out outside it; the completion report says where the
+  run started and that work committed before it had the suite but no diff reading.
+  (0.1.0 resumed after the last `tasks: mark phase <n>` commit, which restarted a feature adopted
+  partway through at Phase 1.)
 - **The project names no suite, or no static check**: verification runs what is named, says in the
   completion report what was not, and the diff is read as always.
 - **`[P]` tasks** run inside their phase's worker, one after another: two workers would write the
@@ -194,7 +196,7 @@ its own.
   its own prompt; the calls' model and effort still apply (observed, R1).
 - **The main session is already on the smaller model**: the hand-off still happens; not measured.
 - **The project is not a git repository**: core runs without git, the hand-off cannot (per-task
-  commits, the diff from a recorded HEAD, the baseline worktree): the run falls back to core (FR-007).
+  commits, the diff from a recorded HEAD): the run falls back to core (FR-007).
   Not measured, the eval's fixture being a git repository; the source is core itself, whose
   "Project Setup Verification" checks `git rev-parse --git-dir` before relying on git (constitution
   III's cited source, for a rule that restates core's behaviour).
@@ -210,21 +212,25 @@ its own.
   `effort: "medium"` and `run_in_background: false` on the call, so the main session has the
   worker's report before it verifies (research.md R1 17).
 - **FR-003**: The worker's brief MUST open with the phase's heading as `tasks.md` writes it and carry
-  the phase's tasks — and, for a fix, the finding; on
-  resume, the uncommitted diff — the feature directory, the suite and static-check commands (from the
-  project's instructions, else `plan.md`'s Technical Context), and what earlier workers finished; it
+  the phase's unmarked tasks, which may already be partly done (0.2.0, feature 003) — or, for a
+  fix, the finding — the feature directory, the suite and static-check commands (from the
+  project's instructions, else `plan.md`'s Technical Context), and the phases already marked; it
   MUST point the worker at core's "Load and analyze the implementation context", "Project Setup
-  Verification" (first phase only), "Execute implementation", "Implementation execution rules" and
+  Verification" (Phase 1's worker only, 0.2.0), "Execute implementation", "Implementation execution rules" and
   "Progress tracking and error handling" steps in the composed skill rather than repeating them; and
-  it MUST say the worker commits each task in a commit of its own, returns the worker report, follows
+  it MUST say the worker commits each task in a commit of its own (0.2.0: staging only the files it
+  changed, never a file in the feature directory), returns the worker report, follows
   or reports a call a project hook blocks, and does not edit `tasks.md` (core's "mark the task off as
   [X]" in those steps is the main session's), start a review or start another worker.
 - **FR-004**: The main session MUST mark a task `[X]` only after, in its own runs, the whole suite
   passes (when one is named), the static checks report no finding the baseline it took before the
   phase's first worker did not have (when they are named), and its reading of the phase's diff finds
-  nothing the phase's tasks do not call for. A review the phase calls for (FR-005), and every fix
+  nothing the phase's tasks do not call for (0.2.0: the commits since the recorded HEAD, and `git
+  status` listing nothing uncommitted outside the feature directory; a task found
+  already done is marked on the suite, the static checks and the commit or file cited). A review the phase calls for (FR-005), and every fix
   it leads to, resolves before the phase is marked; then the main session commits `tasks.md` with a
-  message containing `tasks: mark phase <n>` (after any prefix the project's instructions require), and only then does the next phase's worker start. A worker's report
+  message containing `tasks: mark phase <n>` (after any prefix the project's instructions require;
+  0.2.0: none when the phase marked nothing new), and only then does the next phase's worker start. A worker's report
   never marks a task.
 - **FR-005**: Any review the user's or the project's instructions, or a command, call for MUST be
   started in a fresh context with `subagent_type: "general-purpose"`, `model` set to the main
@@ -233,7 +239,8 @@ its own.
   and the completion report says so: core has no review, and a review by the context that wrote the
   code is not one.
 - **FR-006**: Every hand-off — unfinished tasks, a failed verification, a review finding — MUST go
-  to a worker briefed with it, then verification again; a review finding passes when a fresh review
+  to a worker briefed with it (0.2.0: except a task that changes the feature directory, which the
+  main session carries out), then verification again; a review finding passes when a fresh review
   of that finding no longer reports it. A phase gets at most two fix hand-offs — every hand-off of
   the phase after its first counts, whatever items it carries; when verification — a fresh review still reporting its finding included — still fails after
   them, the main session carries out the phase's
@@ -244,10 +251,13 @@ its own.
   "Halt execution if any non-parallel task fails" applies and the run ends with the report. Apart
   from that, the main session's only edits to tracked files are `tasks.md` — its checkboxes, and the
   tasks a worker reported finding — and its commits of them; running the suite, the static checks or
-  core's extension hooks is not writing code.
+  core's extension hooks is not writing code. (0.2.0: outside the items it carries out, and it commits
+  what it carries out outside the feature directory with a message containing `tasks: carried out
+  in this session`.)
 - **FR-007**: When no worker can carry on — no Agent tool, a worker's error (a usage limit included)
   or missing report, or a project that is not a git repository (the hand-off's commits, diff and
-  baseline need git) — the main session MUST carry out the remaining tasks as core does and say which
+  baseline need git), or (0.2.0) uncommitted changes outside the feature directory when the run
+  starts — the main session MUST carry out the remaining tasks as core does and say which
   and why in the completion report (constitution IV). FR-006's bound is narrower: only that phase's
   remaining items run in the main session, and the next phase goes to a worker as usual. The completion report always
   carries the line `Carried out in this session: none`, or `Carried out in this session:` followed by

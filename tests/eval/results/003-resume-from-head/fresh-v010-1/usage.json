@@ -1,0 +1,196 @@
+{
+  "models": {
+    "claude-opus-5-5": {
+      "reported": {
+        "input": 86,
+        "output": 29583,
+        "cache_read": 1698879,
+        "cache_write": 161967,
+        "cost": 1.9353458
+      },
+      "transcripts": {
+        "input": 86,
+        "output": 29583,
+        "cache_read": 1698879,
+        "cache_write_5m": 97390,
+        "cache_write_1h": 64577,
+        "cost": 1.9353458000000001
+      }
+    },
+    "claude-sonnet-5-5": {
+      "reported": {
+        "input": 86,
+        "output": 35548,
+        "cache_read": 1245207,
+        "cache_write": 162021,
+        "cost": 0.8852251999999999
+      },
+      "transcripts": {
+        "input": 86,
+        "output": 35548,
+        "cache_read": 1245207,
+        "cache_write_5m": 162021,
+        "cache_write_1h": 0,
+        "cost": 0.8852251999999999
+      }
+    }
+  },
+  "parts": [
+    {
+      "part": "before",
+      "phase": null,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 6,
+      "output": 468,
+      "cache_read": 64946,
+      "cache_write_5m": 0,
+      "cache_write_1h": 25651,
+      "cost": 0.2275812
+    },
+    {
+      "part": "phase",
+      "phase": 1,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 6,
+      "output": 1520,
+      "cache_read": 123054,
+      "cache_write_5m": 0,
+      "cache_write_1h": 6436,
+      "cost": 0.1065228
+    },
+    {
+      "part": "phase",
+      "phase": 2,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 14,
+      "output": 4715,
+      "cache_read": 349686,
+      "cache_write_5m": 0,
+      "cache_write_1h": 13461,
+      "cost": 0.27198120000000003
+    },
+    {
+      "part": "phase",
+      "phase": 3,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 8,
+      "output": 3291,
+      "cache_read": 241292,
+      "cache_write_5m": 0,
+      "cache_write_1h": 8692,
+      "cost": 0.1836464
+    },
+    {
+      "part": "phase",
+      "phase": 4,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 12,
+      "output": 4665,
+      "cache_read": 425578,
+      "cache_write_5m": 0,
+      "cache_write_1h": 9852,
+      "cost": 0.2572796
+    },
+    {
+      "part": "after",
+      "phase": null,
+      "model": "claude-opus-5-5",
+      "subagents": 0,
+      "input": 2,
+      "output": 862,
+      "cache_read": 76353,
+      "cache_write_5m": 0,
+      "cache_write_1h": 485,
+      "cost": 0.036398599999999996
+    },
+    {
+      "part": "worker",
+      "phase": 1,
+      "model": "claude-sonnet-5-5",
+      "subagents": 1,
+      "input": 10,
+      "output": 1724,
+      "cache_read": 103899,
+      "cache_write_5m": 18705,
+      "cache_write_1h": 0,
+      "cost": 0.07441239999999999
+    },
+    {
+      "part": "worker",
+      "phase": 2,
+      "model": "claude-sonnet-5-5",
+      "subagents": 2,
+      "input": 24,
+      "output": 9771,
+      "cache_read": 280537,
+      "cache_write_5m": 45512,
+      "cache_write_1h": 0,
+      "cost": 0.23959170000000002
+    },
+    {
+      "part": "worker",
+      "phase": 3,
+      "model": "claude-sonnet-5-5",
+      "subagents": 1,
+      "input": 20,
+      "output": 13679,
+      "cache_read": 402296,
+      "cache_write_5m": 44197,
+      "cache_write_1h": 0,
+      "cost": 0.2875521
+    },
+    {
+      "part": "worker",
+      "phase": 4,
+      "model": "claude-sonnet-5-5",
+      "subagents": 2,
+      "input": 32,
+      "output": 10374,
+      "cache_read": 458475,
+      "cache_write_5m": 53607,
+      "cache_write_1h": 0,
+      "cost": 0.283669
+    },
+    {
+      "part": "review",
+      "phase": 2,
+      "model": "claude-opus-5-5",
+      "subagents": 2,
+      "input": 18,
+      "output": 5970,
+      "cache_read": 183542,
+      "cache_write_5m": 41724,
+      "cache_write_1h": 0,
+      "cost": 0.3648004
+    },
+    {
+      "part": "review",
+      "phase": 3,
+      "model": "claude-opus-5-5",
+      "subagents": 1,
+      "input": 10,
+      "output": 4622,
+      "cache_read": 123542,
+      "cache_write_5m": 30643,
+      "cache_write_1h": 0,
+      "cost": 0.2704034
+    },
+    {
+      "part": "review",
+      "phase": 4,
+      "model": "claude-opus-5-5",
+      "subagents": 1,
+      "input": 10,
+      "output": 3470,
+      "cache_read": 110886,
+      "cache_write_5m": 25023,
+      "cache_write_1h": 0,
+      "cost": 0.2167322
+    }
+  ]
+}

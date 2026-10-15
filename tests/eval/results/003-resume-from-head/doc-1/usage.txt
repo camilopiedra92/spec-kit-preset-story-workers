@@ -1,0 +1,9 @@
+claude-opus-5-5 cost 1.3383408 input 52 output 20026 cache_read 910549 cache_write_5m 70867 cache_write_1h 50146
+claude-sonnet-5-5 cost 0.5726097 input 52 output 23477 cache_read 1000182 cache_write_5m 95087 cache_write_1h 0
+sum 1.9109505
+five_hour 0.29 0.31
+reconciled yes
+part unattributed phase - claude-opus-5-5 cost 0.7077856 input 28 output 9271 cache_read 605428 cache_write_5m 0 cache_write_1h 50146
+part worker phase 3 claude-sonnet-5-5 cost 0.3239510 input 28 output 13453 cache_read 544200 cache_write_5m 53978 cache_write_1h 0
+part worker phase 4 claude-sonnet-5-5 cost 0.2486587 input 24 output 10024 cache_read 455982 cache_write_5m 41109 cache_write_1h 0
+part review phase - claude-opus-5-5 cost 0.6305552 input 24 output 10755 cache_read 305121 cache_write_5m 70867 cache_write_1h 0

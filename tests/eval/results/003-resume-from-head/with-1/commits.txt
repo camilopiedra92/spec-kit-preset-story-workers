@@ -1,0 +1,98 @@
+commit 56e46bbd185f92a475dd5f75fbf7e0400e7a1bc2
+fixture: T012 test promotions
+
+tests/test_promotions.py
+commit 7488678e794829d78ad98057428fbeb0555ffd5b
+fixture: T013 test allocation
+
+tests/test_allocation.py
+commit d2392ac63a05fc25169247c4e6c2b32cf50d30ab
+fixture: T014 test exclusivity
+
+tests/test_exclusivity.py
+commit 26e608baa242115993ac7ce955408dc99e6b7d3b
+fixture: T013 drop unused import in test_allocation
+
+tests/test_allocation.py
+commit 0e13f38172cfad2bbba2254ef462e14701f4ec82
+fixture: T015 implement allocate
+
+src/checkout/allocation.py
+commit af8d778934346c1dcb7a7bb9e567efab35e5a0b0
+fixture: T016 promotions and stacking order
+
+src/checkout/promotions.py
+commit 50b3971e0ea668b5e2a83f4aaf83df4440806615
+fixture: T017 minimum net
+
+src/checkout/promotions.py
+commit 95588ecfb893fd7401c2637b8ba9df3e1e285687
+fixture: T018 discount cap
+
+src/checkout/promotions.py
+commit b72192016edec45d5960d78ab9b0d67331413782
+fixture: T019 free units stay outside the cap (kept in T016/T018: free tracked apart from capped)
+commit 210e0eff14f75db45ae871dde846b0500e72780f
+fixture: T014 remove a test that restated no spec scenario
+
+tests/test_exclusivity.py
+commit 296bea36eec32a547e0af21e284f777bb5a591cf
+fixture: T020 exclusivity and its tie-breaks
+
+src/checkout/promotions.py
+commit 234a09f2d5191bab7d9a3695ba89a47d3c883b99
+fixture: T021 price with promotions and the discount cap
+
+src/checkout/cart.py
+commit e89b9f06b9f5baa1f69a9dd07191e5fb9264615b
+fixture: tasks: mark phase 3
+
+specs/001-checkout/tasks.md
+commit 82666d93765e77c946ff9ae706ac3f934dbc8dfe
+fixture: T022 test returns
+
+tests/test_returns.py
+commit 7bc1f037a6fdeaf28d8c3cf4df31181a5de4b024
+fixture: T023 test return rejections
+
+tests/test_return_rejections.py
+commit a82b4e124b8f1d704c3031bde552d9de04d25e60
+fixture: T024 test return fees
+
+tests/test_return_fees.py
+commit c178c3194e3bc32fbce6c0ddcd1ff55190b223fb
+fixture: T025 implement per_unit
+
+src/checkout/allocation.py
+commit ecf64b82612a54215e26865608541900f79b51cc
+fixture: T026 unit_nets and unit_taxes on PricedLine
+
+src/checkout/cart.py
+commit fa73926b6584bbff02f81c50d1f4ac35a01f79b4
+fixture: T027 Refund, Order and return_units
+
+src/checkout/returns.py
+commit c9f3368c32f11bc43122305c933c3f5aa6f33c15
+fixture: T028 OverReturn and the return rejections
+
+src/checkout/returns.py
+commit a83ba1b02f7492576324e1b4bb694c3a1fbbbcbe
+fixture: T029 restocking fee
+
+src/checkout/returns.py
+commit f2394cd9fbcbb58278a6f3eec6a8c53a63f4e702
+fixture: T026 import per_unit in cart.py (missing from the T026 commit)
+
+src/checkout/cart.py
+commit 10cb1c49b3e40289301878323b5aa9ce00d99936
+fixture: T030 fee cap across the order's returns
+
+src/checkout/returns.py
+commit c3566f541eb94666a5ad58f5d90fa845a65a9e02
+fixture: assert US3-6 per-unit nets and taxes and each refund's net and tax
+
+tests/test_return_rejections.py
+commit 387b249e442ad451b4ffef18f0192415342d7df7
+fixture: tasks: mark phase 4
+
+specs/001-checkout/tasks.md

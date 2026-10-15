@@ -1,0 +1,22 @@
+All 30 tasks in `specs/001-checkout/tasks.md` are done and marked `[X]`, across four phases. The suite passes (77 tests) and the static check is clean.
+
+| Phase | Tasks | What was built | Fresh review |
+|---|---|---|---|
+| 1 Setup | T001 | The package and test folder; Python ignore patterns added to `.gitignore` | None (no user story) |
+| 2 US1 cart and tax | T002–T011 | Half-even rounding, catalog, bulk price, tax table, cart, pricing | 2 findings, both fixed and confirmed fixed by a second review |
+| 3 US2 promotions | T012–T021 | Splitting a fixed amount across lines, the three promotion kinds in their fixed order, minimum net, discount cap, exclusive promotions | Nothing found |
+| 4 US3 returns | T022–T030 | Splitting each line into per-unit amounts, refunds, rejected returns, restocking fee and its cap | Nothing failing; one mismatch with the plan, fixed |
+
+**What the reviews changed:**
+- **Phase 2:** `Cart.add` accepted quantities that aren't whole numbers (such as `2.5`), although the spec says a quantity is a whole number from 1 to 99. It now rejects them with `InvalidQuantity`, which also covers `True`. Separately, the test for scenario US1-3 now builds the cart the scenario actually describes.
+- **Phase 4:** `PricedLine.unit_nets` and `unit_taxes` had been given empty defaults, which `plan.md` doesn't have. A line built without them would have refunded 0 per unit. They are now required.
+
+**Notes:**
+- `Cart.add` and `Order.return_units` reject `2.0`, even though its value is whole. That is stricter than the spec, which only ever uses whole-number integers.
+- `Order` is a plain class rather than a frozen dataclass, because it has to remember units already returned and how much of the fee cap is left.
+- Until Phase 2 added tests, `uv run pytest` exited with code 5 ("no tests ran") rather than 0. Nothing failed.
+- There were no checklists and no `.specify/extensions.yml`, so there were no before or after hooks to run. The project names a suite and a static check, and both ran at every phase.
+
+Each phase ends with a `fixture: tasks: mark phase <n>` commit. The last one is `46d523f`, on `master`, and nothing has been pushed.
+
+Carried out in this session: none
