@@ -169,9 +169,9 @@ phrases=(
   # reviewer's to read.
   '`[X]` or `[x]`'
   'read from the file as core reads it'
-  'where a run starts is never read from commit messages'
+  'Where a run starts is never read from commit messages'
   'skips every phase whose tasks are all marked, wherever it falls'
-  'it starts at the first phase with an unmarked task, at Phase 1 when none is marked'
+  'It starts at the first phase with an unmarked task, at Phase 1 when none is marked'
   'When every task is marked, start no worker, commit nothing'
   "Each phase's baseline is taken as Verification says"
   "Before a phase's first worker, record HEAD"
@@ -193,17 +193,17 @@ phrases=(
   'Outside the items this session carries out, your only edits'
   'When it lists a path outside the feature directory'
   'carry out the run in this session as core does'
-  'they are not a finding'
-  'no worker edits, stages, commits or reverts a file there'
+  'They are not a finding'
+  'No worker edits, stages, commits or reverts a file there'
   'carry `tasks.md` as it stands, its earlier edits included'
   'A task that changes a file in the feature directory is carried out in this session as core does'
   '`tasks: carried out in this session`'
   'uncommitted changes stay as they are'
-  'its files in the feature directory are left uncommitted, as core leaves them'
+  'Its files in the feature directory are left uncommitted, as core leaves them'
   'What this session changes outside the feature directory while carrying out'
   'leaves a task that needs one unfinished, saying so'
-  'and `git status --porcelain --untracked-files=all`, run before its own suite'
-  'except one that changes the feature directory, which this session carries out'
+  '`git status --porcelain --untracked-files=all`, run before its own suite'
+  'an unfinished task that changes the feature directory, which this session carries out'
   'any file the suite or the static checks generate that git does not ignore'
   "Before the first worker and before any of the run's own suite or static-check runs"
   'it commits as soon as it has carried them out, before any later Verification or worker'
@@ -246,6 +246,40 @@ for phrase in 'A run starts at the phase after the last commit whose message con
   "it commits before the next phase's worker starts"; do
   ! grep -qF -- "$phrase" <<< "$said" || problem "the fragment still says '$phrase'"
 done
+
+# 004 (US1): the fragment is one rule per bullet, and the bullets are the mapping of
+# specs/004-fragment-form-and-observation/plan.md, one inventoried rule each. Read from HEAD, like
+# the fragment. Whether a bullet still MEANS what the clause it replaced did is not decidable
+# here: a fresh-context reviewer compares the inventory with the old and the new text.
+feature=specs/004-fragment-form-and-observation
+for f in "$feature/plan.md" "$feature/spec.md" README.md; do
+  git -C "$PRESET" show "HEAD:$f" > "$work/$(basename "$f")" 2> /dev/null || problem "no $f at HEAD"
+done
+rules() { "$PY" "$PRESET/tests/fragment_rules.py" "$1" plan.md spec.md README.md; }
+rules "$(skill_of speckit.implement)" || fail=1
+# Seen red (constitution III, specs/004 SC-001): a bullet removed, one duplicated, one reworded,
+# an inventory row dropped, a justification sentence dropped from the README. Each must fail,
+# naming the rule.
+break_check() { # <what> <id it must name> <python expression on `text` (the skill) or `spec`>
+  "$PY" -c 'import sys
+skill, spec, readme = (open(p, encoding="utf-8").read() for p in sys.argv[2:5])
+exec(sys.argv[1])
+open("broken-skill.md", "w", encoding="utf-8").write(skill)
+open("broken-spec.md", "w", encoding="utf-8").write(spec)
+open("broken-readme.md", "w", encoding="utf-8").write(readme)' "$3" "$(skill_of speckit.implement)" spec.md README.md
+  if said=$("$PY" "$PRESET/tests/fragment_rules.py" broken-skill.md plan.md broken-spec.md broken-readme.md); then
+    problem "fragment_rules.py passed with $1"
+  elif ! grep -qF -- "$2" <<< "$said"; then
+    problem "fragment_rules.py did not name $2 with $1"
+  fi
+}
+break_check 'R7 removed' 'R7' 'skill = skill.replace("- Never run two workers at once.\n", "")'
+break_check 'R7 duplicated' 'R7' 'skill = skill.replace("- Never run two workers at once.\n", "- Never run two workers at once.\n" * 2)'
+break_check 'R7 reworded' 'R7' 'skill = skill.replace("Never run two workers at once.", "Do not run two workers at once.")'
+break_check 'R50 added to the fragment as an extra bullet' 'mapping lacks' 'skill = skill.rstrip() + "\n- Also do a thing.\n"'
+break_check 'R7 dropped from the inventory' 'R7' 'spec = spec.replace("| R7 |", "| X7 |")'
+break_check 'J3 dropped from the README' 'J3' 'readme = readme.replace("**J3**", "J3")'
+[ "$fail" -ne 0 ] || echo "ok: US1, the fragment is the mapping; each hand-break turned fragment_rules.py red"
 
 specify version > version.txt 2>&1 || true
 [ "$fail" -eq 0 ] && echo "ok: composes on specify $(grep -m1 -oE '[0-9]+\.[0-9]+\.[0-9]+' version.txt)"

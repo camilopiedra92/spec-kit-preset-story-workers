@@ -6,6 +6,18 @@ All notable changes to this preset are recorded here, in the form of
 
 ## [Unreleased]
 
+Nothing here is released: no tag, `preset.yml` is still `0.2.0`, and the owner decides after reading
+the measured results (feature 004, [spec](specs/004-fragment-form-and-observation/spec.md)).
+
+### Changed
+
+- `## Story workers` is one rule per bullet, in the same order and sections, with the sentences that
+  justify a rule moved to the README ([Why the fragment's rules read as they do](README.md#why-the-fragments-rules-read-as-they-do),
+  J1 to J6). No rule is added, removed, reordered or reworded in meaning: the 88 statements of the
+  fragment at `53059f8` map one to one onto the new bullets (`tests/fragment_rules.py`, run by
+  `tests/compose.sh`, seen red with a bullet removed, duplicated, reworded or added). That the new
+  text means what the old did is checked by a fresh-context reviewer, not by a test. **The
+  behaviour of the rewritten fragment is NOT measured** until Eval 004 is recorded in the README.
 ### Added
 
 - A first paragraph in `## Story workers` stating that in a project that is not a git repository,

@@ -73,6 +73,35 @@ the run goes on, halting only when the suite is red because of it).
 more (Eval 001). When the main session already runs on the smaller model. With agents that have no
 subagents (it falls back to core, so it only adds text).
 
+## Why the fragment's rules read as they do
+
+The fragment (`commands/speckit.implement.md`) is one rule per bullet. Until feature 004 several
+rules shared a sentence with the reason for them; the reasons moved here, each under the id the
+feature's spec gives it (`specs/004-fragment-form-and-observation/spec.md`, "Justification
+sentences"), and no rule changed (the spec's inventory, R1 to R88, maps one to one onto the bullets;
+a fresh-context reviewer compares old and new text for equivalence of meaning, which no test can).
+The reasons below are the repository's own, from `specs/001-story-workers/research.md`, not
+measured on their own:
+
+- **J1**, one worker per phase, `[P]` tasks in turn: "two workers would write the same worktree and
+  index" (`specs/001-story-workers/research.md` R2).
+- **J2**, `run_in_background: false`: so the worker's report is in hand before the main session
+  verifies (research R1 17 of 001: a foreground call returns its report before the next call).
+- **J3**, a project that is not a git repository goes to Fallback: the commits, diffs and baseline
+  of Verification need git.
+- **J4**, a review set to the session's model family and no `effort`: so it thinks as hard as the
+  session does (research R1 5 of 001: without `effort` a subagent inherits the session's; R5 for the review).
+- **J5**, no review where no fresh context can be started: a review by the context that wrote the
+  code is not one.
+- **J6**, a path outside the feature directory sends the run to core: a worker's changes could not
+  be kept apart from that work ([decision 0004](docs/decisions/0004-clean-tree-outside-the-feature.md)).
+
+**Why the form changed, and what is not known.** An outside review (owner-commissioned, 2026-10-22)
+found paragraphs of several rules with their exceptions hard to follow and expected one rule per
+bullet to help compliance. Whether it does is a hypothesis; Eval 004 below measures it on one
+fixture. Until its entry is in this README, the behaviour of the rewritten fragment is **not
+measured**.
+
 ## The owner's decision, 2026-10-14
 
 After Eval 002's second closed gate, the owner chose to stop measuring and release the preset as it
