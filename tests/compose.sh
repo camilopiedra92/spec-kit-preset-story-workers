@@ -291,7 +291,7 @@ break_check 'J3 dropped from the README' 'J3' 'readme = readme.replace("**J3**",
 "$PY" "$PRESET/tests/observe_standin.py" implement.md || fail=1
 standin_break() { # <what it must name> <from> <to>
   "$PY" -c 'import sys
-text = open(sys.argv[1], encoding="utf-8").read()
+text = " ".join(open(sys.argv[1], encoding="utf-8").read().split())
 assert sys.argv[2] in text, sys.argv[2]
 open("implement-broken.md", "w", encoding="utf-8").write(text.replace(sys.argv[2], sys.argv[3]))' \
     implement.md "$2" "$3" || { problem "no '$2' in the fragment to break"; return; }

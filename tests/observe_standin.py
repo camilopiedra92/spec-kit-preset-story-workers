@@ -44,7 +44,7 @@ def git(repo: Path, command: str) -> subprocess.CompletedProcess[str]:
 
 def found(text: str) -> dict[str, str]:
     """Each command as the fragment spells it, from the backtick spans of its text."""
-    spans = re.findall(r"`([^`]+)`", text)
+    spans = re.findall(r"`([^`]+)`", " ".join(text.split()))
     return {
         name: next((s for s in spans if re.fullmatch(pattern, s)), "")
         for name, pattern in COMMANDS.items()
