@@ -14,14 +14,14 @@ not before every commit. The feature's fresh-context pass is the owner's.
 ## Phase 1: Spec (PR 1, draft)
 
 - [X] T001 Inventory (R1 to R88), justification sentences (J1 to J6), new rules (N1 to N5), mapping, research, ADR 0005 superseded, CHANGELOG correction
-- [ ] T002 Eval budget confirmed in the spec (owner approved model usage, 2026-10-23)
+- [X] T002 Eval budget confirmed in the spec (owner approved model usage, 2026-10-23)
 
 ## Phase 2: Harness for E3 and E2 (PR 2, draft)
 
-- [ ] T003 `test_run.py`: `--no-git` cases, red first (flag unknown); then `run.sh --no-git`
-- [ ] T004 `test_nogit_check.py` red, then `nogit_check.py`; break each check by hand
-- [ ] T005 `test_observe_check.py` red, then `observe_check.py`; break each check by hand
-- [ ] T006 `tests/check.sh`
+- [X] T003 `test_run.py`: `--no-git` cases, red first (flag unknown); then `run.sh --no-git`
+- [X] T004 `test_nogit_check.py` red, then `nogit_check.py`; break each check by hand
+- [X] T005 `test_observe_check.py` red, then `observe_check.py`; break each check by hand
+- [X] T006 `tests/check.sh`
 
 ## Phase 3: US1, the form (PR 3, draft)
 

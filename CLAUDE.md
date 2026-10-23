@@ -14,9 +14,11 @@ Spec Kit.
 tests/check.sh        # the checks CI runs
 tests/eval/probes.sh [out-dir]                         # reruns research R1; ~$1.40 of usage
 tests/eval/oracle.sh [--write-n] <fixture>             # held-out tests against the reference
-tests/eval/run.sh [--baseline <run>] [--state <s>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>  # one arm; spends usage
+tests/eval/run.sh [--baseline <run>] [--state <s>] [--preset <ref>] [--no-git] <fixture> <without|with|fallback> <out-dir>  # one arm; spends usage
 uv run python tests/eval/resume_check.py <out-dir>    # the resume eval's checks (003)
 tests/eval/runs.sh <attempt-dir> <fixture> <arm>...    # three counted runs per arm; spends usage
+uv run python tests/eval/observe_check.py <out-dir>    # 004's E2: was each worker observed with git
+uv run python tests/eval/nogit_check.py <out-dir>      # 004's E3: a run with no .git (run.sh --no-git)
 uv run python tests/eval/attribution.py <out-dir>      # SC-003 on a `with` arm
 uv run python tests/eval/usage.py <out-dir>            # a run's usage, reconciled and attributed
 uv run python tests/eval/compare.py --help             # verdict, gate and spend across runs
