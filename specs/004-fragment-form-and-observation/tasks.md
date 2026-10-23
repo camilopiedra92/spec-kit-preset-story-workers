@@ -25,10 +25,10 @@ not before every commit. The feature's fresh-context pass is the owner's.
 
 ## Phase 3: US1, the form (PR 3, draft)
 
-- [ ] T007 `tests/fragment_rules.py` and its `compose.sh` call and red checks (bullet removed, duplicated, inventory row dropped); migrated phrases; run against the current fragment: red, each for its reason
-- [ ] T008 Rewrite `commands/speckit.implement.md` to the mapping; T007 green; `core-anchors.sh` green
-- [ ] T009 README "Why the fragment's rules read as they do" (J1 to J6, unmeasured); CHANGELOG `[Unreleased]`
-- [ ] T010 Hand-break: a bullet removed, one duplicated, one reworded in the fragment: red each
+- [X] T007 `tests/fragment_rules.py` and its `compose.sh` call and red checks (bullet removed, duplicated, inventory row dropped); migrated phrases; run against the current fragment: red, each for its reason
+- [X] T008 Rewrite `commands/speckit.implement.md` to the mapping; T007 green; `core-anchors.sh` green
+- [X] T009 README "Why the fragment's rules read as they do" (J1 to J6, unmeasured); CHANGELOG `[Unreleased]`
+- [X] T010 Hand-break: a bullet removed, one duplicated, one reworded in the fragment: red each
 - [ ] T011 `tests/check.sh`; story close; fresh review (owner)
 
 ## Phase 4: US2, observation (PR 4, draft)
