@@ -10,8 +10,11 @@ All notable changes to this preset are recorded here, in the form of
 
 - A first paragraph in `## Story workers` stating that in a project that is not a git repository,
   **The call** sends the run to **Fallback** (core's behaviour, reported). It restates The call and
-  Fallback as written; no rule is added, removed or reordered, and behaviour was not measured (no
-  eval was run): "no rule changed" is the whole claim. Decision and what was deferred:
+  Fallback as written; no rule is added, removed or reordered. When it was merged its behaviour was
+  not measured, and the description said the owner had declined to spend on evals: that was the
+  orchestrating session's misreading, not an owner decision (his refusal concerned GitHub Actions
+  only). Its measurement is feature 004's E3 (README, when recorded). Decision and what was
+  deferred, superseded by 004:
   [0005](docs/decisions/0005-fragment-form-changes-deferred.md).
 
 ## [0.2.0] - 2026-10-14

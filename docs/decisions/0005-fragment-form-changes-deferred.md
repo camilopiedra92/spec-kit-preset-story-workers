@@ -1,6 +1,9 @@
 # 0005. Changes to the fragment's form that need an eval are deferred; two that do not are made
 
-- Status: accepted for the two changes made, proposed for the three deferred
+- Status: the two changes made stay accepted. The deferral of the other three is **superseded by
+  [feature 004](../../specs/004-fragment-form-and-observation/spec.md)** (2026-10-23): items 1 and 2
+  are implemented and measured there, item 3 stays moot. The reason given below for deferring was
+  wrong (see "Correction"); this record keeps what was decided and when.
 - Date: 2026-10-22
 - Source: an outside review of the text the Spec Kit presets add (owner-commissioned, 2026-10-22,
   kept outside this repository); each claim below was checked against the fragment, not taken from
@@ -10,8 +13,20 @@
 
 The review found the fragment's form harder for a model to follow than its substance deserves.
 Constitution III asks an eval for a rule added, changed or dropped, and this repository's evals
-spend model usage, which the owner declined to spend now. Which of the findings can be applied
-without one?
+spend model usage. The session that wrote this record took the owner to have declined that spend;
+he had not (see "Correction"). Which of the findings can be applied without an eval?
+
+## Correction, 2026-10-23
+
+This record said the owner "declined to spend [usage] now". That was **the orchestrating session's
+misreading, not an owner decision**: the owner's refusal to pay concerned GitHub Actions only, and
+model usage from his subscription for evals is approved. The split below (two changes made without
+an eval, three deferred) was taken for that reason and is kept as a record of what was decided on
+2026-10-22, not as the owner's position. On 2026-10-23 the owner decided not to defer the rewrite
+("no diferir la reescritura") and to measure it: feature 004 implements deferred items 1 and 2 and
+runs the evals of constitution III for them and for the paragraph made here, whose "behaviour not
+measured" is replaced by the measurement once it is recorded in the README. Nothing is released
+until the owner decides after reading it.
 
 ## Decision outcome
 
@@ -35,7 +50,7 @@ without one?
   Changing the verb would also have changed the vocabulary of three places for no change in what the
   fragment makes a model do.
 
-**Deferred (each changes the prompt, so each needs an eval first):**
+**Deferred on 2026-10-22 (each changes the prompt, so each needs an eval first); superseded, items 1 and 2 by feature 004:**
 
 1. One rule per bullet in the three long paragraphs (The brief, Hand-offs, A clean tree outside the
    feature), the rationale moving to the README. Not measured whether the compliance gain the
@@ -43,7 +58,7 @@ without one?
 2. Checking `Carried out in this session:` and the "found already done" tasks against the tree
    (`git log` between HEADs) instead of the worker's report. A design change: the report is the
    only record today. Eval needed to show it catches something a report-only run misses.
-3. A composition test for story-workers with another preset that appends to `speckit-implement`.
+3. (Still moot.) A composition test for story-workers with another preset that appends to `speckit-implement`.
    Moot today: the only other such preset, spec-kit-preset-test-first, was archived on 2026-10-08.
    Reopen if a second preset appends to `implement` again.
 
@@ -51,4 +66,5 @@ without one?
 
 - The next release (a PATCH under constitution V, the owner's to cut) carries the first paragraph;
   until then it is under `[Unreleased]` in the CHANGELOG.
-- Whoever runs an eval on the fragment later can take 1 and 2 as its hypotheses.
+- Items 1 and 2 were taken as hypotheses and are feature 004's two stories; their evals are in the
+  README.
