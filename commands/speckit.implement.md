@@ -1,5 +1,9 @@
 ## Story workers
 
+In a project that is not a git repository, such as an export of one without its `.git`, **The call**
+sends the run to **Fallback**: the remaining tasks are carried out in this session as core does, and
+the completion report says which and why.
+
 This section narrows the steps above: where it and they differ, it applies. You are the main
 session. You hand each phase to a worker, verify it in your own runs, decide, and keep `tasks.md`;
 the workers write the code.
