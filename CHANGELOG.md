@@ -9,6 +9,15 @@ All notable changes to this preset are recorded here, in the form of
 Nothing here is released: no tag, `preset.yml` is still `0.2.0`, and the owner decides after reading
 the measured results (feature 004, [spec](specs/004-fragment-form-and-observation/spec.md)).
 
+### Added
+
+- `**Observation.**` in `## Story workers` (N1 to N5): the main session records HEAD before each
+  worker, reads the worker's commits with `git rev-list` and `git log`, fails verification when the
+  report and the range disagree, marks a "found already done" task only when the commit or file the
+  report cites exists, and writes the `Carried out in this session:` line from what it observed. A
+  new rule, so it needs an eval (constitution III): **not measured** until Eval 004 (E2) is
+  recorded in the README. `tests/observe_standin.py` runs its commands in a scratch repository.
+
 ### Changed
 
 - `## Story workers` is one rule per bullet, in the same order and sections, with the sentences that

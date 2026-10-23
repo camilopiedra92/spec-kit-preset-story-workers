@@ -102,6 +102,18 @@ bullet to help compliance. Whether it does is a hypothesis; Eval 004 below measu
 fixture. Until its entry is in this README, the behaviour of the rewritten fragment is **not
 measured**.
 
+**The observation rules (N1 to N5) are new, not moved.** Until feature 004 the line `Carried out in
+this session:`, the tasks a worker "found already done" and the commits a worker reports rested on
+the worker's report alone. The outside review (2026-10-22) named that asymmetry, which the archived
+test-first preset had solved for its own domain by observing the worktree instead of the agent's
+report. N1 to N5 make the main session check the report against `git` (a commit range from the HEAD
+recorded before the worker, `merge-base --is-ancestor` and `ls-files --error-unmatch` for what a
+report cites), commands it already runs. They add behaviour, so they are a rule added under
+constitution III: **not measured** until Eval 004 is recorded; and what they cannot establish is
+that a mistaken report is caught more often than before, since the eval's workers are not told to
+misreport (spec, "What these do not establish"). `tests/observe_standin.py` shows only that the
+commands discriminate as the rules need, in a scratch repository.
+
 ## The owner's decision, 2026-10-14
 
 After Eval 002's second closed gate, the owner chose to stop measuring and release the preset as it

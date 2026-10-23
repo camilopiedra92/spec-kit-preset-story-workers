@@ -213,6 +213,12 @@ phrases=(
   'say so in the completion report in place of the line below'
   'uncommitted changes outside the feature directory'
   'Started at phase <n>: work committed before this run was covered by the whole suite, not read as a diff, its static-check findings in the baseline.'
+  # The observation rules (004, US2): the main session checks the report against git.
+  "Record HEAD before each worker, a fix hand-off's included"
+  "the commits in that range are the worker's work, whatever its report says"
+  'fails verification and goes to a worker as any failed verification does'
+  'Mark a task the worker found already done only if the commit its report cites passes'
+  "Write the \`Carried out in this session:\` line from this observation, not from a worker's report"
   # Each narrowed core rule, named by its exact text (constitution I).
   'For completed tasks, make sure to mark the task off as [X]'
   'parallel tasks [P] can run together'
@@ -279,6 +285,28 @@ break_check 'R7 reworded' 'R7' 'skill = skill.replace("Never run two workers at 
 break_check 'R50 added to the fragment as an extra bullet' 'mapping lacks' 'skill = skill.rstrip() + "\n- Also do a thing.\n"'
 break_check 'R7 dropped from the inventory' 'R7' 'spec = spec.replace("| R7 |", "| X7 |")'
 break_check 'J3 dropped from the README' 'J3' 'readme = readme.replace("**J3**", "J3")'
+# 004 (US2): the commands the Observation bullets name, run in a scratch repository, tell a
+# worker's commits from earlier ones and a tracked file from an untracked one. Each command
+# altered by hand (its range reversed, its flag dropped) must turn the stand-in red.
+"$PY" "$PRESET/tests/observe_standin.py" implement.md || fail=1
+standin_break() { # <what it must name> <from> <to>
+  "$PY" -c 'import sys
+text = " ".join(open(sys.argv[1], encoding="utf-8").read().split())
+assert sys.argv[2] in text, sys.argv[2]
+open("implement-broken.md", "w", encoding="utf-8").write(text.replace(sys.argv[2], sys.argv[3]))' \
+    implement.md "$2" "$3" || { problem "no '$2' in the fragment to break"; return; }
+  if said=$("$PY" "$PRESET/tests/observe_standin.py" implement-broken.md); then
+    problem "observe_standin.py passed with '$2' altered"
+  elif ! grep -qF -- "$1" <<< "$said"; then
+    problem "observe_standin.py did not name '$1' with '$2' altered"
+  fi
+}
+standin_break 'count command' 'git rev-list --count <recorded HEAD>..HEAD' 'git rev-list --count HEAD..<recorded HEAD>'
+standin_break 'log command' "git log --format='%h %s' <recorded HEAD>..HEAD" "git log --format='%h %s' HEAD..<recorded HEAD>"
+standin_break 'ancestor command' '--is-ancestor <commit> <recorded HEAD>' '--is-ancestor <recorded HEAD> <commit>'
+standin_break 'tracked-file command' 'git ls-files --error-unmatch <file>' 'git ls-files <file>'
+standin_break 'run-range command' 'git rev-list <first recorded HEAD>..HEAD' 'git rev-list HEAD..<first recorded HEAD>'
+[ "$fail" -ne 0 ] || echo "ok: US2, the observation commands discriminate; each alteration turned the stand-in red"
 [ "$fail" -ne 0 ] || echo "ok: US1, the fragment is the mapping; each hand-break turned fragment_rules.py red"
 
 specify version > version.txt 2>&1 || true

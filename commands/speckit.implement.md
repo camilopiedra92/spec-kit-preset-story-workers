@@ -86,6 +86,22 @@ It tells the worker:
 - Make no such commit when the phase marked nothing new.
 - Only then start the next phase's worker.
 
+**Observation.**
+
+- Record HEAD before each worker, a fix hand-off's included, not only each phase's first.
+- When a worker returns, run `git rev-list --count <recorded HEAD>..HEAD` and `git log --format='%h
+  %s' <recorded HEAD>..HEAD`: the commits in that range are the worker's work, whatever its report
+  says.
+- A report that lists tasks done while that range is empty, or whose first or last commit is not the
+  range's, fails verification and goes to a worker as any failed verification does.
+- Mark a task the worker found already done only if the commit its report cites passes `git
+  merge-base --is-ancestor <commit> <recorded HEAD>` or the file it cites passes
+  `git ls-files --error-unmatch <file>`.
+- Write the `Carried out in this session:` line from this observation, not from a worker's report:
+  `none` only when every commit of `git rev-list <first recorded HEAD>..HEAD` is in a worker's
+  range, one of the run's `tasks:` commits or a commit of core's extension hooks; otherwise list the
+  tasks the other commits and edits cover.
+
 **Hand-offs.**
 
 - This narrows core's "Halt execution if any non-parallel task fails": every unfinished task, failed

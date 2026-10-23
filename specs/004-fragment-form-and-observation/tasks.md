@@ -33,9 +33,9 @@ not before every commit. The feature's fresh-context pass is the owner's.
 
 ## Phase 4: US2, observation (PR 4, draft)
 
-- [ ] T012 `compose.sh`: phrases for N1 to N5 and the git stand-in, red first (rules absent); hand-break each command
-- [ ] T013 Add the Observation section (N1 to N5); mapping rows `N` in plan.md; `fragment_rules.py` accepts them
-- [ ] T014 README and CHANGELOG (new rule, unmeasured)
+- [X] T012 `compose.sh`: phrases for N1 to N5 and the git stand-in, red first (rules absent); hand-break each command
+- [X] T013 Add the Observation section (N1 to N5); mapping rows `N` in plan.md; `fragment_rules.py` accepts them
+- [X] T014 README and CHANGELOG (new rule, unmeasured)
 - [ ] T015 `tests/check.sh`; story close; fresh review (owner)
 
 ## Phase 5: Evals (PR 5, draft)
