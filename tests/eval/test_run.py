@@ -42,6 +42,7 @@ echo "${DISABLE_AUTOUPDATER-unset}" > "$here/claude.autoupdater"
 # What versions.txt holds when the agent starts (the cwd is <out>/repo).
 cp ../versions.txt "$here/versions.seen" 2> /dev/null || : > "$here/versions.seen"
 git status --porcelain --untracked-files=all > "$here/status.seen"
+{ [ -e .git ] && echo yes || echo no; } > "$here/git.seen"
 # A worker's commit, so commits.txt has something after the setup commit.
 git commit -q --allow-empty -m "fixture: work"
 if [ -e "$here/claude.rename" ]; then
@@ -246,6 +247,7 @@ def run(
     home: Path | None = None,
     state: str | None = None,
     preset: str | None = None,
+    no_git: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     env = {
         "HOME": str(home or stubs / "home"),
@@ -254,6 +256,7 @@ def run(
     args = ["--baseline", str(baseline)] if baseline else []
     args += ["--state", state] if state else []
     args += ["--preset", preset] if preset else []
+    args += ["--no-git"] if no_git else []
     return subprocess.run(
         [BASH, str(checkout / "tests/eval/run.sh"), *args, fixture, arm, str(out)],
         check=False,
@@ -920,3 +923,43 @@ def test_a_state_chain_too_deep_or_circular_is_refused(
     result = run(checkout, stubs, "with", tmp_path / "out", state=names[0])
     assert result.returncode == 2
     assert "more than 5 deep" in result.stderr
+
+
+# 004: --no-git runs the agent where a contained run's export would put it, with no .git.
+
+
+def test_no_git_hides_the_repository_from_the_agent_and_restores_it_after(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "out"
+    result = run(checkout, stubs, "with", out, no_git=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert (stubs / "git.seen").read_text() == "no\n"
+    assert "no_git: yes" in (stubs / "versions.seen").read_text()
+    # Back in place for the steps after the agent, the setup commit in it.
+    log = subprocess.run(
+        ["git", "-C", str(out / "repo"), "log", "--format=%s"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split("\n")
+    assert "fixture: setup" in log
+    assert not (out / "git-aside").exists()
+
+
+def test_without_no_git_the_agent_has_its_repository(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out).returncode == 0
+    assert (stubs / "git.seen").read_text() == "yes\n"
+    assert "no_git: no" in (out / "versions.txt").read_text()
+
+
+def test_the_repository_is_restored_when_the_run_does_not_count(
+    checkout: Path, stubs: Path, tmp_path: Path
+) -> None:
+    script(stubs, stream(), exit_=1)
+    out = tmp_path / "out"
+    assert run(checkout, stubs, "with", out, no_git=True).returncode == 1
+    assert (out / "repo/.git").is_dir()

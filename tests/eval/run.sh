@@ -3,12 +3,13 @@
 # /speckit-implement without the preset, with it, or with it but no Agent tool,
 # hermetic so the result is the preset's and anyone can rerun it.
 #
-# Usage:  tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>
+# Usage:  tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] [--no-git] <fixture> <without|with|fallback> <out-dir>
 #         <fixture> is a directory under tests/eval/fixtures/ holding project/
 #         (what the agent gets) and heldout/ (copied in after a counted run);
 #         --baseline names a counted run whose versions this one must match;
 #         --state lays fixtures/<fixture>/states/<name>/ over the project, after
-#         the state its extends file names
+#         the state its extends file names; --no-git moves the repository's
+#         .git aside while the agent runs, as in an export of a project
 # Exit:   0 counted (status ok); 1 not counted (status says why; rerun it, at
 #         most twice); 2 refused (fix it, do not retry): before the out-dir
 #         exists nothing is written; after, status says why
@@ -25,10 +26,11 @@ refuse() {
 src=${BASH_SOURCE[0]}
 case $src in */*) here=$(cd "${src%/*}" && pwd) ;; *) here=$(pwd) ;; esac
 
-usage="usage: tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] <fixture> <without|with|fallback> <out-dir>"
+usage="usage: tests/eval/run.sh [--baseline <run-dir>] [--state <name>] [--preset <ref>] [--no-git] <fixture> <without|with|fallback> <out-dir>"
 baseline=
 state=
 preset=
+no_git=no
 while [ "$#" -gt 3 ]; do
   case $1 in
     --baseline)
@@ -41,6 +43,13 @@ while [ "$#" -gt 3 ]; do
     # The preset as another ref archives it: the arm without the rule under
     # measurement, on the same fixture (specs/003-resume-from-head, research R3).
     --preset) preset=$2 ;;
+    # A project that is not a git repository: a contained run's export has no
+    # .git (specs/004-fragment-form-and-observation, E3). No value to skip.
+    --no-git)
+      no_git=yes
+      shift
+      continue
+      ;;
     *) refuse "$usage" ;;
   esac
   shift 2
@@ -210,6 +219,7 @@ semver() { grep -m1 -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' || echo unknown; }
   echo "autoupdater: disabled"
   echo "state: ${state:--}"
   echo "preset: ${preset:-HEAD} $preset_sha"
+  echo "no_git: $no_git"
 } > "$out/versions.txt"
 differing() { # <key>...: those whose line differs between this run and the baseline
   local key
@@ -218,7 +228,7 @@ differing() { # <key>...: those whose line differs between this run and the base
       printf '%s ' "$key"
   done
 }
-pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater state preset)
+pre_run=(commit claude specify git uv main_model main_effort environment git_isolation fixture autoupdater state preset no_git)
 if [ -n "$baseline" ]; then
   keys=$(differing "${pre_run[@]}")
   [ -z "$keys" ] || refused "versions differ from the baseline: ${keys% }"
@@ -229,8 +239,17 @@ flags=(-p "/speckit-implement" --model claude-opus-5-5 --effort medium
   --allowedTools "Agent Bash Edit Write Read Glob Grep TodoWrite"
   --output-format stream-json --verbose)
 [ "$arm" != fallback ] || flags+=(--disallowedTools Agent)
+# The repository goes back whatever the agent's exit: the steps after it read it.
+if [ "$no_git" = yes ]; then
+  mv "$repo/.git" "$out/git-aside"
+  trap '[ ! -e "$out/git-aside" ] || mv "$out/git-aside" "$repo/.git"; [ -z "$server" ] || kill "$server" 2> /dev/null; rm -rf "$www"' EXIT
+fi
 rc=0
 clean 3600 claude "${flags[@]}" < /dev/null > "$out/stream.jsonl" 2> "$out/claude.stderr" || rc=$?
+
+if [ -e "$out/git-aside" ]; then
+  mv "$out/git-aside" "$repo/.git"
+fi
 
 # The run's transcripts, whatever its exit, while Claude Code still keeps them:
 # usage.py attributes a counted run from them, and a killed run is priced from
