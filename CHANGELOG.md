@@ -4,6 +4,16 @@ All notable changes to this preset are recorded here, in the form of
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) as constitution V defines it.
 
+## [Unreleased]
+
+### Added
+
+- A first paragraph in `## Story workers` stating that in a project that is not a git repository,
+  **The call** sends the run to **Fallback** (core's behaviour, reported). It restates The call and
+  Fallback as written; no rule is added, removed or reordered, and behaviour was not measured (no
+  eval was run): "no rule changed" is the whole claim. Decision and what was deferred:
+  [0005](docs/decisions/0005-fragment-form-changes-deferred.md).
+
 ## [0.2.0] - 2026-10-14
 
 Measured against `v0.1.0` in [Eval 003](README.md#eval-003-2026-10-14): on a feature adopted with

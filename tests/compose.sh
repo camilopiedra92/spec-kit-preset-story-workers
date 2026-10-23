@@ -221,6 +221,22 @@ phrases=(
 for phrase in "${phrases[@]}"; do
   grep -qF -- "$phrase" <<< "$said" || problem "the fragment does not say '$phrase'"
 done
+# The fragment's first paragraph after its heading says which rule applies in
+# a project that is not a git repository, such as a contained run's export of
+# one with no `.git`: The call sends the run to Fallback. It is a statement of
+# what The call and Fallback already say, so it must stay the first thing a
+# reader meets and must not claim more than those two do. The whole paragraph
+# is compared, so a rewording that adds a claim turns this red; so does moving
+# it down or dropping it. Checked in the composed skill too.
+inert='In a project that is not a git repository, such as an export of one without its `.git`, **The call** sends the run to **Fallback**: the remaining tasks are carried out in this session as core does, and the completion report says which and why.'
+"$PY" -c 'import sys
+squeeze = lambda t: " ".join(t.split())
+paragraphs = [squeeze(p) for p in open(sys.argv[1], encoding="utf-8").read().split("\n\n") if p.strip()]
+sys.exit(not (paragraphs[0] == "## Story workers" and paragraphs[1] == sys.argv[2]))' \
+  implement.md "$inert" ||
+  problem "the fragment's first paragraph after its heading is not the not-a-git-repository line"
+grep -qF -- "$inert" <<< "$(tr -s '[:space:]' ' ' < "$(skill_of speckit.implement)")" ||
+  problem "the composed speckit-implement skill does not carry the not-a-git-repository line"
 # 0.1.0's Resume rule, replaced in 0.2.0: it restarted a feature adopted
 # partway through at Phase 1.
 for phrase in 'A run starts at the phase after the last commit whose message contains' \
